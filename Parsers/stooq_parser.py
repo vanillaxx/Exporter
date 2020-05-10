@@ -1,17 +1,89 @@
 import requests
 import pandas as pd
+import re
 
 
 class StooqParser:
     def __init__(self):
-        self._all_companies_current_ulr_base = 'https://stooq.com/t/?i=513&v=1&l={number}'
-        self._all_companies_date_ulr_base = 'https://stooq.com/t/?i=513&v=1&d={year:04d}{month:02d}{day:02d}&l={number}'
+        self._all_companies_current_ulr_base = 'https://stooq.com/t/?i=513&n=1&v=1&l={number}'
+        self._all_companies_date_ulr_base = 'https://stooq.com/t/?i=513&n=1&v=1&d={year:04d}{month:02d}{day:02d}&l={number}'
         self._company_current_url_base = 'https://stooq.com/q/d/?s={company}'
         self._company_period_url_base = 'https://stooq.com/q/d/?s={company}&i=d&d1={year1:04d}{month1:02d}{day1:02d}&d2={year2:04d}{month2:02d}{day2:02d}&l={number}'
+        self._tables_filter = re.compile(r'.*:.*')
+
+    def download_all_companies_current(self):
+        i = 1
+        frames = []
+        found = False
+        while True:
+            url = self._all_companies_current_ulr_base.format(number=i)
+            site_html = requests.get(url).content
+
+            try:
+                df_list = pd.read_html(site_html)
+            except ValueError:
+                break
+
+            if len(df_list) == 0:
+                break
+
+            for df in df_list:
+                if 'Symbol' in df.columns and 'Name' in df.columns and 'Last' in df.columns:
+                    if not df.empty and not df.Symbol.apply(lambda x: bool(self._tables_filter.match(str(x)))).any():
+                        frames.append(df)
+                        found = True
+
+            if not found:
+                break
+
+            i += 1
+            found = False
+
+        if len(frames) == 0:
+            raise ValueError("No stock quotes for companies")
+        result = pd.concat(frames)
+        print(result)
+        return True
+
+    def download_all_companies_date(self, date):
+        day, month, year = date
+        i = 1
+        frames = []
+        found = False
+        while True:
+            url = self._all_companies_date_ulr_base.format(number=i, day=day, month=month, year=year)
+            site_html = requests.get(url).content
+
+            try:
+                df_list = pd.read_html(site_html)
+            except ValueError:
+                break
+
+            if len(df_list) == 0:
+                break
+
+            for df in df_list:
+                if 'Symbol' in df.columns and 'Name' in df.columns and 'Last' in df.columns:
+                    if not df.empty and not df.Symbol.apply(lambda x: bool(self._tables_filter.match(str(x)))).any():
+                        frames.append(df)
+                        found = True
+
+            if not found:
+                break
+
+            i += 1
+            found = False
+
+        if len(frames) == 0:
+            raise ValueError("No stock quotes for companies for given date")
+        result = pd.concat(frames)
+        print(result)
+        return True
 
     def download_company_current(self, company):
         url = self._company_current_url_base.format(company=company)
         site_html = requests.get(url).content
+        print(url)
 
         try:
             df_list = pd.read_html(site_html, attrs={'id': 'fth1'})
@@ -48,54 +120,9 @@ class StooqParser:
         print(result)
         return True
 
-    def download_all_companies_date(self, date):
-        day, month, year = date
-        i = 1
-        frames = []
-        while True:
-            url = self._all_companies_date_ulr_base.format(number=i, day=day, month=month, year=year)
-            site_html = requests.get(url).content
-
-            try:
-                df_list = pd.read_html(site_html, attrs={'id': 'fth1'})
-            except ValueError:
-                break
-
-            if len(df_list) == 0 or df_list[0].empty:
-                break
-
-            frames.append(df_list[0])
-            i += 1
-
-        result = pd.concat(frames)
-        print(result)
-        return True
-
-    def download_all_companies_current(self):
-        i = 1
-        frames = []
-        while True:
-            url = self._all_companies_current_ulr_base.format(number=i)
-            site_html = requests.get(url).content
-
-            try:
-                df_list = pd.read_html(site_html, attrs={'id': 'fth1'})
-            except ValueError:
-                break
-
-            if len(df_list) == 0 or df_list[0].empty:
-                break
-
-            frames.append(df_list[0])
-            i += 1
-
-        result = pd.concat(frames)
-        print(result)
-        return True
-
 
 sp = StooqParser()
-sp.download_all_companies_current()
-sp.download_all_companies_date((30, 4, 2020))
-sp.download_company_current("wig20")
-sp.download_company_period("bnp", (23, 4, 2020), (28, 4, 2020))
+# sp.download_all_companies_current()
+# sp.download_all_companies_date((30, 4, 2020))
+# sp.download_company_current("wig20")
+# sp.download_company_period("bnp", (23, 4, 2020), (28, 4, 2020))
