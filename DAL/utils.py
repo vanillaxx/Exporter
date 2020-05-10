@@ -6,28 +6,42 @@ def with_connection(func):
 
     def with_connection_(*args, **kwargs):
         database_path = 'exporter.db'
-        conn = None
+        connection = None
         try:
-            conn = sqlite3.connect(database_path)
-            res = func(conn, *args, **kwargs)
+            connection = sqlite3.connect(database_path)
+            res = func(connection, *args, **kwargs)
         except sqlite3.DatabaseError as e:
             print(e)
         finally:
-            if conn:
-                conn.close()
+            if connection:
+                connection.close()
         return res
 
     return with_connection_
 
 
 @with_connection
-def set_up_database_tables(conn):
-    with conn:
-        conn.execute("PRAGMA foreign_keys = 1")
-        conn.execute('''CREATE TABLE IF NOT EXISTS Company
-        (ID INTEGER PRIMARY KEY AUTOINCREMENT, Name varchar unique);''')
-        conn.execute('''CREATE TABLE IF NOT EXISTS EquityLiabilities
-        (ID INTEGER PRIMARY KEY AUTOINCREMENT,
+def set_up_database_tables(connection):
+    with connection:
+        connection.execute("PRAGMA foreign_keys = 1")
+
+        # creating tables
+        set_up_company_table(connection)
+        set_up_equity_liabilities_table(connection)
+        set_up_assets_table(connection)
+        set_up_stock_quotes_table(connection)
+
+
+def set_up_company_table(connection):
+    connection.execute('''CREATE TABLE IF NOT EXISTS Company
+    (ID INTEGER PRIMARY KEY AUTOINCREMENT,
+        Name varchar unique,
+        Symbol varchar unique);''')
+
+
+def set_up_equity_liabilities_table(connection):
+    connection.execute('''CREATE TABLE IF NOT EXISTS EquityLiabilities
+    (ID INTEGER PRIMARY KEY AUTOINCREMENT,
         CompanyID INTEGER,
         Date TEXT,
         'Share capital' REAL,
@@ -60,55 +74,70 @@ def set_up_database_tables(conn):
         FOREIGN KEY(CompanyID) REFERENCES Company(ID)
         );''')
 
-        conn.execute('''CREATE TABLE IF NOT EXISTS Assets
-                (ID INTEGER PRIMARY KEY AUTOINCREMENT,
-                CompanyID INTEGER,
-                Date TEXT,
-                'Property, plant and equipment' REAL,
-                'Exploration for and evaluation of mineral resources' REAL,
-                'Intangible assets' REAL,
-                'Goodwill' REAL,
-                'Investment property' REAL,
-                'Investment in affiliates' REAL,
-                'Non-current financial assets' REAL,
-                'Non-current loans and receivables' REAL,
-                'Deferred income tax' REAL,
-                'Non-current deferred charges and accruals' REAL,
-                'Non-current derivative instruments' REAL,
-                'Other non-current assets' REAL,
-                'Inventories' REAL,
-                'Current intangible assets' REAL,
-                'Biological assets' REAL,
-                'Trade receivables' REAL,
-                'Loans and other receivables' REAL,
-                'Financial assets' REAL,
-                'Cash and cash equivalents' REAL,
-                'Accruals' REAL,
-                'Assets from current tax' REAL,
-                'Derivative instruments' REAL,
-                'Other assets' REAL,
-                'Assets held for sale and discontinuing operations' REAL,
-                'Called up capital' REAL,
-                'Own shares' REAL,
-                FOREIGN KEY(CompanyID) REFERENCES Company(ID)
-                );''')
-        #insert value for testing
-        conn.execute('''INSERT INTO Company(Name) VALUES ('Agora')''')
 
+def set_up_assets_table(connection):
+    connection.execute('''CREATE TABLE IF NOT EXISTS Assets
+            (ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            CompanyID INTEGER,
+            Date TEXT,
+            'Property, plant and equipment' REAL,
+            'Exploration for and evaluation of mineral resources' REAL,
+            'Intangible assets' REAL,
+            'Goodwill' REAL,
+            'Investment property' REAL,
+            'Investment in affiliates' REAL,
+            'Non-current financial assets' REAL,
+            'Non-current loans and receivables' REAL,
+            'Deferred income tax' REAL,
+            'Non-current deferred charges and accruals' REAL,
+            'Non-current derivative instruments' REAL,
+            'Other non-current assets' REAL,
+            'Inventories' REAL,
+            'Current intangible assets' REAL,
+            'Biological assets' REAL,
+            'Trade receivables' REAL,
+            'Loans and other receivables' REAL,
+            'Financial assets' REAL,
+            'Cash and cash equivalents' REAL,
+            'Accruals' REAL,
+            'Assets from current tax' REAL,
+            'Derivative instruments' REAL,
+            'Other assets' REAL,
+            'Assets held for sale and discontinuing operations' REAL,
+            'Called up capital' REAL,
+            'Own shares' REAL,
+            FOREIGN KEY(CompanyID) REFERENCES Company(ID)
+            );''')
+
+
+def set_up_stock_quotes_table(connection):
+    connection.execute('''CREATE TABLE IF NOT EXISTS StockQuotes
+    (ID INTEGER PRIMARY KEY AUTOINCREMENT,
+        CompanyID INTEGER,
+        Date DATE,
+        Stock REAL,
+        Change REAL,
+        Open REAL,
+        High REAL,
+        Low REAL,
+        Volume INTEGER,
+        Turnover INTEGER,
+        FOREIGN KEY(CompanyID) REFERENCES Company(ID)
+        );''')
 
 
 @with_connection
-def insert_values(conn, table_name, columns, values):
+def insert_values(connection, table_name, columns, values):
     values = tuple(values)
     columns = tuple(columns)
     command = 'INSERT INTO %s%s values %s ' % (table_name, columns, values)
-    with conn:
-        conn.execute(command)
+    with connection:
+        connection.execute(command)
 
 
 @with_connection
-def get_company_id_from_name(conn, company_name):
+def get_company_id_from_name(connection, company_name):
     company_name = company_name.upper()
-    c = conn.cursor()
+    c = connection.cursor()
     c.execute("SELECT ID FROM Company WHERE Name Like ?", (company_name,))
     return c.fetchone()[0]
