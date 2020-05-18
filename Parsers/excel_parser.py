@@ -1,6 +1,7 @@
 import xlrd
 import DAL.utils
 
+
 class ExcelParser():
     def __init__(self):
         self.assets_categories = [
@@ -8,7 +9,7 @@ class ExcelParser():
             'Assets held for sale and discontinuing operations',
             'Called up capital', 'Own shares'
         ]
-        self.equities_categories = [
+        self.equity_liabilities_categories = [
             'Equity shareholders of the parent', 'Non-controlling interests',
             'Non-current liabilities', 'Current liabilities',
             'Liabilities related to assets held for sale and discontinued operations'
@@ -18,6 +19,10 @@ class ExcelParser():
         ]
 
     def parse_company(self, path):
+        def parse_ekd(ekd):
+            parsed_ekd = ekd.split('.')
+            return parsed_ekd[0], parsed_ekd[1]
+
         excel_sheet = self.get_sheet(path, 'Info')
         attribute_column = 0
         value_column = 1
@@ -42,20 +47,27 @@ class ExcelParser():
         else:
             raise ValueError('(A26=EKD 1) of company should be in B26 cell')
 
-        ekd_section, ekd_class = self.parse_ekd(company_ekd)
+        ekd_section, ekd_class = parse_ekd(company_ekd)
         self.insert_ekd_data(ekd_section, ekd_class)
         DAL.utils.insert_company(company_name, company_ticker, company_bloomberg,
                                  ekd_section, ekd_class)
 
+    def parse(self, path, sheet_name):
+        def insert_float_value(where, value):
+            if curr_value:
+                where.append(float(value))
+            else:
+                where.append(0.0)
 
-    def parse(self, path, sheet_name, company):
-        excel_file = xlrd.open_workbook(path)
-        excel_sheet = excel_file.sheet_by_name(sheet_name)
-        company_id = DAL.utils.get_company_id_from_name(company)
+
+        excel_sheet = self.get_sheet(path, sheet_name)
+        company_id = self.get_company(path)
         curr_row = 0
         curr_column = 2
-        assets = []
-        equity_liabilities = []
+        assets = [company_id]
+        assets_categories = [company_id]
+        equity_liabilities = [company_id]
+        equity_liabilities_categories = [company_id]
         while curr_row < excel_sheet.nrows:
             if excel_sheet.cell(curr_row, curr_column).value == 'Balance sheet':
                 attributes_column = curr_column
@@ -63,90 +75,95 @@ class ExcelParser():
                 dates_row = curr_row + 1
                 sum_row = dates_row + 1
                 curr_row += 3
-                assets_attributes = []
-                equity_liabilities_attributes = []
+                assets_attributes = ['CompanyID', 'Date']
+                assets_categories_attributes = ['CompanyID', 'Date']
+                equity_liabilities_attributes = ['CompanyID', 'Date']
+                equity_liabilities_categories_attributes = ['CompanyID', 'Date']
                 while curr_column < excel_sheet.ncols:
-                    #check if data for that period exists
+                    # check if data for that period exists
                     if not excel_sheet.cell(sum_row, curr_column).value:
                         curr_column += 1
                         continue
-                    else:
-                        sum = float(excel_sheet.cell(sum_row, curr_column).value)
-                    #add date to list
-                    assets.append(excel_sheet.cell(dates_row, curr_column).value)
-                    equity_liabilities.append(excel_sheet.cell(dates_row, curr_column).value)
-                    #omit
-                    #curr_row += 2
-                    #iterate from the first element until assets end
+                    # add date to list
+                    date_value = excel_sheet.cell(dates_row, curr_column).value
+                    assets.append(date_value)
+                    assets_categories.append(date_value)
+                    equity_liabilities.append(date_value)
+                    equity_liabilities_categories.append(date_value)
+                    # omit
+                    # curr_row += 2
+                    # iterate from the first element until assets end
                     while excel_sheet.cell(curr_row, attributes_column).value != '':
                         attribute = excel_sheet.cell(curr_row, attributes_column).value
-                        if attribute in self.assets_categories:
-                            curr_row += 1
-                            continue
-                        assets_attributes.append(attribute)
                         curr_value = excel_sheet.cell(curr_row, curr_column).value
-                        #insert 0 instead of empty value
-                        if curr_value != '':
-                            percentage_value = float(curr_value) * 100 / sum
-                            assets.append(round(percentage_value, 2))
+                        if attribute in self.assets_categories:
+                            assets_categories_attributes.append(attribute)
+                            insert_float_value(assets_categories, curr_value)
                         else:
-                            assets.append(0.0)
+                            assets_attributes.append(attribute)
+                            insert_float_value(assets, curr_value)
                         curr_row += 1
 
                     curr_row += 2
-                    #omit headers and iterate until equities and liabilities end
+                    # omit headers and iterate until equities and liabilities end
                     while excel_sheet.cell(curr_row, attributes_column).value != 'Date of publication':
                         attribute = excel_sheet.cell(curr_row, attributes_column).value
-                        if attribute in self.equities_categories:
-                            curr_row += 1
-                            continue
-                        equity_liabilities_attributes.append(attribute)
                         curr_value = excel_sheet.cell(curr_row, curr_column).value
-                        #insert 0 instead of empty value
-                        if curr_value != '':
-                            percentage_value = float(curr_value) * 100 / sum
-                            equity_liabilities.append(round(percentage_value, 2))
+                        if attribute in self.equity_liabilities_categories:
+                            equity_liabilities_categories_attributes.append(attribute)
+                            insert_float_value(equity_liabilities_categories, curr_value)
                         else:
-                            equity_liabilities.append(0.0)
+                            equity_liabilities_attributes.append(attribute)
+                            insert_float_value(equity_liabilities, curr_value)
                         curr_row += 1
-                    assets_attributes.insert(0, "Date")
-                    equity_liabilities_attributes.insert(0, "Date")
-                    assets_attributes.insert(0, "CompanyID")
-                    equity_liabilities_attributes.insert(0, "CompanyID")
-                    assets.insert(0, company_id)
-                    equity_liabilities.insert(0, company_id)
+
                     DAL.utils.insert_values(table_name="Assets",
-                                            columns=assets_attributes, values=assets)
+                                            columns=assets_attributes,
+                                            values=assets)
                     DAL.utils.insert_values(table_name="EquityLiabilities",
                                             columns=equity_liabilities_attributes,
                                             values=equity_liabilities)
-                    assets_attributes = []
-                    equity_liabilities_attributes = []
-                    assets = []
-                    equity_liabilities = []
+                    DAL.utils.insert_values(table_name="AssetsCategories",
+                                            columns=assets_categories_attributes,
+                                            values=assets_categories)
+                    DAL.utils.insert_values(table_name="EquityLiabilitiesCategories",
+                                            columns=equity_liabilities_categories_attributes,
+                                            values=equity_liabilities_categories)
+                    assets_attributes = ['CompanyID', 'Date']
+                    assets_categories_attributes = ['CompanyID', 'Date']
+                    equity_liabilities_attributes = ['CompanyID', 'Date']
+                    equity_liabilities_categories_attributes = ['CompanyID', 'Date']
+                    assets = [company_id]
+                    assets_categories = [company_id]
+                    equity_liabilities = [company_id]
+                    equity_liabilities_categories = [company_id]
                     curr_column += 1
                     curr_row = sum_row + 1
                 break
             curr_row += 1
+
+    def get_company(self, path):
+        self.parse_company(path)
+        excel_sheet = self.get_sheet(path, 'Info')
+        value_column = 1
+        name_row = 2
+        company_name = excel_sheet.cell(name_row, value_column).value
+        return DAL.utils.get_company_id_from_name(company_name)
 
 
     def get_sheet(self, path, sheet_name):
         excel_file = xlrd.open_workbook(path)
         return excel_file.sheet_by_name(sheet_name)
 
-    def parse_ekd(self, ekd):
-        parsed_ekd = ekd.split('.')
-        return parsed_ekd[0], parsed_ekd[1]
-
-
     def insert_ekd_data(self, ekd_section, ekd_class):
         DAL.utils.insert_ekd_section(ekd_section)
         DAL.utils.insert_ekd_class(ekd_class)
 
+
 if __name__ == "__main__":
     ep = ExcelParser()
     excel_file = input("Enter path to file:\n")
-    #sheet = input("Enter sheet: QS or YS\n")
-    #company = input("Enter company name:\n")
-    #ep.parse(excel_file, sheet, company)
-    ep.parse_company(excel_file)
+    sheet = input("Enter sheet: QS or YS\n")
+    # company = input("Enter company name:\n")
+    ep.parse(excel_file, sheet)
+    # ep.parse_company(excel_file)
