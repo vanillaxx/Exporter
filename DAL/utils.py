@@ -26,24 +26,34 @@ def set_up_database_tables(connection):
         connection.execute("PRAGMA foreign_keys = 1")
 
         # creating tables
+        set_up_ekd_section_table(connection)
+        set_up_ekd_class_table(connection)
         set_up_company_table(connection)
         set_up_equity_liabilities_table(connection)
         set_up_assets_table(connection)
+        set_up_assets_categories_table(connection)
+        set_up_equity_liabilities_categories_table(connection)
         set_up_stock_quotes_table(connection)
 
 
 def set_up_company_table(connection):
     connection.execute('''CREATE TABLE IF NOT EXISTS Company
     (ID INTEGER PRIMARY KEY AUTOINCREMENT,
-        Name varchar unique,
-        Symbol varchar unique);''')
+        Name VARCHAR UNIQUE ,
+        Ticker VARCHAR UNIQUE ,
+        Bloomberg VARCHAR,
+        EKD_SectionID INTEGER,
+        EKD_ClassID INTEGER,
+        FOREIGN KEY(EKD_SectionID) REFERENCES EKD_Section(ID),
+        FOREIGN KEY(EKD_ClassID) REFERENCES EKD_Class(ID)
+        );''')
 
 
 def set_up_equity_liabilities_table(connection):
     connection.execute('''CREATE TABLE IF NOT EXISTS EquityLiabilities
     (ID INTEGER PRIMARY KEY AUTOINCREMENT,
         CompanyID INTEGER,
-        Date TEXT,
+        Date DATE,
         'Share capital' REAL,
         'Called up share capital' REAL,
         'Treasury shares' REAL,
@@ -79,7 +89,7 @@ def set_up_assets_table(connection):
     connection.execute('''CREATE TABLE IF NOT EXISTS Assets
             (ID INTEGER PRIMARY KEY AUTOINCREMENT,
             CompanyID INTEGER,
-            Date TEXT,
+            Date DATE,
             'Property, plant and equipment' REAL,
             'Exploration for and evaluation of mineral resources' REAL,
             'Intangible assets' REAL,
@@ -103,12 +113,50 @@ def set_up_assets_table(connection):
             'Assets from current tax' REAL,
             'Derivative instruments' REAL,
             'Other assets' REAL,
+            FOREIGN KEY(CompanyID) REFERENCES Company(ID)
+            );''')
+
+
+def set_up_assets_categories_table(connection):
+    connection.execute('''CREATE TABLE IF NOT EXISTS AssetsCategories
+            (ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            CompanyID INTEGER,
+            Date DATE,
+            'Non-current assets' REAL,
+            'Current assets' REAL,
             'Assets held for sale and discontinuing operations' REAL,
             'Called up capital' REAL,
             'Own shares' REAL,
             FOREIGN KEY(CompanyID) REFERENCES Company(ID)
             );''')
 
+
+def set_up_equity_liabilities_categories_table(connection):
+    connection.execute('''CREATE TABLE IF NOT EXISTS EquityLiabilitiesCategories
+            (ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            CompanyID INTEGER,
+            Date DATE,
+            'Equity shareholders of the parent' REAL,
+            'Non-controlling interests' REAL,
+            'Non-current liabilities' REAL,
+            'Current liabilities' REAL,
+            'Liabilities related to assets held for sale and discontinued operations' REAL,
+            FOREIGN KEY(CompanyID) REFERENCES Company(ID)
+            );''')
+
+
+def set_up_ekd_section_table(connection):
+    connection.execute('''CREATE TABLE IF NOT EXISTS EKD_Section
+            (ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            Value INTEGER UNIQUE
+            );''')
+
+
+def set_up_ekd_class_table(connection):
+    connection.execute('''CREATE TABLE IF NOT EXISTS EKD_Class
+            (ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            Value INTEGER UNIQUE 
+            );''')
 
 def set_up_stock_quotes_table(connection):
     connection.execute('''CREATE TABLE IF NOT EXISTS StockQuotes
@@ -130,7 +178,14 @@ def set_up_stock_quotes_table(connection):
 def insert_values(connection, table_name, columns, values):
     values = tuple(values)
     columns = tuple(columns)
-    command = 'INSERT INTO %s%s values %s ' % (table_name, columns, values)
+    command = 'INSERT OR IGNORE INTO %s%s VALUES %s ' % (table_name, columns, values)
+    with connection:
+        connection.execute(command)
+
+
+@with_connection
+def insert_value(connection, table_name, column, value):
+    command = 'INSERT OR IGNORE INTO %s(%s) VALUES (%s) ' % (table_name, column, value)
     with connection:
         connection.execute(command)
 
@@ -141,3 +196,36 @@ def get_company_id_from_name(connection, company_name):
     c = connection.cursor()
     c.execute("SELECT ID FROM Company WHERE Name Like ?", (company_name,))
     return c.fetchone()[0]
+
+
+def insert_ekd_section(ekd_section):
+    insert_value(table_name='EKD_Section', column='Value', value=ekd_section)
+
+
+def insert_ekd_class(ekd_class):
+    insert_value(table_name='EKD_Class', column='Value', value=ekd_class)
+
+
+def insert_company(company_name, company_ticker, company_bloomberg, ekd_section, ekd_class):
+    section_id = get_ekd_section_id_from_value(ekd_section=ekd_section)
+    class_id = get_ekd_class_id_from_value(ekd_class=ekd_class)
+    insert_values(table_name='Company',
+                  columns=['Name', 'Ticker', 'Bloomberg', 'EKD_SectionID', 'EKD_ClassID'],
+                  values=[company_name, company_ticker, company_bloomberg, section_id, class_id])
+
+
+@with_connection
+def get_ekd_section_id_from_value(connection, ekd_section):
+    c = connection.cursor()
+    c.execute("SELECT ID FROM EKD_Section WHERE Value Like (?)", (int(ekd_section),))
+    return c.fetchone()[0]
+
+
+@with_connection
+def get_ekd_class_id_from_value(connection, ekd_class):
+    c = connection.cursor()
+    c.execute("SELECT ID FROM EKD_Class WHERE Value Like (?)", (int(ekd_class),))
+    return c.fetchone()[0]
+
+
+set_up_database_tables()
