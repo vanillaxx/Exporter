@@ -34,6 +34,8 @@ def set_up_database_tables(connection):
         set_up_assets_categories_table(connection)
         set_up_equity_liabilities_categories_table(connection)
         set_up_stock_quotes_table(connection)
+        set_up_financial_ratios_table(connection)
+        set_up_du_pont_table(connection)
 
 
 def set_up_company_table(connection):
@@ -157,6 +159,59 @@ def set_up_ekd_class_table(connection):
             (ID INTEGER PRIMARY KEY AUTOINCREMENT,
             Value INTEGER UNIQUE 
             );''')
+
+
+def set_up_financial_ratios_table(connection):
+    connection.execute('''CREATE TABLE IF NOT EXISTS FinancialRatios
+        (ID INTEGER PRIMARY KEY AUTOINCREMENT,
+        CompanyID INTEGER,
+        PeriodStart DATE,
+        PeriodEnd DATE,
+        'Gross profit margin on sales' REAL,
+        'Operating profit margin' REAL,
+        'Gross profit margin' REAL,
+        'Net profit margin' REAL,
+        'Return on equity (ROE)' REAL,
+        'Return on assets (ROA)' REAL,
+        'Working capital ratio' REAL,
+        'Current ratio' REAL,
+        'Quick ratio' REAL,
+        'Cash ratio'REAL,
+        'Receivables turnover' REAL,
+        'Inventory turnover' REAL,
+        'The operating cycle' REAL,
+        'Rotation commitments' REAL,
+        'Cash conversion cycle' REAL,
+        'Rotation assets' REAL,
+        'Rotation of assets' REAL,
+        'Assets ratio' REAL,
+        'Debt ratio' REAL,
+        'Debt service ratio' REAL,
+        'Rate debt security' REAL,
+        FOREIGN KEY(CompanyID) REFERENCES Company(ID)
+        );''')
+
+
+def set_up_du_pont_table(connection):
+    connection.execute('''CREATE TABLE IF NOT EXISTS DuPontIndicators
+        (ID INTEGER PRIMARY KEY AUTOINCREMENT,
+        CompanyID INTEGER,
+        PeriodStart DATE,
+        PeriodEnd DATE,
+        'Return on equity (ROE)' REAL,
+        'Return on assets (ROA)' REAL,
+        'Leverage (EM)' REAL,
+        'Net profit margin' REAL,
+        'Asset utilization (AU)' REAL,
+        'Load gross profit' REAL,
+        'Load operating profit' REAL,
+        'Operating profit margin' REAL,
+        'EBITDA margin' REAL,
+        FOREIGN KEY(CompanyID) REFERENCES Company(ID)
+        );''')
+
+
+
 
 def set_up_stock_quotes_table(connection):
     connection.execute('''CREATE TABLE IF NOT EXISTS StockQuotes
