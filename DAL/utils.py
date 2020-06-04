@@ -211,14 +211,13 @@ def set_up_du_pont_table(connection):
         );''')
 
 
-
-
 def set_up_stock_quotes_table(connection):
     connection.execute('''CREATE TABLE IF NOT EXISTS StockQuotes
     (ID INTEGER PRIMARY KEY AUTOINCREMENT,
-        CompanyID INTEGER,
-        Date DATE,
-        Stock REAL,
+        CompanyID INTEGER NOT NULL,
+        StartDate DATE,
+        EndDate DATE NOT NULL,
+        Stock REAL NOT NULL,
         Change REAL,
         Open REAL,
         High REAL,
@@ -246,11 +245,31 @@ def insert_value(connection, table_name, column, value):
 
 
 @with_connection
+def insert_stock_quotes(connection, values):
+    command = '''INSERT OR IGNORE INTO StockQuotes
+                (CompanyID, EndDate, Stock, Change, Open, High, Low, Volume, Turnover)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'''
+    with connection:
+        connection.execute(command, values)
+
+
+@with_connection
 def get_company_id_from_name(connection, company_name):
     company_name = company_name.upper()
     c = connection.cursor()
     c.execute("SELECT ID FROM Company WHERE Name Like ?", (company_name,))
     return c.fetchone()[0]
+
+
+@with_connection
+def get_company_id_from_ticker(connection, ticker):
+    company_ticker = ticker.upper()
+    c = connection.cursor()
+    c.execute("SELECT ID FROM Company WHERE Ticker Like ?", (company_ticker,))
+    company = c.fetchone()
+    if not company:
+        return None
+    return company[0]
 
 
 def insert_ekd_section(ekd_section):
@@ -267,6 +286,12 @@ def insert_company(company_name, company_ticker, company_bloomberg, ekd_section,
     insert_values(table_name='Company',
                   columns=['Name', 'Ticker', 'Bloomberg', 'EKD_SectionID', 'EKD_ClassID'],
                   values=[company_name, company_ticker, company_bloomberg, section_id, class_id])
+
+
+def insert_company(company_name, company_ticker,):
+    insert_values(table_name='Company',
+                  columns=['Name', 'Ticker'],
+                  values=[company_name, company_ticker,])
 
 
 @with_connection
