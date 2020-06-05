@@ -1,5 +1,6 @@
 import requests
 import pandas as pd
+import exporter.DAL.utils
 import re
 
 
@@ -126,3 +127,6 @@ sp = StooqParser()
 # sp.download_all_companies_date((30, 4, 2020))
 # sp.download_company_current("wig20")
 # sp.download_company_period("bnp", (23, 4, 2020), (28, 4, 2020))
+#test
+exporter.DAL.utils.set_up_database_tables()
+
