@@ -41,8 +41,9 @@ def set_up_database_tables(connection):
 def set_up_company_table(connection):
     connection.execute('''CREATE TABLE IF NOT EXISTS Company
     (ID INTEGER PRIMARY KEY AUTOINCREMENT,
-        Name VARCHAR UNIQUE ,
-        Ticker VARCHAR UNIQUE ,
+        Name VARCHAR,
+        ISIN VARCHAR UNIQUE,
+        Ticker VARCHAR UNIQUE,
         Bloomberg VARCHAR,
         EKD_SectionID INTEGER,
         EKD_ClassID INTEGER,
@@ -261,12 +262,12 @@ def insert_ekd_class(ekd_class):
     insert_value(table_name='EKD_Class', column='Value', value=ekd_class)
 
 
-def insert_company(company_name, company_ticker, company_bloomberg, ekd_section, ekd_class):
+def insert_company(company_name, isin, company_ticker, company_bloomberg, ekd_section, ekd_class):
     section_id = get_ekd_section_id_from_value(ekd_section=ekd_section)
     class_id = get_ekd_class_id_from_value(ekd_class=ekd_class)
     insert_values(table_name='Company',
-                  columns=['Name', 'Ticker', 'Bloomberg', 'EKD_SectionID', 'EKD_ClassID'],
-                  values=[company_name, company_ticker, company_bloomberg, section_id, class_id])
+                  columns=['Name', 'ISIN', 'Ticker', 'Bloomberg', 'EKD_SectionID', 'EKD_ClassID'],
+                  values=[company_name, isin, company_ticker, company_bloomberg, section_id, class_id])
 
 
 @with_connection
