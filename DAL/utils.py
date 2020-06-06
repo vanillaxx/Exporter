@@ -215,7 +215,6 @@ def set_up_stock_quotes_table(connection):
     connection.execute('''CREATE TABLE IF NOT EXISTS StockQuotes
     (ID INTEGER PRIMARY KEY AUTOINCREMENT,
         CompanyID INTEGER NOT NULL,
-        StartDate DATE,
         EndDate DATE NOT NULL,
         Stock REAL NOT NULL,
         Change REAL,

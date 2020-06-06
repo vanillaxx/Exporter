@@ -15,7 +15,7 @@ class StooqParser:
         self._all_companies_current_ulr_base_change = 'https://stooq.com/t/?i=513&n=0&v=0&l={number}'
         self._all_companies_date_ulr_base = 'https://stooq.com/t/?i=513&n=0&v=1&d={year:04d}{month:02d}{day:02d}&l={number}'
         self._all_companies_date_ulr_change = 'https://stooq.com/t/?i=513&n=0&v=0&d={year:04d}{month:02d}{day:02d}&l={number}'
-        self._company_url_base = 'https://stooq.com/q/d/?s={company}&i={interval}&d1={year1:04d}{month1:02d}{day1:02d}&d2={year2:04d}{month2:02d}{day2:02d}&l={number}'
+        self._company_url_base = 'https://stooq.com/q/d/?s={company}&d1={year1:04d}{month1:02d}{day1:02d}&d2={year2:04d}{month2:02d}{day2:02d}&i={interval}&l={number}'
         self._tables_filter = re.compile(r'.*:.*')
 
     def download_all_companies_current(self): # daily StockQuotes for all available companies (contains turnover)
@@ -53,7 +53,7 @@ class StooqParser:
         found = False
         while True:
             url_change = self._all_companies_current_ulr_base_change.format(number=i)
-            site_html_change = requests.get(url_change).content
+            site_html_change = requests.get(url_change).content.decode("utf-8")
 
             try:
                 df_list_change = pd.read_html(site_html_change)
@@ -110,7 +110,7 @@ class StooqParser:
         found = False
         while True:
             url = self._all_companies_date_ulr_base.format(number=i, day=day, month=month, year=year)
-            site_html = requests.get(url).content
+            site_html = requests.get(url).content.decode("utf-8")
 
             try:
                 df_list = pd.read_html(site_html)
@@ -194,12 +194,14 @@ class StooqParser:
         i = 1
         frames = []
         found = False
+
         while i<2:
             url = self._company_url_base.format(number=i, company=company,
                                                        day1=start_day, month1=start_month, year1=start_year,
                                                        day2=end_day, month2=end_month, year2=end_year,
                                                        interval=interval)
             site_html = requests.get(url).content.decode("utf-8")
+            print(url)
 
             try:
                 df_list = pd.read_html(site_html)
@@ -208,7 +210,7 @@ class StooqParser:
             except lxml.etree.ParserError:
                 break
 
-            print(df_list)
+            # print(df_list)
             if len(df_list) == 0:
                 break
             for df in df_list:
@@ -251,6 +253,6 @@ def _convert_kmb(val):
 # insert_company("06n", "06N")
 # insert_company("08n", "08N")
 sp = StooqParser()
-sp.download_all_companies_current()
-sp.download_all_companies_date((1, 6, 2020))
-# sp.download_company("06n", (30, 2, 2019), (30, 12, 2020), 'y')
+# sp.download_all_companies_current()
+# sp.download_all_companies_date((1, 6, 2020))
+sp.download_company("pko", (30, 2, 2019), (30, 12, 2020), 'y')
