@@ -182,7 +182,6 @@ class StooqParser:
             company_id = get_company_id_from_ticker(row['Symbol'])
             if company_id is None:
                 raise CompanyNotFoundError
-
             insert_stock_quotes((company_id, date(year, month, day), row['Last'],
                                 row['Change.1'], row['Open'], row['High'], row['Low'], row['Volume'], row['Turnover']))
 
@@ -201,7 +200,6 @@ class StooqParser:
                                                        day2=end_day, month2=end_month, year2=end_year,
                                                        interval=interval)
             site_html = requests.get(url).content.decode("utf-8")
-            print(url)
 
             try:
                 df_list = pd.read_html(site_html)
@@ -243,16 +241,16 @@ def _convert_kmb(val):
         return int(val)
     lookup = {'k': 1000, 'm': 1000000, 'b': 1000000000}
     unit = val[-1]
-    number = int(val[:-1])
+    number = float(val[:-1])
     if unit in lookup:
-        return lookup[unit] * number
+        return int(lookup[unit] * number)
     return int(val)
 
 # test
-# set_up_database_tables()
+set_up_database_tables()
 # insert_company("06n", "06N")
 # insert_company("08n", "08N")
 sp = StooqParser()
 # sp.download_all_companies_current()
-# sp.download_all_companies_date((1, 6, 2020))
-sp.download_company("pko", (30, 2, 2019), (30, 12, 2020), 'y')
+sp.download_all_companies_date((1, 6, 2020))
+# sp.download_company("pko", (30, 2, 2019), (30, 12, 2020), 'y')
