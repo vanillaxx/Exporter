@@ -56,6 +56,8 @@ class ExcelParser():
         attribute_column = 0
         value_column = 1
         name_row = 2
+        isin_row = 17
+        isin_column = 3
         ticker_row = 12
         bloomberg_row = 16
         ekd_row = 25
@@ -63,6 +65,10 @@ class ExcelParser():
             company_name = excel_sheet.cell(name_row, value_column).value
         else:
             raise ValueError('(A3=Nazwa) of company should be in B3 cell')
+        if excel_sheet.cell(isin_row, isin_column).value == 'ISIN':
+            isin = excel_sheet.cell(isin_row, isin_column + 1).value
+        else:
+            raise ValueError('(D18=ISIN) of company should be in E18 cell')
         if excel_sheet.cell(ticker_row, attribute_column).value == 'TICKER':
             company_ticker = excel_sheet.cell(ticker_row, value_column).value
         else:
@@ -78,7 +84,7 @@ class ExcelParser():
 
         ekd_section, ekd_class = parse_ekd(company_ekd)
         insert_ekd_data(ekd_section, ekd_class)
-        DAL.utils.insert_company(company_name, company_ticker, company_bloomberg,
+        DAL.utils.insert_company(company_name, isin, company_ticker, company_bloomberg,
                                  ekd_section, ekd_class)
 
     def parse_balance_sheet(self, path, sheet_name):
@@ -88,8 +94,10 @@ class ExcelParser():
         company_id = self.get_company(path)
         curr_row = 0
         curr_column = 2
-        assets = equity_liabilities_categories = [company_id]
-        equity_liabilities = assets_categories = [company_id]
+        assets = [company_id]
+        assets_categories = [company_id]
+        equity_liabilities = [company_id]
+        equity_liabilities_categories = [company_id]
         while curr_row < excel_sheet.nrows:
             if excel_sheet.cell(curr_row, curr_column).value == 'Balance sheet':
                 attributes_column = curr_column
@@ -97,8 +105,10 @@ class ExcelParser():
                 dates_row = curr_row + 1
                 sum_row = dates_row + 1
                 curr_row += 3
-                assets_attributes = equity_liabilities_categories_attributes = ['CompanyID', 'Date']
-                assets_categories_attributes = equity_liabilities_attributes = ['CompanyID', 'Date']
+                assets_attributes = ['CompanyID', 'Date']
+                equity_liabilities_categories_attributes = ['CompanyID', 'Date']
+                assets_categories_attributes = ['CompanyID', 'Date']
+                equity_liabilities_attributes = ['CompanyID', 'Date']
                 while curr_column < excel_sheet.ncols:
                     # check if data for that period exists
                     if not excel_sheet.cell(sum_row, curr_column).value:
@@ -147,10 +157,14 @@ class ExcelParser():
                     DAL.utils.insert_values(table_name="EquityLiabilitiesCategories",
                                             columns=equity_liabilities_categories_attributes,
                                             values=equity_liabilities_categories)
-                    assets_attributes = equity_liabilities_categories_attributes = ['CompanyID', 'Date']
-                    assets_categories_attributes = equity_liabilities_attributes = ['CompanyID', 'Date']
-                    assets = equity_liabilities_categories = [company_id]
-                    assets_categories = equity_liabilities = [company_id]
+                    assets_attributes = ['CompanyID', 'Date']
+                    assets_categories_attributes = ['CompanyID', 'Date']
+                    equity_liabilities_attributes = ['CompanyID', 'Date']
+                    equity_liabilities_categories_attributes = ['CompanyID', 'Date']
+                    assets = [company_id]
+                    equity_liabilities = [company_id]
+                    assets_categories = [company_id]
+                    equity_liabilities_categories = [company_id]
                     curr_column += 1
                     curr_row = sum_row + 1
                 break
