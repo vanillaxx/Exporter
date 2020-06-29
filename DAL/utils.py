@@ -216,6 +216,7 @@ def set_up_stock_quotes_table(connection):
     connection.execute('''CREATE TABLE IF NOT EXISTS StockQuotes
     (ID INTEGER PRIMARY KEY AUTOINCREMENT,
         CompanyID INTEGER NOT NULL,
+        StartDate DATE NOT NULL,
         EndDate DATE NOT NULL,
         Stock REAL NOT NULL,
         Change REAL,
@@ -247,8 +248,8 @@ def insert_value(connection, table_name, column, value):
 @with_connection
 def insert_stock_quotes(connection, values):
     command = '''INSERT OR IGNORE INTO StockQuotes
-                (CompanyID, EndDate, Stock, Change, Open, High, Low, Volume, Turnover)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'''
+                (CompanyID, StartDate, EndDate, Stock, Change, Open, High, Low, Volume, Turnover)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'''
     with connection:
         connection.execute(command, values)
 
