@@ -230,4 +230,10 @@ def set_up_stock_quotes_table(connection):
 
 
 
+@with_connection
+def get_balance_sheet_data_for_period(connection, company, start, end):
+    c = connection.cursor()
+    c.execute("SELECT * FROM Assets WHERE Company LIKE (?)", company)
+
+
 set_up_database_tables()

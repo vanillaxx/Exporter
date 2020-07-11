@@ -91,7 +91,7 @@ class ExcelParser():
         if sheet_name not in self.available_sheets:
             raise ValueError("Available sheet names: QS, YS")
         excel_sheet = get_sheet(path, sheet_name)
-        company_id = self.get_company(path)
+        company_id = self.get_company_id_balance_sheet(path)
         curr_row = 0
         curr_column = 2
         assets = [company_id]
@@ -180,7 +180,7 @@ class ExcelParser():
         if sheet_name not in self.available_sheets:
             raise ValueError("Available sheet names: QS, YS")
         excel_sheet = get_sheet(path, sheet_name)
-        company_id = self.get_company(path)
+        company_id = self.get_company_id_balance_sheet(path)
         curr_row = 200
         if ratio_name == 'DuPont indicators':
             curr_row = 225
@@ -218,7 +218,25 @@ class ExcelParser():
                 break
             curr_row += 1
 
-    def get_company(self, path):
+    def parse_GPW_capitalization(self, path):
+        sheet_name = 'kap'
+        excel_sheet = get_sheet(path, sheet_name)
+        start_row = 8
+        curr_row = start_row
+        isin_column = 1
+        name_column = 2
+        capitalization_column = 4
+        values = []
+        milion = 1e6
+        while curr_row < excel_sheet.nrows:
+            values.append([excel_sheet.cell(curr_row, isin_column).value,
+                           excel_sheet.cell(curr_row, name_column).value,
+                           excel_sheet.cell(curr_row, capitalization_column).value*milion])
+            curr_row = curr_row + 1
+        for row in values:
+            print(row)
+
+    def get_company_id_balance_sheet(self, path):
         self.parse_company(path)
         excel_sheet = get_sheet(path, 'Info')
         value_column = 1
@@ -236,14 +254,19 @@ if __name__ == "__main__":
     -f QS - parse QS of financial ratio
     -f YS - parse YS of financial ratio
     -d QS - parse QS of Du Pont indicators
-    -d YS - parse YS of Du Pont indicators'''
+    -d YS - parse YS of Du Pont indicators
+    -g    - parse GPW capitalization'''
 
     functions = {'-b': ep.parse_balance_sheet,
                  '-f': ep.parse_financial_ratios,
-                 '-d': ep.parse_du_pont_indicators
+                 '-d': ep.parse_du_pont_indicators,
+                 '-g': ep.parse_GPW_capitalization
                  }
-    if len(sys.argv) < 4:
+    if len(sys.argv) < 3:
         print(help)
+    elif len(sys.argv) == 3:
+        excel_file = sys.argv[1]
+        functions[sys.argv[2]](excel_file)
     else:
         excel_file = sys.argv[1]
         sheet = sys.argv[3]
