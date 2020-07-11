@@ -36,6 +36,7 @@ def set_up_database_tables(connection):
         set_up_stock_quotes_table(connection)
         set_up_financial_ratios_table(connection)
         set_up_du_pont_table(connection)
+        set_up_company_values_table(connection)
 
 
 def set_up_company_table(connection):
@@ -229,11 +230,14 @@ def set_up_stock_quotes_table(connection):
         );''')
 
 
-
-@with_connection
-def get_balance_sheet_data_for_period(connection, company, start, end):
-    c = connection.cursor()
-    c.execute("SELECT * FROM Assets WHERE Company LIKE (?)", company)
+def set_up_company_values_table(connection):
+    connection.execute('''CREATE TABLE IF NOT EXISTS CompanyValues
+    (ID INTEGER PRIMARY KEY AUTOINCREMENT,
+        CompanyID INTEGER NOT NULL,
+        PeriodEnd DATE NOT NULL,
+        Value REAL,
+        FOREIGN KEY(CompanyID) REFERENCES Company(ID)
+        );''')
 
 
 set_up_database_tables()
