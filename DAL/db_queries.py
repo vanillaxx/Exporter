@@ -1,4 +1,5 @@
-from exporter.DAL.db_utils import with_connection
+from DAL.db_utils import with_connection
+from Utils.Errors import CompanyNotFoundError
 
 
 @with_connection
@@ -135,3 +136,26 @@ def get_assets_equity_liabilities_for_company(connection, company_name):
                 JOIN Company C ON C.ID = E.CompanyID
                 WHERE Name = ? ''', (company_name,))
     return c.fetchall()
+
+
+@with_connection
+def get_company_id_from_isin(connection, company_isin):
+    c = connection.cursor()
+    c.execute('''SELECT C.ID
+                FROM Company C
+                WHERE ISIN = ? ''', (company_isin,))
+    result = c.fetchone()
+    if result:
+        return result[0]
+    else:
+        return result
+
+
+def insert_company_value(company_isin, value, end_date):
+    company_id = get_company_id_from_isin(company_isin)
+    if company_id:
+        insert_values(table_name='CompanyValues',
+                      columns=['CompanyID', 'PeriodEnd', 'Value'],
+                      values=[company_id, end_date, value])
+    else:
+        raise CompanyNotFoundError()

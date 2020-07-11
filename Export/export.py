@@ -1,11 +1,11 @@
-from exporter.DAL.db_queries import get_assets_for_company
+from DAL.db_queries import get_assets_for_company
 import csv
 
 
 if __name__ == "__main__":
 
     csv_file = []
-    for row in get_assets_for_company('Agora SA'):
+    for row in get_assets_for_company('Comarch SA'):
         print(row)
         skip = 3
         fresh_row = []
