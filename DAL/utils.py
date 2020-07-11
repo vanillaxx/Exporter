@@ -284,4 +284,10 @@ def get_ekd_class_id_from_value(connection, ekd_class):
     return c.fetchone()[0]
 
 
+@with_connection
+def get_balance_sheet_data_for_period(connection, company, start, end):
+    c = connection.cursor()
+    c.execute("SELECT * FROM Assets WHERE Company LIKE (?)", company)
+
+
 set_up_database_tables()
