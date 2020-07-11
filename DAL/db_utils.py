@@ -212,14 +212,13 @@ def set_up_du_pont_table(connection):
         );''')
 
 
-
-
 def set_up_stock_quotes_table(connection):
     connection.execute('''CREATE TABLE IF NOT EXISTS StockQuotes
     (ID INTEGER PRIMARY KEY AUTOINCREMENT,
-        CompanyID INTEGER,
-        Date DATE,
-        Stock REAL,
+        CompanyID INTEGER NOT NULL,
+        StartDate DATE NOT NULL,
+        EndDate DATE NOT NULL,
+        Stock REAL NOT NULL,
         Change REAL,
         Open REAL,
         High REAL,
@@ -229,59 +228,6 @@ def set_up_stock_quotes_table(connection):
         FOREIGN KEY(CompanyID) REFERENCES Company(ID)
         );''')
 
-
-@with_connection
-def insert_values(connection, table_name, columns, values):
-    values = tuple(values)
-    columns = tuple(columns)
-    command = 'INSERT OR IGNORE INTO %s%s VALUES %s ' % (table_name, columns, values)
-    with connection:
-        connection.execute(command)
-
-
-@with_connection
-def insert_value(connection, table_name, column, value):
-    command = 'INSERT OR IGNORE INTO %s(%s) VALUES (%s) ' % (table_name, column, value)
-    with connection:
-        connection.execute(command)
-
-
-@with_connection
-def get_company_id_from_name(connection, company_name):
-    company_name = company_name.upper()
-    c = connection.cursor()
-    c.execute("SELECT ID FROM Company WHERE Name Like ?", (company_name,))
-    return c.fetchone()[0]
-
-
-def insert_ekd_section(ekd_section):
-    insert_value(table_name='EKD_Section', column='Value', value=ekd_section)
-
-
-def insert_ekd_class(ekd_class):
-    insert_value(table_name='EKD_Class', column='Value', value=ekd_class)
-
-
-def insert_company(company_name, isin, company_ticker, company_bloomberg, ekd_section, ekd_class):
-    section_id = get_ekd_section_id_from_value(ekd_section=ekd_section)
-    class_id = get_ekd_class_id_from_value(ekd_class=ekd_class)
-    insert_values(table_name='Company',
-                  columns=['Name', 'ISIN', 'Ticker', 'Bloomberg', 'EKD_SectionID', 'EKD_ClassID'],
-                  values=[company_name, isin, company_ticker, company_bloomberg, section_id, class_id])
-
-
-@with_connection
-def get_ekd_section_id_from_value(connection, ekd_section):
-    c = connection.cursor()
-    c.execute("SELECT ID FROM EKD_Section WHERE Value Like (?)", (int(ekd_section),))
-    return c.fetchone()[0]
-
-
-@with_connection
-def get_ekd_class_id_from_value(connection, ekd_class):
-    c = connection.cursor()
-    c.execute("SELECT ID FROM EKD_Class WHERE Value Like (?)", (int(ekd_class),))
-    return c.fetchone()[0]
 
 
 @with_connection
