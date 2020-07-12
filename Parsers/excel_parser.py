@@ -1,9 +1,10 @@
 import xlrd
-import DAL.utils
+import DAL.db_queries
 import sys
 import datetime
 from calendar import monthrange
-
+import re
+from Utils.Errors import CompanyNotFoundError
 
 def get_start_end_date(period):
     period = period.split('-')
@@ -20,8 +21,8 @@ def get_sheet(path, sheet_name):
 
 
 def insert_ekd_data(ekd_section, ekd_class):
-    DAL.utils.insert_ekd_section(ekd_section)
-    DAL.utils.insert_ekd_class(ekd_class)
+    DAL.db_queries.insert_ekd_section(ekd_section)
+    DAL.db_queries.insert_ekd_class(ekd_class)
 
 
 def insert_float_value(where, value):
@@ -84,14 +85,14 @@ class ExcelParser():
 
         ekd_section, ekd_class = parse_ekd(company_ekd)
         insert_ekd_data(ekd_section, ekd_class)
-        DAL.utils.insert_company(company_name, isin, company_ticker, company_bloomberg,
-                                 ekd_section, ekd_class)
+        DAL.db_queries.insert_full_company(company_name, isin, company_ticker, company_bloomberg,
+                                      ekd_section, ekd_class)
 
     def parse_balance_sheet(self, path, sheet_name):
         if sheet_name not in self.available_sheets:
             raise ValueError("Available sheet names: QS, YS")
         excel_sheet = get_sheet(path, sheet_name)
-        company_id = self.get_company(path)
+        company_id = self.get_company_id_balance_sheet(path)
         curr_row = 0
         curr_column = 2
         assets = [company_id]
@@ -145,18 +146,18 @@ class ExcelParser():
                             insert_float_value(equity_liabilities, curr_value)
                         curr_row += 1
 
-                    DAL.utils.insert_values(table_name="Assets",
-                                            columns=assets_attributes,
-                                            values=assets)
-                    DAL.utils.insert_values(table_name="EquityLiabilities",
-                                            columns=equity_liabilities_attributes,
-                                            values=equity_liabilities)
-                    DAL.utils.insert_values(table_name="AssetsCategories",
-                                            columns=assets_categories_attributes,
-                                            values=assets_categories)
-                    DAL.utils.insert_values(table_name="EquityLiabilitiesCategories",
-                                            columns=equity_liabilities_categories_attributes,
-                                            values=equity_liabilities_categories)
+                    DAL.db_queries.insert_values(table_name="Assets",
+                                                 columns=assets_attributes,
+                                                 values=assets)
+                    DAL.db_queries.insert_values(table_name="EquityLiabilities",
+                                                 columns=equity_liabilities_attributes,
+                                                 values=equity_liabilities)
+                    DAL.db_queries.insert_values(table_name="AssetsCategories",
+                                                 columns=assets_categories_attributes,
+                                                 values=assets_categories)
+                    DAL.db_queries.insert_values(table_name="EquityLiabilitiesCategories",
+                                                 columns=equity_liabilities_categories_attributes,
+                                                 values=equity_liabilities_categories)
                     assets_attributes = ['CompanyID', 'Date']
                     assets_categories_attributes = ['CompanyID', 'Date']
                     equity_liabilities_attributes = ['CompanyID', 'Date']
@@ -180,7 +181,7 @@ class ExcelParser():
         if sheet_name not in self.available_sheets:
             raise ValueError("Available sheet names: QS, YS")
         excel_sheet = get_sheet(path, sheet_name)
-        company_id = self.get_company(path)
+        company_id = self.get_company_id_balance_sheet(path)
         curr_row = 200
         if ratio_name == 'DuPont indicators':
             curr_row = 225
@@ -208,9 +209,9 @@ class ExcelParser():
                         insert_float_value(ratios, curr_value)
                         curr_row += 1
 
-                    DAL.utils.insert_values(table_name=table_name,
-                                            columns=attributes,
-                                            values=ratios)
+                    DAL.db_queries.insert_values(table_name=table_name,
+                                                 columns=attributes,
+                                                 values=ratios)
                     attributes = ['CompanyID', 'PeriodStart', 'PeriodEnd']
                     ratios = [company_id]
                     curr_column += 1
@@ -218,13 +219,32 @@ class ExcelParser():
                 break
             curr_row += 1
 
-    def get_company(self, path):
+    def parse_GPW_capitalization(self, path, end_date):
+        sheet_name = 'kap'
+        excel_sheet = get_sheet(path, sheet_name)
+        start_row = 8
+        curr_row = start_row
+        isin_column = 1
+        name_column = 2
+        capitalization_column = 4
+        values = []
+        milion = 1e6
+        while curr_row < excel_sheet.nrows:
+            isin = excel_sheet.cell(curr_row, isin_column).value
+            value = excel_sheet.cell(curr_row, capitalization_column).value * milion
+            try:
+                DAL.db_queries.insert_company_value(isin, value, end_date)
+            except CompanyNotFoundError:
+                print("Company %s not found in db" % isin)
+            curr_row = curr_row + 1
+
+    def get_company_id_balance_sheet(self, path):
         self.parse_company(path)
         excel_sheet = get_sheet(path, 'Info')
         value_column = 1
         name_row = 2
         company_name = excel_sheet.cell(name_row, value_column).value
-        return DAL.utils.get_company_id_from_name(company_name)
+        return DAL.db_queries.get_company_id_from_name(company_name)
 
 
 if __name__ == "__main__":
@@ -236,14 +256,24 @@ if __name__ == "__main__":
     -f QS - parse QS of financial ratio
     -f YS - parse YS of financial ratio
     -d QS - parse QS of Du Pont indicators
-    -d YS - parse YS of Du Pont indicators'''
+    -d YS - parse YS of Du Pont indicators
+    -g [YYYY-MM-DD]   - parse GPW capitalization for end of period'''
 
     functions = {'-b': ep.parse_balance_sheet,
                  '-f': ep.parse_financial_ratios,
-                 '-d': ep.parse_du_pont_indicators
+                 '-d': ep.parse_du_pont_indicators,
+                 '-g': ep.parse_GPW_capitalization
                  }
-    if len(sys.argv) < 4:
+    if len(sys.argv) < 3:
         print(help)
+    elif sys.argv[2] == '-g':
+        excel_file = sys.argv[1]
+        end_date = sys.argv[3]
+        pattern = re.compile("\d\d\d\d-\d\d-\d\d")
+        if pattern.match(end_date):
+            functions[sys.argv[2]](excel_file, end_date)
+        else:
+            print("Pass end date in format YYYY-MM-DD")
     else:
         excel_file = sys.argv[1]
         sheet = sys.argv[3]
