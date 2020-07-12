@@ -6,6 +6,7 @@ from calendar import monthrange
 import re
 from Utils.Errors import CompanyNotFoundError
 
+
 def get_start_end_date(period):
     period = period.split('-')
     start, end = period[0], period[1]
@@ -231,9 +232,10 @@ class ExcelParser():
         milion = 1e6
         while curr_row < excel_sheet.nrows:
             isin = excel_sheet.cell(curr_row, isin_column).value
+            name = excel_sheet.cell(curr_row, name_column).value
             value = excel_sheet.cell(curr_row, capitalization_column).value * milion
             try:
-                DAL.db_queries.insert_company_value(isin, value, end_date)
+                DAL.db_queries.insert_market_value(value, end_date, name, isin)
             except CompanyNotFoundError:
                 print("Company %s not found in db" % isin)
             curr_row = curr_row + 1

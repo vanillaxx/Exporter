@@ -7,6 +7,9 @@ import numpy as np
 from datetime import date, datetime
 import calendar
 import locale
+from DAL.db_queries import insert_market_value, insert_company
+from Utils.Errors import CompanyNotFoundError
+from DAL.db_utils import set_up_database_tables
 
 
 class PdfGPWParser:
@@ -55,19 +58,28 @@ class PdfGPWParser:
         r'(?:\))?(?:,)? \d{4})',
         r'(?:Biuletyn GPW|WSE Bulletin) \((?P<month>\d{1,2})/(?P<year>\d{4})\) '
     ]
+    isin_code_column = 'ISIN'
+    capitalisation_value_column = 'Kapitalizacja'
+    company_column = 'Nazwa'
 
     def __init__(self):
         self.doc = None
+        self.pdf_path = None
         self.date = None
 
     def parse(self, pdf_path, data_date=None):
+        self.pdf_path = pdf_path
         self.doc = fitz.Document(pdf_path)
+
         if data_date is None:
             self.date = self.find_data_date()
 
         dataframes = [self.process_page(page, page_num) for page_num, page in enumerate(self.doc.pages())]
         dataframes = [dataframe for dataframe in dataframes if dataframe is not None]
-        return pd.concat(dataframes, ignore_index=True)
+        if dataframes:
+            return pd.concat(dataframes, ignore_index=True)
+        else:
+            raise ValueError('No data found')
 
     # TODO errors
     def find_data_date(self):
@@ -186,7 +198,7 @@ class PdfGPWParser:
             table_area = [x_min, media_box.y1 - bottom_left.y, x_max, y_max]
             table_area = ','.join('%f' % coord for coord in table_area)
 
-            tables = camelot.read_pdf(path, pages=str(page_num + 1), flavor='stream', table_areas=[table_area])
+            tables = camelot.read_pdf(self.pdf_path, pages=str(page_num + 1), flavor='stream', table_areas=[table_area])
             if tables:
                 return self.parse_table(tables[0])
         else:
@@ -202,9 +214,6 @@ class PdfGPWParser:
         name_pattern = re.compile(r'(?P<index>\d+) (?P<name>\w+)\*?')
         name_pattern2 = re.compile(r'(?P<name>\w+)\n(?P<index>\d+)')
         name_pattern3 = re.compile(r'(?P<index>\d+)\n(?P<name>\w+)')
-        isin_code = 'ISIN'
-        capitalisation_value = 'Kapitalizacja'
-        company = 'Nazwa'
         drop_index = None
         for row, value in enumerate(df.values):
             # print(value)
@@ -224,22 +233,22 @@ class PdfGPWParser:
 
             elif value[0].isdigit() and re.compile(r'\w+').match(value[1]):
                 columns_parsed = True
-                if not re.match(r'^\s*$', columns[1]) and columns[1] != company:
+                if not re.match(r'^\s*$', columns[1]) and columns[1] != self.company_column:
                     df.loc[[row], 0] = value[1]
-                    columns[0] = company
+                    columns[0] = self.company_column
                 else:
-                    columns[1] = company
+                    columns[1] = self.company_column
 
             elif match_name_old:
                 columns_parsed = True
                 pattern = re.compile(r'^\s*$')
 
-                if not pattern.match(columns[1]) and columns[1] != company:
+                if not pattern.match(columns[1]) and columns[1] != self.company_column:
                     df.loc[[row], 0] = match_name_old.group('name')
-                    columns[0] = company
+                    columns[0] = self.company_column
 
                 else:
-                    columns[1] = company
+                    columns[1] = self.company_column
                     df.loc[[row], 1] = match_name_old.group('name')
                     df.loc[[row], 0] = match_name_old.group('index')
 
@@ -283,12 +292,12 @@ class PdfGPWParser:
             columns[col] = re.sub(r'\s\s+', ' ', name)
         columns = [name for name in columns if name]
 
-        new_columns = [isin_code, company, capitalisation_value]
+        new_columns = [self.isin_code_column, self.company_column, self.capitalisation_value_column]
         for new_name in new_columns:
             column_info = [(name, index) for index, name in enumerate(columns) if new_name in name]
             if column_info:
                 column_name, index = column_info[0]
-                if new_name == capitalisation_value:
+                if new_name == self.capitalisation_value_column:
                     multiplier = 1
                     if 'mln' or 'mil' in column_name:
                         multiplier = 1000000
@@ -297,7 +306,7 @@ class PdfGPWParser:
                 columns[index] = new_name
 
         if not all(name in columns for name in new_columns) and \
-                (company not in columns or capitalisation_value not in columns):
+                (self.company_column not in columns or self.capitalisation_value_column not in columns):
             raise ValueError('Invalid column names')
 
         columns = columns + ['', '']
@@ -306,17 +315,32 @@ class PdfGPWParser:
         new_columns = [name for name in new_columns if name in df.columns]
 
         new_df = df[new_columns].replace(regex=r'\*', value='')
-        new_df[capitalisation_value] = new_df[capitalisation_value] \
+        new_df[self.capitalisation_value_column] = new_df[self.capitalisation_value_column] \
             .replace(regex=' ', value='') \
             .replace(regex=',', value='.') \
             .astype('float') \
             .mul(multiplier)
 
+        new_df.apply(self.save_value_to_database, axis=1)
         return new_df
+
+    def save_value_to_database(self, row):
+        company_name = row[self.company_column]
+        company_isin = row.get(self.isin_code_column)
+        market_value = row[self.capitalisation_value_column]
+
+        try:
+            insert_market_value(market_value, self.date, company_name, company_isin)
+        except CompanyNotFoundError:
+            print(f'Company {company_name} not found')
+            # TODO (what next?)
+            insert_company(company_name=company_name, company_isin=company_isin)
+            print(f'Company {company_name} inserted')
+            self.save_value_to_database(row)
 
 
 if __name__ == '__main__':
-    path = 'C:\\Users\\Dominika\\Documents\\Studia\\Inżynierka\\examples\\200201_GPW.pdf'
+    path = 'C:\\Users\\Dominika\\Documents\\Studia\\Inżynierka\\examples\\2019_GPW.pdf'
     doc_date = None
 
     parser = PdfGPWParser()
