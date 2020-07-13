@@ -229,6 +229,7 @@ def get_equity_liabilities_categories_for_company(connection, company_name):
                 ORDER BY EC.Date''', (company_name,))
     return c.fetchall(), list(map(lambda x: x[0], c.description))
 
+
 @with_connection
 def get_full_assets_for_company(connection, company_name):
     c = connection.cursor()
@@ -261,6 +262,7 @@ def get_full_assets_for_company(connection, company_name):
                 ORDER BY A.Date''', (company_name,))
     return c.fetchall(), list(map(lambda x: x[0], c.description))
 
+
 @with_connection
 def get_du_pont_indicators_for_company(connection, company_name):
     c = connection.cursor()
@@ -272,6 +274,7 @@ def get_du_pont_indicators_for_company(connection, company_name):
               JOIN Company C ON C.ID = D.CompanyID
               WHERE Name = ? ''', (company_name,))
     return c.fetchall(), list(map(lambda x: x[0], c.description))
+
 
 @with_connection
 def get_financial_ratios_for_company(connection, company_name):
@@ -288,6 +291,7 @@ def get_financial_ratios_for_company(connection, company_name):
               JOIN Company C ON C.ID = F.CompanyID
               WHERE Name = ? ''', (company_name,))
     return c.fetchall(), list(map(lambda x: x[0], c.description))
+
 
 @with_connection
 def get_full_equities_for_company(connection, company_name):
@@ -323,6 +327,18 @@ def get_full_equities_for_company(connection, company_name):
               JOIN Company C ON C.ID = E.CompanyID
               WHERE Name = ? ''', (company_name,))
     return c.fetchall(), list(map(lambda x: x[0], c.description))
+
+
+@with_connection
+def export_stock_quotes(connection, company_name):
+    c = connection.cursor()
+    c.execute('''SELECT C.Name, StartDate, EndDate, Stock, Change, "Open", High, Low, Volume, Turnover
+                FROM StockQuotes SQ 
+                JOIN Company C ON C.ID = SQ.CompanyID
+                WHERE Name = ? 
+                ORDER BY SQ.StartDate''', (company_name,))
+    return c.fetchall(), list(map(lambda x: x[0], c.description))
+
 
 @with_connection
 def insert_market_value(connection, market_value, end_date, company_name, company_isin=None):

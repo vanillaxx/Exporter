@@ -79,6 +79,11 @@ def export_du_pont_indicators(company_name, file_name):
     put_data_to_csv(data, description, file_name)
 
 
+def export_stock_quotes(company_name, file_name):
+    data, description = db_queries.export_stock_quotes(company_name)
+    put_data_to_csv(data, description, file_name)
+
+
 def export_company_values():
     pass
 
@@ -95,7 +100,8 @@ if __name__ == "__main__":
     -fe - export full equities
     -f - export financial ratio
     -d - export Du Pont indicators
-    -v - export company values'''
+    -v - export company values
+    -s - export stock quotes'''
 
     functions = {'-da': export_detailed_assets,
                  '-de': export_detailed_equities,
@@ -105,7 +111,8 @@ if __name__ == "__main__":
                  '-fe': export_full_equities,
                  '-f': export_financial_ratios,
                  '-d': export_du_pont_indicators,
-                 '-v': export_company_values
+                 '-v': export_company_values,
+                 '-s': export_stock_quotes
                  }
 
     if len(sys.argv) == 3 and sys.argv[1] in functions:
