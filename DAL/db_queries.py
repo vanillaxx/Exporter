@@ -43,10 +43,12 @@ def insert_full_company(company_name, isin, company_ticker, company_bloomberg, e
                   values=[company_name, isin, company_ticker, company_bloomberg, section_id, class_id])
 
 
-def insert_company(company_name, company_ticker, ):
-    insert_values(table_name='Company',
-                  columns=['Name', 'Ticker'],
-                  values=[company_name, company_ticker, ])
+@with_connection
+def insert_company(connection, company_name, company_ticker=None, company_isin=None):
+    values = company_name, company_ticker, company_isin
+    command = '''INSERT INTO Company(Name, Ticker, ISIN) VALUES (?, ?, ?)'''
+    with connection:
+        connection.execute(command, values)
 
 
 @with_connection
@@ -54,7 +56,10 @@ def get_company_id_from_name(connection, company_name):
     company_name = company_name.upper()
     c = connection.cursor()
     c.execute("SELECT ID FROM Company WHERE Name Like ?", (company_name,))
-    return c.fetchone()[0]
+    company = c.fetchone()
+    if not company:
+        return None
+    return company[0]
 
 
 @with_connection
@@ -66,6 +71,19 @@ def get_company_id_from_ticker(connection, ticker):
     if not company:
         return None
     return company[0]
+
+
+@with_connection
+def get_company_id_from_isin(connection, company_isin):
+    c = connection.cursor()
+    c.execute('''SELECT C.ID
+                FROM Company C
+                WHERE ISIN = ? ''', (company_isin,))
+    result = c.fetchone()
+    if result:
+        return result[0]
+    else:
+        return result
 
 
 @with_connection
@@ -139,23 +157,13 @@ def get_assets_equity_liabilities_for_company(connection, company_name):
 
 
 @with_connection
-def get_company_id_from_isin(connection, company_isin):
-    c = connection.cursor()
-    c.execute('''SELECT C.ID
-                FROM Company C
-                WHERE ISIN = ? ''', (company_isin,))
-    result = c.fetchone()
-    if result:
-        return result[0]
-    else:
-        return result
-
-
-def insert_company_value(company_isin, value, end_date):
-    company_id = get_company_id_from_isin(company_isin)
+def insert_market_value(connection, market_value, end_date, company_name, company_isin=None):
+    # TODO updating information about company
+    company_id = get_company_id_from_isin(company_isin) or get_company_id_from_name(company_name)
+    data = (company_id, end_date, market_value)
     if company_id:
-        insert_values(table_name='CompanyValues',
-                      columns=['CompanyID', 'PeriodEnd', 'Value'],
-                      values=[company_id, end_date, value])
+        command = '''INSERT INTO MarketValues(CompanyID, PeriodEnd, MarketValue) VALUES (?, ?, ?)'''
+        with connection:
+            connection.execute(command, data)
     else:
-        raise CompanyNotFoundError()
+        raise CompanyNotFoundError

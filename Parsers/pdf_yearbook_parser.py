@@ -3,6 +3,9 @@ import fitz
 import re
 import collections
 import pandas as pd
+from datetime import date
+from DAL.db_queries import insert_market_value, insert_company
+from Utils.Errors import CompanyNotFoundError
 
 
 class PdfYearbookParser:
@@ -27,19 +30,31 @@ class PdfYearbookParser:
         f'{yearbook_year} Rocznik Giełdowy'
     ]
     year_pattern = r'Rocznik Giełdowy (?P<yearbook_year>\d{4})|Dane statystyczne za rok (?P<data_year>\d{4})'
+    market_value_column = 'Wartość rynkowa'
+    company_column = 'Spółka'
 
     def __init__(self):
         self.doc = None
+        self.pdf_path = None
+        self.date = None
 
+    # TODO errore
     def parse(self, pdf_path, year=None):
+        self.pdf_path = pdf_path
         self.doc = fitz.Document(pdf_path)
+
         if year is None:
             self.find_data_date()
         else:
             self.data_year = year - 1
+        self.date = date(int(self.data_year), month=12, day=31)
+
         dataframes = [self.process_page(page, page_num) for page_num, page in enumerate(self.doc.pages())]
         dataframes = [dataframe for dataframe in dataframes if dataframe is not None]
-        return pd.concat(dataframes, ignore_index=True)
+        if dataframes:
+            return pd.concat(dataframes, ignore_index=True)
+        else:
+            raise ValueError('No data found')
 
     def find_data_date(self):
         for page in self.doc.pages():
@@ -75,7 +90,7 @@ class PdfYearbookParser:
             table_area = [x_min, media_box.y1 - bottom_left.y, x_max, y_max]
             table_area = ','.join('%f' % coord for coord in table_area)
 
-            tables = camelot.read_pdf(path, pages=str(page_num + 1), flavor='stream', table_areas=[table_area])
+            tables = camelot.read_pdf(self.pdf_path, pages=str(page_num + 1), flavor='stream', table_areas=[table_area])
             if tables:
                 return self.parse_table(tables[0])
 
@@ -127,10 +142,7 @@ class PdfYearbookParser:
             name = re.sub(r'\t', ' ', name)
             columns[col] = re.sub(r',', '', name)
 
-        market_value = 'Wartość rynkowa'
-        company = 'Spółka'
-
-        column_info = [(name, index) for index, name in enumerate(columns) if re.search(market_value, name)]
+        column_info = [(name, index) for index, name in enumerate(columns) if re.search(self.market_value_column, name)]
         if column_info:
             market_value_column_name, index = column_info[0]
         else:
@@ -146,19 +158,35 @@ class PdfYearbookParser:
         if found_multipliers:
             multiplier = multipliers[found_multipliers[0]]
 
-        columns[index] = market_value
+        columns[index] = self.market_value_column
         df = df.rename(columns=lambda s: columns[s])
 
-        if company in df.columns and market_value in df.columns:
-            new_df = df[[company, market_value]].replace(regex=r'\*', value='')
-            new_df[market_value] = new_df[market_value] \
+        if self.company_column in df.columns and self.market_value_column in df.columns:
+            new_df = df[[self.company_column, self.market_value_column]].replace(regex=r'\*', value='')
+            new_df[self.market_value_column] = new_df[self.market_value_column] \
                 .replace(regex=' ', value='') \
                 .replace(regex=',', value='.') \
                 .astype('float') \
                 .mul(multiplier)
+
+            new_df.apply(self.save_value_to_database, axis=1)
+
             return new_df
         else:
             raise ValueError('Invalid column names')
+
+    def save_value_to_database(self, row):
+        company_name = row[self.company_column]
+        market_value = row[self.market_value_column]
+
+        try:
+            insert_market_value(market_value, self.date, company_name)
+        except CompanyNotFoundError:
+            print(f'Company {company_name} not found')
+            # TODO (what next?)
+            insert_company(company_name)
+            print(f'Company {company_name} inserted')
+            self.save_value_to_database(row)
 
 
 if __name__ == '__main__':
