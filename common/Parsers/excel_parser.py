@@ -1,10 +1,10 @@
 import xlrd
-import DAL.db_queries
+import common.DAL.db_queries
 import sys
 import datetime
 from calendar import monthrange
 import re
-from Utils.Errors import CompanyNotFoundError
+from common.Utils.Errors import CompanyNotFoundError
 
 
 def get_start_end_date(period):
@@ -22,8 +22,8 @@ def get_sheet(path, sheet_name):
 
 
 def insert_ekd_data(ekd_section, ekd_class):
-    DAL.db_queries.insert_ekd_section(ekd_section)
-    DAL.db_queries.insert_ekd_class(ekd_class)
+    common.DAL.db_queries.insert_ekd_section(ekd_section)
+    common.DAL.db_queries.insert_ekd_class(ekd_class)
 
 
 def insert_float_value(where, value):
@@ -86,8 +86,8 @@ class ExcelParser():
 
         ekd_section, ekd_class = parse_ekd(company_ekd)
         insert_ekd_data(ekd_section, ekd_class)
-        DAL.db_queries.insert_full_company(company_name, isin, company_ticker, company_bloomberg,
-                                      ekd_section, ekd_class)
+        common.DAL.db_queries.insert_full_company(company_name, isin, company_ticker, company_bloomberg,
+                                                  ekd_section, ekd_class)
 
     def parse_balance_sheet(self, path, sheet_name):
         if sheet_name not in self.available_sheets:
@@ -147,18 +147,18 @@ class ExcelParser():
                             insert_float_value(equity_liabilities, curr_value)
                         curr_row += 1
 
-                    DAL.db_queries.insert_values(table_name="Assets",
-                                                 columns=assets_attributes,
-                                                 values=assets)
-                    DAL.db_queries.insert_values(table_name="EquityLiabilities",
-                                                 columns=equity_liabilities_attributes,
-                                                 values=equity_liabilities)
-                    DAL.db_queries.insert_values(table_name="AssetsCategories",
-                                                 columns=assets_categories_attributes,
-                                                 values=assets_categories)
-                    DAL.db_queries.insert_values(table_name="EquityLiabilitiesCategories",
-                                                 columns=equity_liabilities_categories_attributes,
-                                                 values=equity_liabilities_categories)
+                    common.DAL.db_queries.insert_values(table_name="Assets",
+                                                        columns=assets_attributes,
+                                                        values=assets)
+                    common.DAL.db_queries.insert_values(table_name="EquityLiabilities",
+                                                        columns=equity_liabilities_attributes,
+                                                        values=equity_liabilities)
+                    common.DAL.db_queries.insert_values(table_name="AssetsCategories",
+                                                        columns=assets_categories_attributes,
+                                                        values=assets_categories)
+                    common.DAL.db_queries.insert_values(table_name="EquityLiabilitiesCategories",
+                                                        columns=equity_liabilities_categories_attributes,
+                                                        values=equity_liabilities_categories)
                     assets_attributes = ['CompanyID', 'Date']
                     assets_categories_attributes = ['CompanyID', 'Date']
                     equity_liabilities_attributes = ['CompanyID', 'Date']
@@ -210,9 +210,9 @@ class ExcelParser():
                         insert_float_value(ratios, curr_value)
                         curr_row += 1
 
-                    DAL.db_queries.insert_values(table_name=table_name,
-                                                 columns=attributes,
-                                                 values=ratios)
+                    common.DAL.db_queries.insert_values(table_name=table_name,
+                                                        columns=attributes,
+                                                        values=ratios)
                     attributes = ['CompanyID', 'PeriodStart', 'PeriodEnd']
                     ratios = [company_id]
                     curr_column += 1
@@ -235,7 +235,7 @@ class ExcelParser():
             name = excel_sheet.cell(curr_row, name_column).value
             value = excel_sheet.cell(curr_row, capitalization_column).value * milion
             try:
-                DAL.db_queries.insert_market_value(value, end_date, name, isin)
+                common.DAL.db_queries.insert_market_value(value, end_date, name, isin)
             except CompanyNotFoundError:
                 print("Company %s not found in db" % isin)
             curr_row = curr_row + 1
@@ -246,7 +246,7 @@ class ExcelParser():
         value_column = 1
         name_row = 2
         company_name = excel_sheet.cell(name_row, value_column).value
-        return DAL.db_queries.get_company_id_from_name(company_name)
+        return common.DAL.db_queries.get_company_id_from_name(company_name)
 
 
 if __name__ == "__main__":

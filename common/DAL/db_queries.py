@@ -1,5 +1,5 @@
-from DAL.db_utils import with_connection
-from Utils.Errors import CompanyNotFoundError
+from common.DAL.db_utils import with_connection
+from common.Utils.Errors import CompanyNotFoundError
 
 
 @with_connection

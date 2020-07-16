@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Import data from balance sheet</title>
+</head>
+<body>
+<form method="post">
+{% csrf_token %}
+    <label for="file_path">Pass path to file: </label>
+        <input id="file_path" type="text" name="file_path" value="{{ file_path }}">
+
+<input type="submit" value="Import">
+</form>
+</body>
+</html>

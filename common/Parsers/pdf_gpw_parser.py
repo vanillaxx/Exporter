@@ -7,9 +7,8 @@ import numpy as np
 from datetime import date, datetime
 import calendar
 import locale
-from DAL.db_queries import insert_market_value, insert_company
-from Utils.Errors import CompanyNotFoundError
-from DAL.db_utils import set_up_database_tables
+from common.DAL.db_queries import insert_market_value, insert_company
+from common.Utils import CompanyNotFoundError
 
 
 class PdfGPWParser:
