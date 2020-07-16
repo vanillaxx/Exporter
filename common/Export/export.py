@@ -1,4 +1,4 @@
-from DAL.db_queries import get_assets_for_company
+from common.DAL.db_queries import get_assets_for_company
 import csv
 
 
