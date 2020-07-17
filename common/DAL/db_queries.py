@@ -114,7 +114,7 @@ def get_ekd_class_id_from_value(connection, ekd_class):
 
 
 @with_connection
-def get_assets_for_company(connection, company_name):
+def get_assets_for_company(connection, company_id):
     c = connection.cursor()
     c.execute('''SELECT C.Name, "Date", "Property, plant and equipment" +
                 "Exploration for and evaluation of mineral resources" + "Intangible assets" +
@@ -136,13 +136,13 @@ def get_assets_for_company(connection, company_name):
                  Accruals, "Assets from current tax", "Derivative instruments", "Other assets"
                 FROM Assets A 
                 JOIN Company C ON C.ID = A.CompanyID
-                WHERE Name = ? 
-                ORDER BY A.Date ''', (company_name,))
+                WHERE C.ID = ? 
+                ORDER BY A.Date ''', (company_id,))
     return c.fetchall(), list(map(lambda x: x[0], c.description))
 
 
 @with_connection
-def get_equity_liabilities_for_company(connection, company_name):
+def get_equity_liabilities_for_company(connection, company_id):
     c = connection.cursor()
     c.execute('''SELECT C.Name, "Date",
     "Share capital" + "Called up share capital" +
@@ -169,12 +169,12 @@ def get_equity_liabilities_for_company(connection, company_name):
                 "Current tax liabilities", Provisions, "Other liabilities", "Accruals (liability)"
               FROM EquityLiabilities E 
               JOIN Company C ON C.ID = E.CompanyID
-              WHERE Name = ? ''', (company_name,))
+              WHERE C.ID = ? ''', (company_id,))
     return c.fetchall(), list(map(lambda x: x[0], c.description))
 
 
 @with_connection
-def get_assets_equity_liabilities_for_company(connection, company_name):
+def get_assets_equity_liabilities_for_company(connection, company_id):
     c = connection.cursor()
     c.execute('''SELECT C.Name, E."Date",
                 "Property, plant and equipment" +
@@ -205,13 +205,13 @@ def get_assets_equity_liabilities_for_company(connection, company_name):
                 FROM EquityLiabilities E 
                 JOIN main.Assets A ON A.CompanyID = E.CompanyID AND A.Date = E.Date
                 JOIN Company C ON C.ID = E.CompanyID
-                WHERE Name = ? 
-                ORDER BY E.Date''', (company_name,))
+                WHERE C.ID = ? 
+                ORDER BY E.Date''', (company_id,))
     return c.fetchall(), list(map(lambda x: x[0], c.description))
 
 
 @with_connection
-def get_assets_categories_for_company(connection, company_name):
+def get_assets_categories_for_company(connection, company_id):
     c = connection.cursor()
     c.execute('''SELECT C.Name, "Date", "Non-current assets" + "Current assets" +
                 "Assets held for sale and discontinuing operations" +
@@ -221,13 +221,13 @@ def get_assets_categories_for_company(connection, company_name):
                 "Called up capital", "Own shares"
                 FROM AssetsCategories AC 
                 JOIN Company C ON C.ID = AC.CompanyID
-                WHERE Name = ? 
-                ORDER BY AC.Date''', (company_name,))
+                WHERE ID = ? 
+                ORDER BY AC.Date''', (company_id,))
     return c.fetchall(), list(map(lambda x: x[0], c.description))
 
 
 @with_connection
-def get_equity_liabilities_categories_for_company(connection, company_name):
+def get_equity_liabilities_categories_for_company(connection, company_id):
     c = connection.cursor()
     c.execute('''SELECT C.Name, "Date", 
                 "Equity shareholders of the parent" + "Non-controlling interests" +
@@ -238,13 +238,13 @@ def get_equity_liabilities_categories_for_company(connection, company_name):
                 "Liabilities related to assets held for sale and discontinued operations"
                 FROM EquityLiabilitiesCategories EC 
                 JOIN Company C ON C.ID = EC.CompanyID
-                WHERE Name = ? 
-                ORDER BY EC.Date''', (company_name,))
+                WHERE ID = ? 
+                ORDER BY EC.Date''', (company_id,))
     return c.fetchall(), list(map(lambda x: x[0], c.description))
 
 
 @with_connection
-def get_full_assets_for_company(connection, company_name):
+def get_full_assets_for_company(connection, company_id):
     c = connection.cursor()
     c.execute('''SELECT C.Name, A."Date", "Property, plant and equipment" +
                 "Exploration for and evaluation of mineral resources" + "Intangible assets" +
@@ -271,13 +271,13 @@ def get_full_assets_for_company(connection, company_name):
                 JOIN AssetsCategories AC
                 ON AC.CompanyID = A.CompanyID AND AC.Date = A.Date
                 JOIN Company C ON C.ID = A.CompanyID
-                WHERE Name = ? 
-                ORDER BY A.Date''', (company_name,))
+                WHERE ID = ? 
+                ORDER BY A.Date''', (company_id,))
     return c.fetchall(), list(map(lambda x: x[0], c.description))
 
 
 @with_connection
-def get_du_pont_indicators_for_company(connection, company_name):
+def get_du_pont_indicators_for_company(connection, company_id):
     c = connection.cursor()
     c.execute('''SELECT C.Name, PeriodStart, PeriodEnd, "Return on equity (ROE)",
                 "Return on assets (ROA)", "Leverage (EM)", "Net profit margin",
@@ -285,12 +285,12 @@ def get_du_pont_indicators_for_company(connection, company_name):
                 "Operating profit margin", "EBITDA margin"
               FROM DuPontIndicators D
               JOIN Company C ON C.ID = D.CompanyID
-              WHERE Name = ? ''', (company_name,))
+              WHERE ID = ? ''', (company_id,))
     return c.fetchall(), list(map(lambda x: x[0], c.description))
 
 
 @with_connection
-def get_financial_ratios_for_company(connection, company_name):
+def get_financial_ratios_for_company(connection, company_id):
     c = connection.cursor()
     c.execute('''SELECT C.Name, PeriodStart, PeriodEnd,
                 "Gross profit margin on sales", "Operating profit margin",
@@ -302,12 +302,12 @@ def get_financial_ratios_for_company(connection, company_name):
                 "Debt service ratio", "Rate debt security"
               FROM FinancialRatios F
               JOIN Company C ON C.ID = F.CompanyID
-              WHERE Name = ? ''', (company_name,))
+              WHERE ID = ? ''', (company_id,))
     return c.fetchall(), list(map(lambda x: x[0], c.description))
 
 
 @with_connection
-def get_full_equities_for_company(connection, company_name):
+def get_full_equities_for_company(connection, company_id):
     c = connection.cursor()
     c.execute('''SELECT C.Name, E."Date",
     "Share capital" + "Called up share capital" +
@@ -338,7 +338,7 @@ def get_full_equities_for_company(connection, company_name):
               JOIN EquityLiabilitiesCategories ELC
               ON ELC.CompanyID = E.CompanyID AND ELC.Date = E.Date
               JOIN Company C ON C.ID = E.CompanyID
-              WHERE Name = ? ''', (company_name,))
+              WHERE ID = ? ''', (company_id,))
     return c.fetchall(), list(map(lambda x: x[0], c.description))
 
 

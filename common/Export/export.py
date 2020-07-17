@@ -39,43 +39,43 @@ def put_data_to_csv(data, description, file_name):
         print("There is no data for such a company")
 
 
-def export_detailed_assets(company_name, file_name):
-    data, description = db_queries.get_assets_for_company(company_name)
+def export_detailed_assets(company_id, file_name):
+    data, description = db_queries.get_assets_for_company(company_id)
     put_percentage_data_to_csv(data, description, file_name)
 
 
-def export_detailed_equities(company_name, file_name):
-    data, description = db_queries.get_equity_liabilities_for_company(company_name)
+def export_detailed_equities(company_id, file_name):
+    data, description = db_queries.get_equity_liabilities_for_company(company_id)
     put_percentage_data_to_csv(data, description, file_name)
 
 
-def export_assets_categories(company_name, file_name):
-    data, description = db_queries.get_assets_categories_for_company(company_name)
+def export_assets_categories(company_id, file_name):
+    data, description = db_queries.get_assets_categories_for_company(company_id)
     put_percentage_data_to_csv(data, description, file_name)
 
 
-def export_equities_categories(company_name, file_name):
-    data, description = db_queries.get_equity_liabilities_categories_for_company(company_name)
+def export_equities_categories(company_id, file_name):
+    data, description = db_queries.get_equity_liabilities_categories_for_company(company_id)
     put_percentage_data_to_csv(data, description, file_name)
 
 
-def export_full_assets(company_name, file_name):
-    data, description = db_queries.get_full_assets_for_company(company_name)
+def export_full_assets(company_id, file_name):
+    data, description = db_queries.get_full_assets_for_company(company_id)
     put_percentage_data_to_csv(data, description, file_name)
 
 
-def export_full_equities(company_name, file_name):
-    data, description = db_queries.get_full_equities_for_company(company_name)
+def export_full_equities(company_id, file_name):
+    data, description = db_queries.get_full_equities_for_company(company_id)
     put_percentage_data_to_csv(data, description, file_name)
 
 
-def export_financial_ratios(company_name, file_name):
-    data, description = db_queries.get_financial_ratios_for_company(company_name)
+def export_financial_ratios(company_id, file_name):
+    data, description = db_queries.get_financial_ratios_for_company(company_id)
     put_data_to_csv(data, description, file_name)
 
 
-def export_du_pont_indicators(company_name, file_name):
-    data, description = db_queries.get_du_pont_indicators_for_company(company_name)
+def export_du_pont_indicators(company_id, file_name):
+    data, description = db_queries.get_du_pont_indicators_for_company(company_id)
     put_data_to_csv(data, description, file_name)
 
 

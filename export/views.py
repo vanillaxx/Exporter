@@ -13,9 +13,10 @@ def notoria(request):
         if form.is_valid():
             file_name = request.POST.get('file_name', None)
             chosen_data = request.POST.get('chosen_data', None)
-            chosen_companies = request.POST.get('chosen_companies', None)
-            print(file_name, chosen_data, chosen_companies)
-            export.functions[chosen_data](chosen_companies, file_name)
+            chosen_companies = form.cleaned_data.get('chosen_companies')
+            print(chosen_companies)
+            for company in chosen_companies:
+                export.functions[chosen_data](company.id, file_name)
             return HttpResponse('Data exported successfully')
     else:
         form = NotoriaExportForm()
