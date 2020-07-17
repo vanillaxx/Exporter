@@ -103,38 +103,78 @@ def get_ekd_class_id_from_value(connection, ekd_class):
 @with_connection
 def get_assets_for_company(connection, company_name):
     c = connection.cursor()
-    c.execute('''SELECT C.Name, "Date", "Property, plant and equipment" + "Exploration for and evaluation of mineral resources" +
-                "Intangible assets" + Goodwill + "Investment property" + "Investment in affiliates" + "Non-current financial assets" +
-                "Non-current loans and receivables" + "Deferred income tax" + "Non-current deferred charges and accruals" +
-                "Non-current derivative instruments" + "Other non-current assets" + Inventories + "Current intangible assets" +
-                "Biological assets" + "Trade receivables" + "Loans and other receivables" + "Financial assets" +
-                "Cash and cash equivalents" + Accruals + "Assets from current tax" + "Derivative instruments" + "Other assets",
+    c.execute('''SELECT C.Name, "Date", "Property, plant and equipment" +
+                "Exploration for and evaluation of mineral resources" + "Intangible assets" +
+                 Goodwill + "Investment property" + "Investment in affiliates" +
+                 "Non-current financial assets" + "Non-current loans and receivables" +
+                 "Deferred income tax" + "Non-current deferred charges and accruals" +
+                 "Non-current derivative instruments" + "Other non-current assets" +
+                 Inventories + "Current intangible assets" + "Biological assets" +
+                 "Trade receivables" + "Loans and other receivables" + "Financial assets" +
+                "Cash and cash equivalents" + Accruals + "Assets from current tax" +
+                "Derivative instruments" + "Other assets" AS Sum,
                 "Property, plant and equipment", "Exploration for and evaluation of mineral resources",
-                "Intangible assets", Goodwill, "Investment property", "Investment in affiliates", "Non-current financial assets",
-                "Non-current loans and receivables", "Deferred income tax", "Non-current deferred charges and accruals",
-                "Non-current derivative instruments", "Other non-current assets", Inventories, "Current intangible assets",
-                "Biological assets", "Trade receivables", "Loans and other receivables", "Financial assets",
-                "Cash and cash equivalents", Accruals, "Assets from current tax", "Derivative instruments", "Other assets"
+                "Intangible assets", Goodwill, "Investment property", "Investment in affiliates",
+                "Non-current financial assets", "Non-current loans and receivables",
+                "Deferred income tax", "Non-current deferred charges and accruals",
+                "Non-current derivative instruments", "Other non-current assets",
+                 Inventories, "Current intangible assets", "Biological assets", "Trade receivables",
+                 "Loans and other receivables", "Financial assets", "Cash and cash equivalents",
+                 Accruals, "Assets from current tax", "Derivative instruments", "Other assets"
                 FROM Assets A 
                 JOIN Company C ON C.ID = A.CompanyID
-                WHERE Name = ? ''', (company_name,))
-    return c.fetchall()
+                WHERE Name = ? 
+                ORDER BY A.Date ''', (company_name,))
+    return c.fetchall(), list(map(lambda x: x[0], c.description))
 
 
 @with_connection
 def get_equity_liabilities_for_company(connection, company_name):
     c = connection.cursor()
-    c.execute('''SELECT C.Name, "Date", "Share capital", "Called up share capital", "Treasury shares", "Supplementary capital", "Valuation and exchange differences", "Other capitals", "Retained earnings / accumulated losses", "Non-current liabilities from derivatives", "Non-current loans and borrowings", "Non-current liabilities from bonds", "Non-current liabilities from finance leases", "Non-current trade payables", "Long-term provision for employee benefits", "Deferred tax liabilities", "Non-current provision", "Other non-current liabilities", "Non-current accruals (liability)", "Liabilities from derivatives", "Financial liabilities (loans and borrowings)", "Bond liabilities", "Liabilities from finance leases", "Trade payables", "Employee benefits", "Current tax liabilities", Provisions, "Other liabilities", "Accruals (liability)"
+    c.execute('''SELECT C.Name, "Date",
+    "Share capital" + "Called up share capital" +
+                "Treasury shares" + "Supplementary capital" + "Valuation and exchange differences" +
+                "Other capitals" + "Retained earnings / accumulated losses" +
+                "Non-current liabilities from derivatives" + "Non-current loans and borrowings" +
+                "Non-current liabilities from bonds" + "Non-current liabilities from finance leases" +
+                "Non-current trade payables" + "Long-term provision for employee benefits" +
+                "Deferred tax liabilities" + "Non-current provision" + "Other non-current liabilities" +
+                "Non-current accruals (liability)" + "Liabilities from derivatives" +
+                "Financial liabilities (loans and borrowings)" + "Bond liabilities" +
+                "Liabilities from finance leases" + "Trade payables" + "Employee benefits" +
+                "Current tax liabilities" + Provisions + "Other liabilities" + "Accruals (liability)" AS Sum,
+                "Share capital", "Called up share capital",
+                "Treasury shares", "Supplementary capital", "Valuation and exchange differences",
+                "Other capitals", "Retained earnings / accumulated losses",
+                "Non-current liabilities from derivatives", "Non-current loans and borrowings",
+                "Non-current liabilities from bonds", "Non-current liabilities from finance leases",
+                "Non-current trade payables", "Long-term provision for employee benefits",
+                "Deferred tax liabilities", "Non-current provision", "Other non-current liabilities",
+                "Non-current accruals (liability)", "Liabilities from derivatives",
+                "Financial liabilities (loans and borrowings)", "Bond liabilities",
+                "Liabilities from finance leases", "Trade payables", "Employee benefits",
+                "Current tax liabilities", Provisions, "Other liabilities", "Accruals (liability)"
               FROM EquityLiabilities E 
               JOIN Company C ON C.ID = E.CompanyID
               WHERE Name = ? ''', (company_name,))
-    return c.fetchall()
+    return c.fetchall(), list(map(lambda x: x[0], c.description))
 
 
 @with_connection
 def get_assets_equity_liabilities_for_company(connection, company_name):
     c = connection.cursor()
-    c.execute('''SELECT C.Name, E."Date", "Share capital", "Called up share capital", "Treasury shares",
+    c.execute('''SELECT C.Name, E."Date",
+                "Property, plant and equipment" +
+                "Exploration for and evaluation of mineral resources" + "Intangible assets" +
+                 Goodwill + "Investment property" + "Investment in affiliates" +
+                 "Non-current financial assets" + "Non-current loans and receivables" +
+                 "Deferred income tax" + "Non-current deferred charges and accruals" +
+                 "Non-current derivative instruments" + "Other non-current assets" +
+                 Inventories + "Current intangible assets" + "Biological assets" +
+                 "Trade receivables" + "Loans and other receivables" + "Financial assets" +
+                "Cash and cash equivalents" + Accruals + "Assets from current tax" +
+                "Derivative instruments" + "Other assets" AS Sum,
+                "Share capital", "Called up share capital", "Treasury shares",
                 "Supplementary capital", "Valuation and exchange differences", "Other capitals",
                 "Retained earnings / accumulated losses", "Non-current liabilities from derivatives",
                 "Non-current loans and borrowings", "Non-current liabilities from bonds",
@@ -152,8 +192,152 @@ def get_assets_equity_liabilities_for_company(connection, company_name):
                 FROM EquityLiabilities E 
                 JOIN main.Assets A ON A.CompanyID = E.CompanyID AND A.Date = E.Date
                 JOIN Company C ON C.ID = E.CompanyID
-                WHERE Name = ? ''', (company_name,))
-    return c.fetchall()
+                WHERE Name = ? 
+                ORDER BY E.Date''', (company_name,))
+    return c.fetchall(), list(map(lambda x: x[0], c.description))
+
+
+@with_connection
+def get_assets_categories_for_company(connection, company_name):
+    c = connection.cursor()
+    c.execute('''SELECT C.Name, "Date", "Non-current assets" + "Current assets" +
+                "Assets held for sale and discontinuing operations" +
+                "Called up capital" + "Own shares" AS Sum,
+                "Non-current assets", "Current assets",
+                "Assets held for sale and discontinuing operations",
+                "Called up capital", "Own shares"
+                FROM AssetsCategories AC 
+                JOIN Company C ON C.ID = AC.CompanyID
+                WHERE Name = ? 
+                ORDER BY AC.Date''', (company_name,))
+    return c.fetchall(), list(map(lambda x: x[0], c.description))
+
+
+@with_connection
+def get_equity_liabilities_categories_for_company(connection, company_name):
+    c = connection.cursor()
+    c.execute('''SELECT C.Name, "Date", 
+                "Equity shareholders of the parent" + "Non-controlling interests" +
+                "Non-current liabilities" + "Current liabilities" + 
+                "Liabilities related to assets held for sale and discontinued operations" AS Sum,
+                "Equity shareholders of the parent", "Non-controlling interests",
+                "Non-current liabilities", "Current liabilities", 
+                "Liabilities related to assets held for sale and discontinued operations"
+                FROM EquityLiabilitiesCategories EC 
+                JOIN Company C ON C.ID = EC.CompanyID
+                WHERE Name = ? 
+                ORDER BY EC.Date''', (company_name,))
+    return c.fetchall(), list(map(lambda x: x[0], c.description))
+
+
+@with_connection
+def get_full_assets_for_company(connection, company_name):
+    c = connection.cursor()
+    c.execute('''SELECT C.Name, A."Date", "Property, plant and equipment" +
+                "Exploration for and evaluation of mineral resources" + "Intangible assets" +
+                 Goodwill + "Investment property" + "Investment in affiliates" +
+                 "Non-current financial assets" + "Non-current loans and receivables" +
+                 "Deferred income tax" + "Non-current deferred charges and accruals" +
+                 "Non-current derivative instruments" + "Other non-current assets" +
+                 Inventories + "Current intangible assets" + "Biological assets" +
+                 "Trade receivables" + "Loans and other receivables" + "Financial assets" +
+                "Cash and cash equivalents" + Accruals + "Assets from current tax" +
+                "Derivative instruments" + "Other assets" AS Sum,
+                AC."Non-current assets", "Property, plant and equipment",
+                "Exploration for and evaluation of mineral resources",
+                "Intangible assets", Goodwill, "Investment property", "Investment in affiliates",
+                "Non-current financial assets", "Non-current loans and receivables",
+                "Deferred income tax", "Non-current deferred charges and accruals",
+                "Non-current derivative instruments", "Other non-current assets", AC."Current assets",
+                 Inventories, "Current intangible assets",
+                "Biological assets", "Trade receivables", "Loans and other receivables", "Financial assets",
+                "Cash and cash equivalents", Accruals, "Assets from current tax", "Derivative instruments",
+                "Other assets", AC."Assets held for sale and discontinuing operations",
+                AC."Called up capital", AC."Own shares"
+                FROM Assets A 
+                JOIN AssetsCategories AC
+                ON AC.CompanyID = A.CompanyID AND AC.Date = A.Date
+                JOIN Company C ON C.ID = A.CompanyID
+                WHERE Name = ? 
+                ORDER BY A.Date''', (company_name,))
+    return c.fetchall(), list(map(lambda x: x[0], c.description))
+
+
+@with_connection
+def get_du_pont_indicators_for_company(connection, company_name):
+    c = connection.cursor()
+    c.execute('''SELECT C.Name, PeriodStart, PeriodEnd, "Return on equity (ROE)",
+                "Return on assets (ROA)", "Leverage (EM)", "Net profit margin",
+                "Asset utilization (AU)", "Load gross profit", "Load operating profit",
+                "Operating profit margin", "EBITDA margin"
+              FROM DuPontIndicators D
+              JOIN Company C ON C.ID = D.CompanyID
+              WHERE Name = ? ''', (company_name,))
+    return c.fetchall(), list(map(lambda x: x[0], c.description))
+
+
+@with_connection
+def get_financial_ratios_for_company(connection, company_name):
+    c = connection.cursor()
+    c.execute('''SELECT C.Name, PeriodStart, PeriodEnd,
+                "Gross profit margin on sales", "Operating profit margin",
+                "Gross profit margin", "Net profit margin", "Return on equity (ROE)",
+                "Return on assets (ROA)", "Working capital ratio", "Current ratio",
+                "Quick ratio","Cash ratio", "Receivables turnover", "Inventory turnover",
+                "The operating cycle", "Rotation commitments", "Cash conversion cycle",
+                "Rotation assets", "Rotation of assets", "Assets ratio", "Debt ratio",
+                "Debt service ratio", "Rate debt security"
+              FROM FinancialRatios F
+              JOIN Company C ON C.ID = F.CompanyID
+              WHERE Name = ? ''', (company_name,))
+    return c.fetchall(), list(map(lambda x: x[0], c.description))
+
+
+@with_connection
+def get_full_equities_for_company(connection, company_name):
+    c = connection.cursor()
+    c.execute('''SELECT C.Name, E."Date",
+    "Share capital" + "Called up share capital" +
+                "Treasury shares" + "Supplementary capital" + "Valuation and exchange differences" +
+                "Other capitals" + "Retained earnings / accumulated losses" +
+                "Non-current liabilities from derivatives" + "Non-current loans and borrowings" +
+                "Non-current liabilities from bonds" + "Non-current liabilities from finance leases" +
+                "Non-current trade payables" + "Long-term provision for employee benefits" +
+                "Deferred tax liabilities" + "Non-current provision" + "Other non-current liabilities" +
+                "Non-current accruals (liability)" + "Liabilities from derivatives" +
+                "Financial liabilities (loans and borrowings)" + "Bond liabilities" +
+                "Liabilities from finance leases" + "Trade payables" + "Employee benefits" +
+                "Current tax liabilities" + Provisions + "Other liabilities" + "Accruals (liability)" AS Sum,
+                ELC."Equity shareholders of the parent", "Share capital", "Called up share capital",
+                "Treasury shares", "Supplementary capital", "Valuation and exchange differences",
+                "Other capitals", "Retained earnings / accumulated losses",
+                ELC."Non-controlling interests", ELC."Non-current liabilities",
+                "Non-current liabilities from derivatives", "Non-current loans and borrowings",
+                "Non-current liabilities from bonds", "Non-current liabilities from finance leases",
+                "Non-current trade payables", "Long-term provision for employee benefits",
+                "Deferred tax liabilities", "Non-current provision", "Other non-current liabilities",
+                "Non-current accruals (liability)", ELC."Current liabilities", "Liabilities from derivatives",
+                "Financial liabilities (loans and borrowings)", "Bond liabilities",
+                "Liabilities from finance leases", "Trade payables", "Employee benefits",
+                "Current tax liabilities", Provisions, "Other liabilities", "Accruals (liability)",
+                ELC."Liabilities related to assets held for sale and discontinued operations"
+              FROM EquityLiabilities E 
+              JOIN EquityLiabilitiesCategories ELC
+              ON ELC.CompanyID = E.CompanyID AND ELC.Date = E.Date
+              JOIN Company C ON C.ID = E.CompanyID
+              WHERE Name = ? ''', (company_name,))
+    return c.fetchall(), list(map(lambda x: x[0], c.description))
+
+
+@with_connection
+def export_stock_quotes(connection, company_name):
+    c = connection.cursor()
+    c.execute('''SELECT C.Name, StartDate, EndDate, Stock, Change, "Open", High, Low, Volume, Turnover
+                FROM StockQuotes SQ 
+                JOIN Company C ON C.ID = SQ.CompanyID
+                WHERE Name = ? 
+                ORDER BY SQ.StartDate''', (company_name,))
+    return c.fetchall(), list(map(lambda x: x[0], c.description))
 
 
 @with_connection

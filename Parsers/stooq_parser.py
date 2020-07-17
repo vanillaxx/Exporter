@@ -2,8 +2,8 @@ import lxml
 import numbers
 import requests
 import pandas as pd
-from exporter.DAL.utils import set_up_database_tables, insert_stock_quotes, get_company_id_from_ticker
-from exporter.Utils.Errors import CompanyNotFoundError
+from DAL.db_queries import insert_company, insert_stock_quotes, get_company_id_from_ticker
+from Utils.Errors import CompanyNotFoundError
 import re
 from datetime import date, timedelta
 
@@ -322,8 +322,7 @@ def _get_first_day_of_the_quarter(date):
 
 
 # test
-set_up_database_tables()
-# insert_company("pko", "PKO")
+insert_company("pko", "PKO")
 # insert_company("08n", "08N")
 sp = StooqParser()
 # sp.download_all_companies_current()
