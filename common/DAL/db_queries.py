@@ -362,3 +362,10 @@ def get_market_values_for_company(connection, company_id):
                  WHERE C.ID = ? 
                  ORDER BY MV.PeriodEnd''', (company_id,))
     return c.fetchall(), list(map(lambda x: x[0], c.description))
+
+
+@with_connection
+def get_all_companies(connection):
+    c = connection.cursor()
+    c.execute("SELECT Name, Name FROM Company ")
+    return c.fetchall()

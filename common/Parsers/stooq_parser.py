@@ -2,8 +2,8 @@ import lxml
 import numbers
 import requests
 import pandas as pd
-from DAL.db_queries import insert_company, insert_stock_quotes, get_company_id_from_ticker
-from Utils.Errors import CompanyNotFoundError
+from common.DAL.db_queries import insert_company, insert_stock_quotes, get_company_id_from_ticker
+from common.Utils.Errors import CompanyNotFoundError
 import re
 from datetime import date, timedelta
 

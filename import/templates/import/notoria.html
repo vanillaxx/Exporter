@@ -5,6 +5,16 @@
     <title>Import data from balance sheet</title>
 </head>
 <body>
+<h1>Notoria</h1>
+<h2>Import</h2>
+<h3>{{form.bs_sheet}}</h3>
+    {{form.chosen_sheets_bs}}
+<h3>{{form.fr_sheet}}</h3>
+    {{form.chosen_sheets_fr}}
+<h3>{{form.dp_sheet}}</h3>
+    {{form.chosen_sheets_dp}}
+
+
 <form method="post">
 {% csrf_token %}
     <label for="file_path">Pass path to file: </label>

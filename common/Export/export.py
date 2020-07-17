@@ -1,6 +1,6 @@
 import sys
 import common.DAL.db_queries as db_queries
-from Export.save import save_to_csv
+from common.Export.save import save_to_csv
 
 
 def get_data_with_percentage_values(data, description):
@@ -89,6 +89,18 @@ def export_market_values(company_id, file_name):
     put_data_to_csv(data, description, file_name)
 
 
+functions = {'-da': export_detailed_assets,
+             '-de': export_detailed_equities,
+             '-ca': export_assets_categories,
+             '-ce': export_equities_categories,
+             '-fa': export_full_assets,
+             '-fe': export_full_equities,
+             '-f': export_financial_ratios,
+             '-d': export_du_pont_indicators,
+             '-v': export_market_values,
+             '-s': export_stock_quotes
+             }
+
 if __name__ == "__main__":
 
     help = '''[option] [company]
@@ -103,18 +115,6 @@ if __name__ == "__main__":
     -d - export Du Pont indicators
     -v - export company values
     -s - export stock quotes'''
-
-    functions = {'-da': export_detailed_assets,
-                 '-de': export_detailed_equities,
-                 '-ca': export_assets_categories,
-                 '-ce': export_equities_categories,
-                 '-fa': export_full_assets,
-                 '-fe': export_full_equities,
-                 '-f': export_financial_ratios,
-                 '-d': export_du_pont_indicators,
-                 '-v': export_market_values,
-                 '-s': export_stock_quotes
-                 }
 
     if len(sys.argv) == 3 and sys.argv[1] in functions:
         functions[sys.argv[1]](sys.argv[2], 'default.csv')
