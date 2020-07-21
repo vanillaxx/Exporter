@@ -34,8 +34,8 @@ class Migration(migrations.Migration):
                 ('ISIN', models.CharField(max_length=255)),
                 ('Ticker', models.CharField(max_length=255)),
                 ('Bloomberg', models.CharField(max_length=255)),
-                ('EKD_ClassID', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='export.EKD_Class')),
-                ('EKD_SectionID', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='export.EKD_Section')),
+                ('EKD_ClassID', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='app.EKD_Class')),
+                ('EKD_SectionID', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='app.EKD_Section')),
             ],
         ),
         migrations.CreateModel(
@@ -66,7 +66,7 @@ class Migration(migrations.Migration):
                 ('Assets_from_current_tax', models.DecimalField(db_column='Assets from current tax', decimal_places=4, max_digits=15)),
                 ('Derivative_instruments', models.DecimalField(db_column='Derivative instruments', decimal_places=4, max_digits=15)),
                 ('Other_assets', models.DecimalField(db_column='Other assets', decimal_places=4, max_digits=15)),
-                ('CompanyID', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='export.Company')),
+                ('CompanyID', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='app.Company')),
             ],
         ),
     ]

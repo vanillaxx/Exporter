@@ -7,20 +7,22 @@
 <body>
 <h1>EXPORTER</h1>
 
-<button onclick="showList()">Import</button>
+<button onclick="showList()" id="importButton" class="buttons">Import</button>
 <ul id="list">
-  <li><a href = "" id="import_notoria">Import from Notoria</a></li>
-  <li><a href = "" id="import_stooq">Import from Stooq</a></li>
+  <li><a href = "" id="importNotoria">Import from Notoria</a></li>
+  <li><a href = "" id="importStooq">Import from Stooq</a></li>
 </ul>
+
+<button onclick="window.location.href=window.location.origin+'/export/notoria'" id="exportButton" class="buttons">Export</button>
 
 {% block content %}
 {% endblock %}
 
 <script>
     var urlBase = window.location.origin;
-    var link = document.getElementById("import_stooq");
+    var link = document.getElementById("importStooq");
     link.setAttribute('href', urlBase + '/import/stooq');
-    var link = document.getElementById("import_notoria");
+    var link = document.getElementById("importNotoria");
     link.setAttribute('href', urlBase + '/import/notoria');
     var list = document.getElementById("list");
     list.style.display = "none";
