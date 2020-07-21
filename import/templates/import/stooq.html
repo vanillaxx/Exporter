@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Import data from Stooq website</title>
+</head>
+<body>
+<h1>Stooq</h1>
+<h2>Import</h2>
+<h3>{{form.bs_sheet}}</h3>
+    {{form.chosen_sheets_bs}}
+<h3>{{form.fr_sheet}}</h3>
+    {{form.chosen_sheets_fr}}
+<h3>{{form.dp_sheet}}</h3>
+    {{form.chosen_sheets_dp}}
+
+
+<form method="post">
+{% csrf_token %}
+    <label for="file_path">Pass path to file: </label>
+        <input id="file_path" type="text" name="file_path" value="{{ file_path }}">
+
+<input type="submit" value="Import">
+</form>
+</body>
+</html>
