@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'common.apps.CommonConfig',
     'export.apps.ExportConfig',
     'import.apps.ImportConfig',
+    'main.apps.ImportConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

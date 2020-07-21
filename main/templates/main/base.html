@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Import data from balance sheet</title>
+</head>
+<body>
+<h1>EXPORTER</h1>
+
+<button onclick="showList()">Import</button>
+<ul id="list">
+  <li><a href = "" id="import_notoria">Import from Notoria</a></li>
+  <li><a href = "" id="import_stooq">Import from Stooq</a></li>
+</ul>
+
+{% block content %}
+{% endblock %}
+
+<script>
+    var urlBase = window.location.origin;
+    var link = document.getElementById("import_stooq");
+    link.setAttribute('href', urlBase + '/import/stooq');
+    var link = document.getElementById("import_notoria");
+    link.setAttribute('href', urlBase + '/import/notoria');
+    var list = document.getElementById("list");
+    list.style.display = "none";
+
+    function showList() {
+        var list = document.getElementById("list");
+
+        if (list.style.display == "none"){
+            list.style.display = "block";
+        }else{
+            list.style.display = "none";
+        }
+}
+</script>
+
+</body>
+</html>
