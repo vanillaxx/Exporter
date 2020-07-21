@@ -6,7 +6,7 @@ import common.Export.export as export
 
 
 def index(request):
-    return render(request, 'main.html')
+    return render(request, 'index.html')
 
 
 def import_notoria(request):
