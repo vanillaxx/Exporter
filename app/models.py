@@ -3,27 +3,6 @@ from django.db import models
 # Create your models here.
 
 
-from django import forms
-
-
-class NotoriaImportForm(forms.Form):
-    file_path = forms.CharField(label='Path to files:', max_length=100)
-    choices_bs = [('yearly_bs', 'Yearly'),
-                  ('quarterly_bs', 'Quarterly')]
-    choices_fr = [('yearly_fr', 'Yearly'),
-                  ('quarterly_fr', 'Quarterly')]
-    choices_dp = [('yearly_bs', 'Yearly'),
-                  ('quarterly_dp', 'Quarterly')]
-
-    chosen_sheets_bs = forms.ChoiceField(choices=choices_bs, widget=forms.CheckboxSelectMultiple)
-    chosen_sheets_fr = forms.ChoiceField(choices=choices_fr, widget=forms.CheckboxSelectMultiple)
-    chosen_sheets_dp = forms.ChoiceField(choices=choices_dp, widget=forms.CheckboxSelectMultiple)
-
-    bs_sheet = 'Balance sheet'
-    fr_sheet = 'Financial ratios'
-    dp_sheet = 'DuPont Indicators'
-
-
 class Assets(models.Model):
     id = models.AutoField(db_column='ID', primary_key=True, blank=True, null=False)  # Field name made lowercase.
     companyid = models.ForeignKey('Company', models.DO_NOTHING, db_column='CompanyID', blank=True,
@@ -80,7 +59,7 @@ class Assets(models.Model):
         db_table = 'Assets'
 
 
-class Assetscategories(models.Model):
+class AssetsCategories(models.Model):
     id = models.AutoField(db_column='ID', primary_key=True, blank=True, null=False)  # Field name made lowercase.
     companyid = models.ForeignKey('Company', models.DO_NOTHING, db_column='CompanyID', blank=True,
                                   null=True)  # Field name made lowercase.
@@ -142,7 +121,7 @@ class Company(models.Model):
         db_table = 'Company'
 
 
-class Dupontindicators(models.Model):
+class DuPontIndicators(models.Model):
     id = models.AutoField(db_column='ID', primary_key=True, blank=True, null=False)  # Field name made lowercase.
     companyid = models.ForeignKey(Company, models.DO_NOTHING, db_column='CompanyID', blank=True,
                                   null=True)  # Field name made lowercase.
@@ -172,7 +151,7 @@ class Dupontindicators(models.Model):
         db_table = 'DuPontIndicators'
 
 
-class Equityliabilities(models.Model):
+class EquityLiabilities(models.Model):
     id = models.AutoField(db_column='ID', primary_key=True, blank=True, null=False)  # Field name made lowercase.
     companyid = models.ForeignKey(Company, models.DO_NOTHING, db_column='CompanyID', blank=True,
                                   null=True)  # Field name made lowercase.
@@ -241,7 +220,7 @@ class Equityliabilities(models.Model):
         db_table = 'EquityLiabilities'
 
 
-class Equityliabilitiescategories(models.Model):
+class EquityLiabilitiesCategories(models.Model):
     id = models.AutoField(db_column='ID', primary_key=True, blank=True, null=False)  # Field name made lowercase.
     companyid = models.ForeignKey(Company, models.DO_NOTHING, db_column='CompanyID', blank=True,
                                   null=True)  # Field name made lowercase.
@@ -263,7 +242,7 @@ class Equityliabilitiescategories(models.Model):
         db_table = 'EquityLiabilitiesCategories'
 
 
-class Financialratios(models.Model):
+class FinancialRatios(models.Model):
     id = models.AutoField(db_column='ID', primary_key=True, blank=True, null=False)  # Field name made lowercase.
     companyid = models.ForeignKey(Company, models.DO_NOTHING, db_column='CompanyID', blank=True,
                                   null=True)  # Field name made lowercase.
@@ -317,7 +296,7 @@ class Financialratios(models.Model):
         db_table = 'FinancialRatios'
 
 
-class Marketvalues(models.Model):
+class MarketValues(models.Model):
     id = models.AutoField(db_column='ID', primary_key=True, blank=True, null=False)  # Field name made lowercase.
     companyid = models.ForeignKey(Company, models.DO_NOTHING, db_column='CompanyID')  # Field name made lowercase.
     periodend = models.DateField(db_column='PeriodEnd')  # Field name made lowercase.
@@ -328,7 +307,7 @@ class Marketvalues(models.Model):
         db_table = 'MarketValues'
 
 
-class Stockquotes(models.Model):
+class StockQuotes(models.Model):
     id = models.AutoField(db_column='ID', primary_key=True, blank=True, null=False)  # Field name made lowercase.
     companyid = models.ForeignKey(Company, models.DO_NOTHING, db_column='CompanyID')  # Field name made lowercase.
     startdate = models.DateField(db_column='StartDate')  # Field name made lowercase.
@@ -344,17 +323,3 @@ class Stockquotes(models.Model):
     class Meta:
         managed = False
         db_table = 'StockQuotes'
-
-
-class NotoriaExportForm(forms.Form):
-    file_name = forms.CharField(label='File name:', max_length=100)
-    notoria_choices = [('-da', 'Detailed assets'),
-                       ('-ca', 'Assets categories'),
-                       ('-fa', 'Full assets'),
-                       ('-de', 'Detailed equity and liabilities'),
-                       ('-ce', 'Equity and liabilities categories'),
-                       ('-fe', 'Full equity and liabilities'),
-                       ]
-    company_choices = Company.objects.all()
-    chosen_data = forms.ChoiceField(choices=notoria_choices)
-    chosen_companies = forms.ModelMultipleChoiceField(queryset=company_choices)

@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseRedirect
-from .models import NotoriaImportForm, NotoriaExportForm
+from .forms import NotoriaImportForm, NotoriaExportForm
 from common.Parsers import excel_parser
 import common.Export.export as export
 

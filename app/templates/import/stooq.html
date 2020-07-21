@@ -2,5 +2,30 @@
 
 {% block content %}
     <br>
+<h3>Import</h3>
 <h2>Stooq</h2>
+<div class="siteDescription">
+    Import stock quotes from <a href="https://stooq.com/">https://stooq.com/</a> website. <br>
+    If import data for one company is chosen, there is an option to choose any period of time and time interval
+    (if only stooq.com contains such data), but there will be no information about turnover. <br>
+    If import data for all companies is chosen, only daily stock quotes from a few days back
+    will be available, but it will download information about turnover.
+</div>
+
+<h3 class="styledHeading">Import data for one company</h3>
+
+<form method="post">
+{% csrf_token %}
+
+<input type="submit" value="Import">
+</form>
+
+<h3 class="styledHeading">Import data for all companies</h3>
+<form method="post">
+{% csrf_token %}
+
+<input type="submit" value="Impor">
+</form>
+
+
 {% endblock %}
