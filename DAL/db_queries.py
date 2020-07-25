@@ -52,6 +52,19 @@ def insert_company(connection, company_name, company_ticker=None, company_isin=N
 
 
 @with_connection
+def insert_market_value(connection, market_value, end_date, company_name, company_isin=None):
+    # TODO updating information about company
+    company_id = get_company_id_from_isin(company_isin) or get_company_id_from_name(company_name)
+    data = (company_id, end_date, market_value)
+    if company_id:
+        command = '''INSERT INTO MarketValues(CompanyID, PeriodEnd, MarketValue) VALUES (?, ?, ?)'''
+        with connection:
+            connection.execute(command, data)
+    else:
+        raise CompanyNotFoundError
+
+
+@with_connection
 def get_company_id_from_name(connection, company_name):
     company_name = company_name.upper()
     c = connection.cursor()
@@ -341,13 +354,11 @@ def export_stock_quotes(connection, company_name):
 
 
 @with_connection
-def insert_market_value(connection, market_value, end_date, company_name, company_isin=None):
-    # TODO updating information about company
-    company_id = get_company_id_from_isin(company_isin) or get_company_id_from_name(company_name)
-    data = (company_id, end_date, market_value)
-    if company_id:
-        command = '''INSERT INTO MarketValues(CompanyID, PeriodEnd, MarketValue) VALUES (?, ?, ?)'''
-        with connection:
-            connection.execute(command, data)
-    else:
-        raise CompanyNotFoundError
+def get_market_values_for_company(connection, company_id):
+    c = connection.cursor()
+    c.execute('''SELECT C.Name, MarketValue, PeriodEnd
+                 FROM MarketValues MV
+                 JOIN Company C ON C.ID = MV.CompanyID
+                 WHERE C.ID = ? 
+                 ORDER BY MV.PeriodEnd''', (company_id,))
+    return c.fetchall(), list(map(lambda x: x[0], c.description))
