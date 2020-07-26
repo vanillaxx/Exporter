@@ -9,8 +9,9 @@
 
 <button onclick="showList()" id="importButton" class="buttons">Import</button>
 <ul id="list">
-  <li><a href = "" id="importNotoria">Import from Notoria</a></li>
-  <li><a href = "" id="importStooq">Import from Stooq</a></li>
+  <li><a href="{% url 'import_notoria' %}" id="importNotoria">Import from Notoria</a></li>
+  <li><a href="{% url 'import_stooq' %}" id="importStooq">Import from Stooq</a></li>
+    <li><a href="{% url 'import_gpw' %}" id="importGPW">Import from GPW</a></li>
 </ul>
 
 <button onclick="window.location.href=window.location.origin+'/export/notoria'" id="exportButton" class="buttons">Export</button>
@@ -20,18 +21,20 @@
 {% endblock %}
 
 <script>
-    var urlBase = window.location.origin;
-    var link = document.getElementById("importStooq");
-    link.setAttribute('href', urlBase + '/import/stooq');
-    var link = document.getElementById("importNotoria");
-    link.setAttribute('href', urlBase + '/import/notoria');
+    // var urlBase = window.location.origin;
+    // var link = document.getElementById("importStooq");
+    // link.setAttribute('href', urlBase + '/import/stooq');
+    // var link = document.getElementById("importNotoria");
+    // link.setAttribute('href', urlBase + '/import/notoria');
+    // var link = document.getElementById("importGPW");
+    // link.setAttribute('href', urlBase + '/import/gpw');
     var list = document.getElementById("list");
     list.style.display = "none";
 
     function showList() {
         var list = document.getElementById("list");
 
-        if (list.style.display == "none"){
+        if (list.style.display === "none"){
             list.style.display = "block";
         }else{
             list.style.display = "none";

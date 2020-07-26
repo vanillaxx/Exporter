@@ -69,3 +69,12 @@ class StooqAllCompaniesImportForm(forms.Form):
     fr_sheet = 'Financial ratios'
     dp_sheet = 'DuPont Indicators'
 
+
+class GpwImportForm(forms.Form):
+    choices = [('yearbook_excel', 'GPW Yearbook Excel'),
+               ('yearbook_pdf', 'GPW Yearbook PDF'),
+               ('statistics_excel', 'GPW Statistic Bulletin Excel'),
+               ('statistics_pdf', 'GPW Statistic Bulletin PDF')]
+
+    file_type = forms.ChoiceField(label='Type of file', choices=choices, widget=forms.RadioSelect)
+    path = forms.CharField(label='Path to file')
