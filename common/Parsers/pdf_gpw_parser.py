@@ -8,7 +8,7 @@ from datetime import date, datetime
 import calendar
 import locale
 from common.DAL.db_queries import insert_market_value, insert_company
-from common.Utils import CompanyNotFoundError
+from common.Utils.Errors import CompanyNotFoundError
 
 
 class PdfGPWParser:

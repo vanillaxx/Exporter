@@ -5,7 +5,7 @@ import collections
 import pandas as pd
 from datetime import date
 from common.DAL.db_queries import insert_market_value, insert_company
-from common.Utils import CompanyNotFoundError
+from common.Utils.Errors import CompanyNotFoundError
 
 
 class PdfYearbookParser:
