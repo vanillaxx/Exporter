@@ -84,8 +84,9 @@ def export_stock_quotes(company_name, file_name):
     put_data_to_csv(data, description, file_name)
 
 
-def export_company_values():
-    pass
+def export_market_values(company_id, file_name):
+    data, description = db_queries.get_market_values_for_company(company_id)
+    put_data_to_csv(data, description, file_name)
 
 
 if __name__ == "__main__":
@@ -111,7 +112,7 @@ if __name__ == "__main__":
                  '-fe': export_full_equities,
                  '-f': export_financial_ratios,
                  '-d': export_du_pont_indicators,
-                 '-v': export_company_values,
+                 '-v': export_market_values,
                  '-s': export_stock_quotes
                  }
 
