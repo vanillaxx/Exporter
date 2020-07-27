@@ -366,6 +366,16 @@ def insert_market_value(connection, market_value, end_date, company_name, compan
         raise CompanyNotFoundError(name=company_name, isin=company_isin)
 
 
+def get_market_values_for_company(connection, company_id):
+    c = connection.cursor()
+    c.execute('''SELECT C.Name, MarketValue, PeriodEnd
+                 FROM MarketValues MV
+                 JOIN Company C ON C.ID = MV.CompanyID
+                 WHERE C.ID = ? 
+                 ORDER BY MV.PeriodEnd''', (company_id,))
+    return c.fetchall(), list(map(lambda x: x[0], c.description))
+
+
 @with_connection
 def get_all_companies(connection):
     c = connection.cursor()

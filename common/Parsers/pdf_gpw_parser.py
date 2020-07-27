@@ -8,7 +8,7 @@ from datetime import date, datetime
 import calendar
 import locale
 from common.DAL.db_queries import insert_market_value, insert_company
-from common.Utils import CompanyNotFoundError
+from common.Utils.Errors import CompanyNotFoundError
 
 
 class PdfGPWParser:
@@ -333,9 +333,9 @@ class PdfGPWParser:
         except CompanyNotFoundError:
             print(f'Company {company_name} not found')
             # TODO (what next?)
-            insert_company(company_name=company_name, company_isin=company_isin)
-            print(f'Company {company_name} inserted')
-            self.save_value_to_database(row)
+            # insert_company(company_name=company_name, company_isin=company_isin)
+            # print(f'Company {company_name} inserted')
+            # self.save_value_to_database(row)
 
 
 if __name__ == '__main__':

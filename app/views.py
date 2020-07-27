@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseRedirect
-from .forms import NotoriaImportForm, NotoriaExportForm
-from common.Parsers import excel_parser
+from .forms import NotoriaImportForm, NotoriaExportForm, GpwImportForm
+from common.Parsers import excel_parser, pdf_gpw_parser, pdf_yearbook_parser
 import common.Export.export as export
 from common.Utils.Errors import CompanyNotFoundError
 
@@ -52,6 +52,28 @@ def import_stooq(request):
         form = NotoriaImportForm()
 
     return render(request, 'import/stooq.html', {'form': form})
+
+
+def import_gpw(request):
+    parsers = {
+        'yearbook_excel': pdf_yearbook_parser.PdfYearbookParser,
+        'yearbook_pdf': pdf_yearbook_parser.PdfYearbookParser,
+        'statistics_excel': excel_parser.ExcelParser,
+        'statistics_pdf': pdf_gpw_parser.PdfGPWParser
+    }
+
+    if request.method == 'POST':
+        form = GpwImportForm(request.POST)
+        if form.is_valid():
+            path = form.cleaned_data['path']
+            file_type = form.cleaned_data['file_type']
+            parser = parsers[file_type]()
+            parser.parse(path)
+            return HttpResponse('Parsed GPW file successfully')
+    else:
+        form = GpwImportForm()
+
+    return render(request, 'import/gpw.html', {'form': form})
 
 
 def export_notoria(request):
