@@ -63,6 +63,19 @@ def get_company_id_from_name(connection, company_name):
 
 
 @with_connection
+def get_company_id(connection, company_name, company_ticker, company_isin):
+    company_name = company_name.upper()
+    c = connection.cursor()
+    c.execute("SELECT ID FROM Company " +
+              "WHERE Name Like ?" +
+              "OR Ticker Like ?" +
+              "OR ISIN Like ?", (company_name, company_ticker, company_isin))
+    company = c.fetchone()
+    if not company:
+        return None
+    return company[0]
+
+@with_connection
 def get_company_id_from_ticker(connection, ticker):
     company_ticker = ticker.upper()
     c = connection.cursor()
@@ -350,7 +363,7 @@ def insert_market_value(connection, market_value, end_date, company_name, compan
         with connection:
             connection.execute(command, data)
     else:
-        raise CompanyNotFoundError
+        raise CompanyNotFoundError(name=company_name, isin=company_isin)
 
 
 @with_connection

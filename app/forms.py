@@ -18,20 +18,24 @@ class NotoriaExportForm(forms.Form):
 
 class NotoriaImportForm(forms.Form):
     file_path = forms.CharField(label='Path to files:', max_length=100)
-    choices_bs = [('yearly_bs', 'Yearly'),
-                  ('quarterly_bs', 'Quarterly')]
-    choices_fr = [('yearly_fr', 'Yearly'),
-                  ('quarterly_fr', 'Quarterly')]
-    choices_dp = [('yearly_bs', 'Yearly'),
-                  ('quarterly_dp', 'Quarterly')]
+    choices_bs = [('YS', 'Yearly'),
+                  ('QS', 'Quarterly')]
+    choices_fr = [('YS', 'Yearly'),
+                  ('QS', 'Quarterly')]
+    choices_dp = [('YS', 'Yearly'),
+                  ('QS', 'Quarterly')]
 
-    chosen_sheets_bs = forms.ChoiceField(choices=choices_bs, widget=forms.CheckboxSelectMultiple)
-    chosen_sheets_fr = forms.ChoiceField(choices=choices_fr, widget=forms.CheckboxSelectMultiple)
-    chosen_sheets_dp = forms.ChoiceField(choices=choices_dp, widget=forms.CheckboxSelectMultiple)
+    chosen_sheets_bs = forms.MultipleChoiceField(choices=choices_bs, widget=forms.CheckboxSelectMultiple, required=False)
+    chosen_sheets_fr = forms.MultipleChoiceField(choices=choices_fr, widget=forms.CheckboxSelectMultiple, required=False)
+    chosen_sheets_dp = forms.MultipleChoiceField(choices=choices_dp, widget=forms.CheckboxSelectMultiple, required=False)
 
     bs_sheet = 'Balance sheet'
     fr_sheet = 'Financial ratios'
     dp_sheet = 'DuPont Indicators'
+    gpw_sheet = 'GPW Capitalization'
+
+    period_end = forms.DateField()
+
 
 
 class StooqOneCompanyImportForm(forms.Form):
@@ -68,4 +72,3 @@ class StooqAllCompaniesImportForm(forms.Form):
     bs_sheet = 'Balance sheet'
     fr_sheet = 'Financial ratios'
     dp_sheet = 'DuPont Indicators'
-

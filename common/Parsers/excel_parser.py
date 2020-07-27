@@ -226,31 +226,60 @@ class ExcelParser():
         start_row = 8
         curr_row = start_row
         isin_column = 1
+        headers_check_row = 4
         name_column = 2
         capitalization_column = 4
         values = []
         milion = 1e6
-        while curr_row < excel_sheet.nrows:
-            isin = excel_sheet.cell(curr_row, isin_column).value
-            name = excel_sheet.cell(curr_row, name_column).value
-            value = excel_sheet.cell(curr_row, capitalization_column).value * milion
-            try:
-                common.DAL.db_queries.insert_market_value(value, end_date, name, isin)
-            except CompanyNotFoundError:
-                print("Company %s not found in db" % isin)
-            curr_row = curr_row + 1
+        if "isin" in excel_sheet.cell(headers_check_row, isin_column).value.lower() and "nazwa" in excel_sheet.cell(headers_check_row, name_column).value.lower():
+            while curr_row < excel_sheet.nrows:
+                isin = excel_sheet.cell(curr_row, isin_column).value
+                name = excel_sheet.cell(curr_row, name_column).value
+                value = excel_sheet.cell(curr_row, capitalization_column).value * milion
+                try:
+                    common.DAL.db_queries.insert_market_value(value, end_date, name, isin)
+                except CompanyNotFoundError as err:
+                    print(err)
+                    common.DAL.db_queries.insert_company(company_name=name, company_isin=isin)
+                    common.DAL.db_queries.insert_market_value(value, end_date, name, isin)
+                curr_row = curr_row + 1
+        else: #case where there is no isin
+            name_column = 1
+            capitalization_column = 3
+            while curr_row < excel_sheet.nrows:
+                name = excel_sheet.cell(curr_row, name_column).value
+                value = excel_sheet.cell(curr_row, capitalization_column).value * milion
+                try:
+                    common.DAL.db_queries.insert_market_value(value, end_date, name)
+                except CompanyNotFoundError as err:
+                    print(err)
+                    common.DAL.db_queries.insert_company(company_name=name)
+                    common.DAL.db_queries.insert_market_value(value, end_date, name)
+                curr_row = curr_row + 1
+
 
     def get_company_id_balance_sheet(self, path):
         self.parse_company(path)
         excel_sheet = get_sheet(path, 'Info')
         value_column = 1
         name_row = 2
+        isin_row = 17
+        isin_column = 3
+        ticker_row = 12
         company_name = excel_sheet.cell(name_row, value_column).value
-        return common.DAL.db_queries.get_company_id_from_name(company_name)
+        company_ticker = excel_sheet.cell(ticker_row, value_column).value
+        company_isin = excel_sheet.cell(isin_row, isin_column).value
+        return common.DAL.db_queries.get_company_id(company_name, company_ticker, company_isin)
 
+
+ep = ExcelParser()
+functions = {'bs': ep.parse_balance_sheet,
+             'fr': ep.parse_financial_ratios,
+             'dp': ep.parse_du_pont_indicators,
+             'gpw': ep.parse_GPW_capitalization
+             }
 
 if __name__ == "__main__":
-    ep = ExcelParser()
     help = '''[path] [option]
     options
     -b QS - parse QS of balance sheet
@@ -261,11 +290,6 @@ if __name__ == "__main__":
     -d YS - parse YS of Du Pont indicators
     -g [YYYY-MM-DD]   - parse GPW capitalization for end of period'''
 
-    functions = {'-b': ep.parse_balance_sheet,
-                 '-f': ep.parse_financial_ratios,
-                 '-d': ep.parse_du_pont_indicators,
-                 '-g': ep.parse_GPW_capitalization
-                 }
     if len(sys.argv) < 3:
         print(help)
     elif sys.argv[2] == '-g':
