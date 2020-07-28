@@ -1,5 +1,4 @@
 class CompanyNotFoundError(Exception):
-    # TODO: consider what we should put here
     def __init__(self, name='', ticker='', isin=''):
         self.name = name
         self.ticker = ticker
@@ -11,3 +10,13 @@ class CompanyNotFoundError(Exception):
         ticker_details = ' Ticker: ' + self.ticker if self.ticker else ''
         isin_details = ' ISIN: ' + self.isin if self.isin else ''
         return message + name_details + ticker_details + isin_details
+
+
+class ParseError(Exception):
+    def __init__(self, source, details=''):
+        self.source = source
+        self.details = details
+
+    def __str__(self):
+        message = 'Cannot parse data. Not compatible with convention. Source: ' + self.source
+        return message + self.details if self.details else message

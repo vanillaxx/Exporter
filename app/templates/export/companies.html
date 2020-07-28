@@ -1,0 +1,10 @@
+<table>
+     {% for company in companies %}
+    <tr>
+         <td>{{ company.name }}</td>
+         <td>{{ company.isin }}</td>
+         <td>{{ company.ticker }}</td>
+         <td>{{ company.bloomberg }}</td>
+    </tr>
+       {% endfor %}
+</table>

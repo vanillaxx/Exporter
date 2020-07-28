@@ -4,7 +4,7 @@ import sys
 import datetime
 from calendar import monthrange
 import re
-from common.Utils.Errors import CompanyNotFoundError
+from common.Utils.Errors import CompanyNotFoundError, ParseError
 
 
 def get_start_end_date(period):
@@ -66,23 +66,23 @@ class ExcelParser():
         if excel_sheet.cell(name_row, attribute_column).value == 'Nazwa':
             company_name = excel_sheet.cell(name_row, value_column).value
         else:
-            raise ValueError('(A3=Nazwa) of company should be in B3 cell')
+            raise ParseError(path, '(A3=Nazwa) of company should be in B3 cell')
         if excel_sheet.cell(isin_row, isin_column).value == 'ISIN':
             isin = excel_sheet.cell(isin_row, isin_column + 1).value
         else:
-            raise ValueError('(D18=ISIN) of company should be in E18 cell')
+            raise ParseError(path, '(D18=ISIN) of company should be in E18 cell')
         if excel_sheet.cell(ticker_row, attribute_column).value == 'TICKER':
             company_ticker = excel_sheet.cell(ticker_row, value_column).value
         else:
-            raise ValueError('(A13=TICKER) of company should be in B13 cell')
+            raise ParseError(path, '(A13=TICKER) of company should be in B13 cell')
         if excel_sheet.cell(bloomberg_row, attribute_column).value == 'Bloomberg':
             company_bloomberg = excel_sheet.cell(bloomberg_row, value_column).value
         else:
-            raise ValueError('(A17=Bloomberg) of company should be in B17 cell')
+            raise ParseError(path, '(A17=Bloomberg) of company should be in B17 cell')
         if excel_sheet.cell(ekd_row, attribute_column).value == 'EKD 1':
             company_ekd = excel_sheet.cell(ekd_row, value_column).value
         else:
-            raise ValueError('(A26=EKD 1) of company should be in B26 cell')
+            raise ParseError(path, '(A26=EKD 1) of company should be in B26 cell')
 
         ekd_section, ekd_class = parse_ekd(company_ekd)
         insert_ekd_data(ekd_section, ekd_class)
@@ -91,7 +91,7 @@ class ExcelParser():
 
     def parse_balance_sheet(self, path, sheet_name):
         if sheet_name not in self.available_sheets:
-            raise ValueError("Available sheet names: QS, YS")
+            raise ParseError(path, "Available sheet names: QS, YS")
         excel_sheet = get_sheet(path, sheet_name)
         company_id = self.get_company_id_balance_sheet(path)
         curr_row = 0
@@ -180,7 +180,7 @@ class ExcelParser():
 
     def parse_ratios(self, path, sheet_name, ratio_name, table_name):
         if sheet_name not in self.available_sheets:
-            raise ValueError("Available sheet names: QS, YS")
+            raise ParseError(path, "Available sheet names: QS, YS")
         excel_sheet = get_sheet(path, sheet_name)
         company_id = self.get_company_id_balance_sheet(path)
         curr_row = 200
@@ -243,7 +243,7 @@ class ExcelParser():
                     common.DAL.db_queries.insert_company(company_name=name, company_isin=isin)
                     common.DAL.db_queries.insert_market_value(value, end_date, name, isin)
                 curr_row = curr_row + 1
-        else: #case where there is no isin
+        elif "nazwa" in excel_sheet.cell(headers_check_row, isin_column).value.lower(): #case where name is in place of isin
             name_column = 1
             capitalization_column = 3
             while curr_row < excel_sheet.nrows:
@@ -256,7 +256,9 @@ class ExcelParser():
                     common.DAL.db_queries.insert_company(company_name=name)
                     common.DAL.db_queries.insert_market_value(value, end_date, name)
                 curr_row = curr_row + 1
-
+        else:
+            raise ParseError(path, '1: "ISIN" should be in B5 cell and "Nazwa" should be in C5 cell or 2: "Nazwa" '
+                                   'should be in B5 cell')
 
     def get_company_id_balance_sheet(self, path):
         self.parse_company(path)
