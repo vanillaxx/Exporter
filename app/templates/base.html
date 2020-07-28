@@ -3,20 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <title>EXPORTER</title>
+    {% load static %}
+    <script src="{% static 'script/jquery-3.5.1.min.js' %}"></script>
+    <link href="{% static 'css/bootstrap.css' %}" rel="stylesheet">
 </head>
-{% load static %}
-<script src="{% static 'script/jquery-3.5.1.min.js' %}"></script>
 <body>
 <h1>EXPORTER</h1>
 
 <button onclick="showList()" id="importButton" class="buttons">Import</button>
 <ul id="list">
-  <li><a href="{% url 'import_notoria' %}" id="importNotoria">Import from Notoria</a></li>
-  <li><a href="{% url 'import_stooq' %}" id="importStooq">Import from Stooq</a></li>
+    <li><a href="{% url 'import_notoria' %}" id="importNotoria">Import from Notoria</a></li>
+    <li><a href="{% url 'import_stooq' %}" id="importStooq">Import from Stooq</a></li>
     <li><a href="{% url 'import_gpw' %}" id="importGPW">Import from GPW</a></li>
 </ul>
 
-<button onclick="window.location.href=window.location.origin+'/export/notoria'" id="exportButton" class="buttons">Export</button>
+<button onclick="window.location.href=window.location.origin+'/export/notoria'" id="exportButton" class="buttons">
+    Export
+</button>
 <button onclick="" id="manageDataButton" class="buttons">Manage data</button>
 
 {% block content %}
@@ -36,12 +39,12 @@
     function showList() {
         var list = document.getElementById("list");
 
-        if (list.style.display === "none"){
+        if (list.style.display === "none") {
             list.style.display = "block";
-        }else{
+        } else {
             list.style.display = "none";
         }
-}
+    }
 </script>
 </body>
 </html>

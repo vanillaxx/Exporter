@@ -6,20 +6,20 @@
 <h2>Notoria</h2>
 
 <form method="post">
-{% csrf_token %}
-<h3>{{form.bs_sheet}}</h3>
+    {% csrf_token %}
+    <h3>{{form.bs_sheet}}</h3>
     {{form.chosen_sheets_bs}}
-<h3>{{form.fr_sheet}}</h3>
+    <h3>{{form.fr_sheet}}</h3>
     {{form.chosen_sheets_fr}}
-<h3>{{form.dp_sheet}}</h3>
+    <h3>{{form.dp_sheet}}</h3>
     {{form.chosen_sheets_dp}}
-<h3>{{form.gpw_sheet}}</h3>
+    <h3>{{form.gpw_sheet}}</h3>
     {{form.period_end}}
     <br>
     <label for="file_path">Pass path to file: </label>
-        <input id="file_path" type="text" name="file_path" value="{{ file_path }}">
+    <input id="file_path" type="text" name="file_path" value="{{ file_path }}">
 
-<input type="submit" value="Import">
+    <input type="submit" value="Import">
 </form>
 {%if error%}
 {% include 'import/company_not_found.html' %}
