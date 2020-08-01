@@ -1,9 +1,10 @@
-from django.shortcuts import render, redirect
-from django.http import HttpResponse, HttpResponseRedirect
-from .forms import NotoriaImportForm, NotoriaExportForm, GpwImportForm
-from common.Parsers import excel_parser, pdf_gpw_parser, pdf_yearbook_parser
+from django.shortcuts import render
+from django.http import HttpResponse
+from .forms import NotoriaImportForm, NotoriaExportForm, GpwImportForm, StooqImportForm
+from common.Parsers import excel_parser, pdf_gpw_parser, stooq_parser, pdf_yearbook_parser
 import common.Export.export as export
 from common.Utils.Errors import CompanyNotFoundError
+from datetime import datetime
 
 
 def index(request):
@@ -42,14 +43,33 @@ def import_notoria(request):
 
 def import_stooq(request):
     if request.method == 'POST':
-        form = NotoriaImportForm(request.POST)
+        form = StooqImportForm(request.POST)
         if form.is_valid():
-            EP = excel_parser.ExcelParser()
-            file_path = request.POST.get('file_path', None)
-            EP.parse_balance_sheet(file_path, 'QS')
-            return HttpResponse('Parsed notoria successfully')
+            SP = stooq_parser.StooqParser()
+            ticker = form.cleaned_data.get('ticker', None)
+            company = form.cleaned_data.get('company')
+
+            date = form.cleaned_data.get('date', None)
+            date_from = form.cleaned_data.get('date_from', None)
+            date_to = form.cleaned_data.get('date_to', None)
+
+            interval = form.cleaned_data.get('interval', None)
+
+            if company and not ticker:
+                ticker = company.ticker
+
+            if ticker and date_from and date_to:
+                SP.download_company(ticker, date_from, date_to, interval)
+
+            if date:
+                SP.download_all_companies(date)
+
+            return HttpResponse('Parsed stooq successfully')
+
+        else:
+            return HttpResponse('Wrong form')
     else:
-        form = NotoriaImportForm()
+        form = StooqImportForm()
 
     return render(request, 'import/stooq.html', {'form': form})
 

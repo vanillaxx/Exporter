@@ -44,7 +44,7 @@ def insert_full_company(company_name, isin, company_ticker, company_bloomberg, e
 
 
 @with_connection
-def insert_company(connection, company_name, company_ticker=None, company_isin=None):
+def insert_company(connection, company_name=None, company_ticker=None, company_isin=None):
     values = company_name, company_ticker, company_isin
     command = '''INSERT INTO Company(Name, Ticker, ISIN) VALUES (?, ?, ?)'''
     with connection:

@@ -12,19 +12,31 @@
     will be available, but it will download information about turnover.
 </div>
 
-<h3 class="styledHeading">Import data for one company</h3>
+<form method="post">{% csrf_token %}
 
-<form method="post">
-{% csrf_token %}
+    <h3 class="styledHeading">Import data for one company</h3>
 
-<input type="submit" value="Import">
-</form>
+    <h4>{{form.ticker_sheet}}</h4>
+    {{form.ticker}}
+
+    <h4>{{form.company_sheet}}</h4>
+    {{form.company}}
+
+    <h4>{{form.date_from_sheet}}</h4>
+    {{form.date_from}}
+
+    <h4>{{form.date_to_sheet}}</h4>
+    {{form.date_to}}
+
+    <h4>{{form.interval_sheet}}</h4>
+    {{form.interval}}
 
 <h3 class="styledHeading">Import data for all companies</h3>
-<form method="post">
-{% csrf_token %}
 
-<input type="submit" value="Impor">
+    <h4>{{form.date_sheet}}</h4>
+    {{form.date}}
+
+<button type="submit">Import</button>
 </form>
 
 
