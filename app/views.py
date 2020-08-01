@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 from .forms import NotoriaImportForm, NotoriaExportForm, GpwImportForm, StooqImportForm
-from common.Parsers import excel_parser, pdf_gpw_parser, stooq_parser, pdf_yearbook_parser
+from common.Parsers import excel_parser, pdf_gpw_parser, stooq_parser, pdf_yearbook_parser, excel_yearbook_parser, excel_gpw_parser
 import common.Export.export as export
 from common.Utils.Errors import CompanyNotFoundError
 from datetime import datetime
@@ -76,9 +76,9 @@ def import_stooq(request):
 
 def import_gpw(request):
     parsers = {
-        'yearbook_excel': pdf_yearbook_parser.PdfYearbookParser,
+        'yearbook_excel': excel_yearbook_parser.ExcelYearbookParser,
         'yearbook_pdf': pdf_yearbook_parser.PdfYearbookParser,
-        'statistics_excel': excel_parser.ExcelParser,
+        'statistics_excel': excel_gpw_parser.ExcelGPWParser,
         'statistics_pdf': pdf_gpw_parser.PdfGPWParser
     }
 
