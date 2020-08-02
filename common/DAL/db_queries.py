@@ -21,8 +21,8 @@ def insert_value(connection, table_name, column, value):
 @with_connection
 def insert_stock_quotes(connection, values):
     command = '''INSERT OR IGNORE INTO StockQuotes
-                (CompanyID, StartDate, EndDate, Stock, Change, Open, High, Low, Volume, Turnover)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'''
+                (CompanyID, StartDate, EndDate, Stock, Change, Open, High, Low, Volume, Turnover, Interval)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'''
     with connection:
         connection.execute(command, values)
 
@@ -112,6 +112,16 @@ def get_ekd_class_id_from_value(connection, ekd_class):
     c = connection.cursor()
     c.execute("SELECT ID FROM EKD_Class WHERE Value Like (?)", (int(ekd_class),))
     return c.fetchone()[0]
+
+
+@with_connection
+def get_interval_id_from_shortcut(connection, shortcut):
+    c = connection.cursor()
+    c.execute("SELECT ID FROM Interval WHERE Shortcut Like ?", (shortcut,))
+    interval = c.fetchone()
+    if not interval:
+        return None
+    return interval[0]
 
 
 @with_connection
