@@ -1,7 +1,6 @@
 from django import forms
 from .models import *
 from bootstrap_datepicker_plus import DatePickerInput
-from bootstrap_daterangepicker import widgets, fields
 
 
 class ExportForm(forms.Form):
@@ -13,7 +12,8 @@ class ExportForm(forms.Form):
                        ('-ce', 'Equity and liabilities categories'),
                        ('-fe', 'Full equity and liabilities'),
                        ('-f', 'Financial ratios'),
-                       ('-d', 'DuPont Indicators')
+                       ('-d', 'DuPont Indicators'),
+                       ('-s', 'Stock quotes'),
                        ]
     company_choices = Company.objects.all()
     chosen_data = forms.ChoiceField(choices=notoria_choices)

@@ -388,13 +388,18 @@ def get_full_equities_for_companies(connection, company_ids, start_date, end_dat
 
 
 @with_connection
-def export_stock_quotes(connection, company_name):
+def export_stock_quotes(connection, company_ids, start_date, end_date, interval):
+    interval_id = get_interval_id_from_shortcut(interval)
     c = connection.cursor()
-    c.execute('''SELECT C.Name, StartDate, EndDate, Stock, Change, "Open", High, Low, Volume, Turnover
+    query = '''SELECT C.Name, StartDate, EndDate, Stock, Change, "Open", High, Low, Volume, Turnover
                 FROM StockQuotes SQ 
                 JOIN Company C ON C.ID = SQ.CompanyID
-                WHERE Name = ? 
-                ORDER BY SQ.StartDate''', (company_name,))
+                WHERE C.ID IN ({seq}) 
+                AND SQ.EndDate BETWEEN ? AND ?
+                AND Interval = ?
+                ORDER BY C.Name, SQ.EndDate'''.format(seq=','.join(['?'] * len(company_ids)))
+    company_ids.extend([start_date, end_date, interval_id])
+    c.execute(query, tuple(company_ids))
     return c.fetchall(), list(map(lambda x: x[0], c.description))
 
 
