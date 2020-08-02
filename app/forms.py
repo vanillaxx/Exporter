@@ -18,15 +18,6 @@ class NotoriaExportForm(forms.Form):
     company_choices = Company.objects.all()
     chosen_data = forms.ChoiceField(choices=notoria_choices)
     chosen_companies = forms.ModelMultipleChoiceField(queryset=company_choices)
-    # start_date = forms.DateField(label='From:',
-    #                              widget=DatePickerInput(
-    #                                  format='%d/%m/%Y', attrs={'type': 'date'}
-    #                              ))
-    #
-    # end_date = forms.DateField(label='To: ',
-    #                            widget=DatePickerInput(
-    #                                format='%d/%m/%Y', attrs={'type': 'date'}
-    #                            ))
     date_ranges_count = forms.CharField(widget=forms.HiddenInput())
 
     def __init__(self, *args, **kwargs):
@@ -73,9 +64,6 @@ class NotoriaImportForm(forms.Form):
     bs_sheet = 'Balance sheet'
     fr_sheet = 'Financial ratios'
     dp_sheet = 'DuPont Indicators'
-    gpw_sheet = 'GPW Capitalization'
-
-    period_end = forms.DateField()
 
 
 class StooqImportForm(forms.Form):

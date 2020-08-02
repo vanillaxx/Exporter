@@ -66,10 +66,11 @@ def get_company_id_from_name(connection, company_name):
 def get_company_id(connection, company_name, company_ticker, company_isin):
     company_name = company_name.upper()
     c = connection.cursor()
-    c.execute("SELECT ID FROM Company " +
-              "WHERE Name Like ?" +
-              "OR Ticker Like ?" +
-              "OR ISIN Like ?", (company_name, company_ticker, company_isin))
+    query = '''SELECT ID FROM Company
+              WHERE Name Like ?
+              OR Ticker Like ?
+              OR ISIN Like ?'''
+    c.execute(query, (company_name, company_ticker, company_isin))
     company = c.fetchone()
     if not company:
         return None
