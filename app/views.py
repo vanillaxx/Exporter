@@ -101,12 +101,19 @@ def export_notoria(request):
     if request.method == 'POST':
         form = NotoriaExportForm(request.POST, count=request.POST.get('date_ranges_count'))
         if form.is_valid():
+            print(form.cleaned_data)
             file_name = request.POST.get('file_name', None)
             chosen_data = request.POST.get('chosen_data', None)
             chosen_companies = list(form.cleaned_data.get('chosen_companies').values_list('id', flat=True))
-            start_date = form.cleaned_data.get('start_date')
-            end_date = form.cleaned_data.get('end_date')
-            export.functions[chosen_data](chosen_companies, start_date, end_date, file_name)
+            date_ranges_count = request.POST.get('date_ranges_count', None)
+            for index in range(int(date_ranges_count)+1):
+                start_date = form.cleaned_data.get('start_date_{index}'.format(index=index))
+                end_date = form.cleaned_data.get('end_date_{index}'.format(index=index))
+                if index == 0:
+                    export.functions[chosen_data](chosen_companies, start_date, end_date, file_name)
+                else:
+                    export.functions[chosen_data](chosen_companies, start_date, end_date, file_name,
+                                                  add_description=False)
             return HttpResponse('Data exported successfully')
     else:
         form = NotoriaExportForm()

@@ -3,8 +3,11 @@ import common.DAL.db_queries as db_queries
 from common.Export.save import save_to_csv
 
 
-def get_data_with_percentage_values(data, description):
-    csv_list = [description]
+def get_data_with_percentage_values(data, description, add_description=True):
+    if add_description:
+        csv_list = [description]
+    else:
+        csv_list = []
     for row in data:
         skip = 3
         fresh_row = []
@@ -19,18 +22,21 @@ def get_data_with_percentage_values(data, description):
     return csv_list
 
 
-def put_percentage_data_to_csv(data, description, file_name):
+def put_percentage_data_to_csv(data, description, file_name, add_description=True):
     if data:
-        csv_list = get_data_with_percentage_values(data, description)
+        csv_list = get_data_with_percentage_values(data, description, add_description)
         save_to_csv(csv_list, file_name)
         print("Data saved to %s" % file_name)
     else:
         print("There is no data for such a company")
 
 
-def put_data_to_csv(data, description, file_name):
+def put_data_to_csv(data, description, file_name, add_description=True):
     if data:
-        csv_list = [description]
+        if add_description:
+            csv_list = [description]
+        else:
+            csv_list = []
         for row in data:
             csv_list.append(row)
         save_to_csv(csv_list, file_name)
@@ -39,45 +45,44 @@ def put_data_to_csv(data, description, file_name):
         print("There is no data for such a company")
 
 
-def export_detailed_assets(company_ids, start_date, end_date, file_name):
-    print(company_ids, start_date, end_date, file_name)
+def export_detailed_assets(company_ids, start_date, end_date, file_name, add_description=True):
     data, description = db_queries.get_assets_for_companies(company_ids, start_date, end_date)
-    put_percentage_data_to_csv(data, description, file_name)
+    put_percentage_data_to_csv(data, description, file_name, add_description)
 
 
-def export_detailed_equities(company_ids, start_date, end_date, file_name):
+def export_detailed_equities(company_ids, start_date, end_date, file_name, add_description=True):
     data, description = db_queries.get_equity_liabilities_for_companies(company_ids, start_date, end_date)
-    put_percentage_data_to_csv(data, description, file_name)
+    put_percentage_data_to_csv(data, description, file_name, add_description)
 
 
-def export_assets_categories(company_ids, start_date, end_date, file_name):
+def export_assets_categories(company_ids, start_date, end_date, file_name, add_description=True):
     data, description = db_queries.get_assets_categories_for_companies(company_ids, start_date, end_date)
-    put_percentage_data_to_csv(data, description, file_name)
+    put_percentage_data_to_csv(data, description, file_name, add_description)
 
 
-def export_equities_categories(company_ids, start_date, end_date, file_name):
+def export_equities_categories(company_ids, start_date, end_date, file_name, add_description=True):
     data, description = db_queries.get_equity_liabilities_categories_for_companies(company_ids, start_date, end_date)
-    put_percentage_data_to_csv(data, description, file_name)
+    put_percentage_data_to_csv(data, description, file_name, add_description)
 
 
-def export_full_assets(company_ids, start_date, end_date, file_name):
+def export_full_assets(company_ids, start_date, end_date, file_name, add_description=True):
     data, description = db_queries.get_full_assets_for_companies(company_ids, start_date, end_date)
-    put_percentage_data_to_csv(data, description, file_name)
+    put_percentage_data_to_csv(data, description, file_name, add_description)
 
 
-def export_full_equities(company_ids, start_date, end_date, file_name):
+def export_full_equities(company_ids, start_date, end_date, file_name, add_description=True):
     data, description = db_queries.get_full_equities_for_companies(company_ids, start_date, end_date)
-    put_percentage_data_to_csv(data, description, file_name)
+    put_percentage_data_to_csv(data, description, file_name, add_description)
 
 
-def export_financial_ratios(company_ids, start_date, end_date, file_name):
+def export_financial_ratios(company_ids, start_date, end_date, file_name, add_description=True):
     data, description = db_queries.get_financial_ratios_for_companies(company_ids, start_date, end_date)
-    put_data_to_csv(data, description, file_name)
+    put_data_to_csv(data, description, file_name, add_description)
 
 
-def export_du_pont_indicators(company_ids, start_date, end_date, file_name):
+def export_du_pont_indicators(company_ids, start_date, end_date, file_name, add_description=True):
     data, description = db_queries.get_du_pont_indicators_for_companies(company_ids, start_date, end_date)
-    put_data_to_csv(data, description, file_name)
+    put_data_to_csv(data, description, file_name, add_description)
 
 
 def export_stock_quotes(company_name, file_name):
