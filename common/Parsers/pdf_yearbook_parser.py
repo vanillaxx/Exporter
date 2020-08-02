@@ -68,7 +68,7 @@ class PdfYearbookParser:
             if self.yearbook_year and self.data_year:
                 return
 
-        if self.yearbook_year and not self.data_year:
+        if self.yearbook_year and self.data_year is None:
             self.data_year = int(self.yearbook_year) - 1
         elif self.yearbook_year is None and self.data_year is None:
             raise ValueError('Cannot find the yearbook year')

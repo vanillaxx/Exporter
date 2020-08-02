@@ -220,46 +220,6 @@ class ExcelParser():
                 break
             curr_row += 1
 
-    def parse_GPW_capitalization(self, path, end_date):
-        sheet_name = 'kap'
-        excel_sheet = get_sheet(path, sheet_name)
-        start_row = 8
-        curr_row = start_row
-        isin_column = 1
-        headers_check_row = 4
-        name_column = 2
-        capitalization_column = 4
-        values = []
-        milion = 1e6
-        if "isin" in excel_sheet.cell(headers_check_row, isin_column).value.lower() and "nazwa" in excel_sheet.cell(headers_check_row, name_column).value.lower():
-            while curr_row < excel_sheet.nrows:
-                isin = excel_sheet.cell(curr_row, isin_column).value
-                name = excel_sheet.cell(curr_row, name_column).value
-                value = excel_sheet.cell(curr_row, capitalization_column).value * milion
-                try:
-                    common.DAL.db_queries.insert_market_value(value, end_date, name, isin)
-                except CompanyNotFoundError as err:
-                    print(err)
-                    common.DAL.db_queries.insert_company(company_name=name, company_isin=isin)
-                    common.DAL.db_queries.insert_market_value(value, end_date, name, isin)
-                curr_row = curr_row + 1
-        elif "nazwa" in excel_sheet.cell(headers_check_row, isin_column).value.lower(): #case where name is in place of isin
-            name_column = 1
-            capitalization_column = 3
-            while curr_row < excel_sheet.nrows:
-                name = excel_sheet.cell(curr_row, name_column).value
-                value = excel_sheet.cell(curr_row, capitalization_column).value * milion
-                try:
-                    common.DAL.db_queries.insert_market_value(value, end_date, name)
-                except CompanyNotFoundError as err:
-                    print(err)
-                    common.DAL.db_queries.insert_company(company_name=name)
-                    common.DAL.db_queries.insert_market_value(value, end_date, name)
-                curr_row = curr_row + 1
-        else:
-            raise ParseError(path, '1: "ISIN" should be in B5 cell and "Nazwa" should be in C5 cell or 2: "Nazwa" '
-                                   'should be in B5 cell')
-
     def get_company_id_balance_sheet(self, path):
         self.parse_company(path)
         excel_sheet = get_sheet(path, 'Info')
@@ -277,8 +237,7 @@ class ExcelParser():
 ep = ExcelParser()
 functions = {'bs': ep.parse_balance_sheet,
              'fr': ep.parse_financial_ratios,
-             'dp': ep.parse_du_pont_indicators,
-             'gpw': ep.parse_GPW_capitalization
+             'dp': ep.parse_du_pont_indicators
              }
 
 if __name__ == "__main__":
@@ -289,8 +248,7 @@ if __name__ == "__main__":
     -f QS - parse QS of financial ratio
     -f YS - parse YS of financial ratio
     -d QS - parse QS of Du Pont indicators
-    -d YS - parse YS of Du Pont indicators
-    -g [YYYY-MM-DD]   - parse GPW capitalization for end of period'''
+    -d YS - parse YS of Du Pont indicators'''
 
     if len(sys.argv) < 3:
         print(help)

@@ -65,40 +65,29 @@ class NotoriaImportForm(forms.Form):
     period_end = forms.DateField()
 
 
-class StooqOneCompanyImportForm(forms.Form):
-    file_path = forms.CharField(label='Path to files:', max_length=100)
-    choices_bs = [('yearly_bs', 'Yearly'),
-                  ('quarterly_bs', 'Quarterly')]
-    choices_fr = [('yearly_fr', 'Yearly'),
-                  ('quarterly_fr', 'Quarterly')]
-    choices_dp = [('yearly_bs', 'Yearly'),
-                  ('quarterly_dp', 'Quarterly')]
+class StooqImportForm(forms.Form):
+    ticker = forms.CharField(label='Ticker of the company', max_length=20, required=False)
+    company_choices = Company.objects.all()
+    company = forms.ModelChoiceField(queryset=company_choices, required=False)
+    date_from = forms.DateTimeField(input_formats=['%d.%m.%Y'], required=False)
+    date_to = forms.DateTimeField(input_formats=['%d.%m.%Y'], required=False)
 
-    chosen_sheets_bs = forms.ChoiceField(choices=choices_bs, widget=forms.CheckboxSelectMultiple)
-    chosen_sheets_fr = forms.ChoiceField(choices=choices_fr, widget=forms.CheckboxSelectMultiple)
-    chosen_sheets_dp = forms.ChoiceField(choices=choices_dp, widget=forms.CheckboxSelectMultiple)
+    choices_interval = [('d', 'Daily'),
+                        ('w', 'Weekly'),
+                        ('m', 'Monthly'),
+                        ('q', 'Quarterly'),
+                        ('y', 'Yearly')]
 
-    bs_sheet = 'Balance sheet'
-    fr_sheet = 'Financial ratios'
-    dp_sheet = 'DuPont Indicators'
+    interval = forms.ChoiceField(choices=choices_interval, widget=forms.RadioSelect, required=False)
 
+    ticker_sheet = 'Ticker'
+    company_sheet = 'Company'
+    date_from_sheet = 'From'
+    date_to_sheet = 'To'
+    interval_sheet = 'Interval'
 
-class StooqAllCompaniesImportForm(forms.Form):
-    file_path = forms.CharField(label='Path to files:', max_length=100)
-    choices_bs = [('yearly_bs', 'Yearly'),
-                  ('quarterly_bs', 'Quarterly')]
-    choices_fr = [('yearly_fr', 'Yearly'),
-                  ('quarterly_fr', 'Quarterly')]
-    choices_dp = [('yearly_bs', 'Yearly'),
-                  ('quarterly_dp', 'Quarterly')]
-
-    chosen_sheets_bs = forms.ChoiceField(choices=choices_bs, widget=forms.CheckboxSelectMultiple)
-    chosen_sheets_fr = forms.ChoiceField(choices=choices_fr, widget=forms.CheckboxSelectMultiple)
-    chosen_sheets_dp = forms.ChoiceField(choices=choices_dp, widget=forms.CheckboxSelectMultiple)
-
-    bs_sheet = 'Balance sheet'
-    fr_sheet = 'Financial ratios'
-    dp_sheet = 'DuPont Indicators'
+    date_sheet = 'Date'
+    date = forms.DateTimeField(input_formats=['%d.%m.%Y'], required=False)
 
 
 class GpwImportForm(forms.Form):

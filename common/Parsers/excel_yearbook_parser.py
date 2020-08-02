@@ -1,8 +1,8 @@
 import xlrd
 import re
 from datetime import date
-from DAL.db_queries import insert_market_value
-from Utils.Errors import CompanyNotFoundError
+from common.DAL.db_queries import insert_market_value
+from common.Utils.Errors import CompanyNotFoundError, ParseError
 
 
 class ExcelYearbookParser:
@@ -37,6 +37,8 @@ class ExcelYearbookParser:
 
         if not sheet_names:
             raise ValueError('Sheet names not found')
+        if year is None:
+            raise ValueError('Date not found')
 
         data_date = date(int(year), month=12, day=31)
         return data_date, sheet_names
