@@ -226,7 +226,7 @@ class ExcelParser():
         value_column = 1
         name_row = 2
         isin_row = 17
-        isin_column = 3
+        isin_column = 4
         ticker_row = 12
         company_name = excel_sheet.cell(name_row, value_column).value
         company_ticker = excel_sheet.cell(ticker_row, value_column).value
