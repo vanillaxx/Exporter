@@ -31,6 +31,9 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'bootstrap_datepicker_plus',
+    'bootstrap_daterangepicker',
+    'dynamic_fields',
     'common.apps.CommonConfig',
     'app.apps.AppConfig',
     'django.contrib.admin',

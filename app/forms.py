@@ -1,5 +1,7 @@
 from django import forms
 from .models import *
+from bootstrap_datepicker_plus import DatePickerInput
+from bootstrap_daterangepicker import widgets, fields
 
 
 class NotoriaExportForm(forms.Form):
@@ -10,10 +12,33 @@ class NotoriaExportForm(forms.Form):
                        ('-de', 'Detailed equity and liabilities'),
                        ('-ce', 'Equity and liabilities categories'),
                        ('-fe', 'Full equity and liabilities'),
+                       ('-f', 'Financial ratios'),
+                       ('-d', 'DuPont Indicators')
                        ]
     company_choices = Company.objects.all()
     chosen_data = forms.ChoiceField(choices=notoria_choices)
     chosen_companies = forms.ModelMultipleChoiceField(queryset=company_choices)
+    start_date = forms.DateField(label='From:',
+                                 widget=DatePickerInput(
+                                     format='%d/%m/%Y', attrs={'type': 'date'}
+                                 ))
+
+    end_date = forms.DateField(label='To: ',
+                               widget=DatePickerInput(
+                                   format='%d/%m/%Y', attrs={'type': 'date'}
+                               ))
+    date_ranges_count = forms.CharField(widget=forms.HiddenInput())
+
+    def __init__(self, *args, **kwargs):
+        date_ranges = kwargs.pop('count', 0)
+
+        super(NotoriaExportForm, self).__init__(*args, **kwargs)
+        self.fields['date_ranges_count'].initial = date_ranges
+
+        for index in range(int(date_ranges)):
+            if index != 0:
+                self.fields['start_date_{index}'.format(index=index)] = forms.DateField()
+                self.fields['end_date_{index}'.format(index=index)] = forms.DateField()
 
 
 class NotoriaImportForm(forms.Form):
@@ -25,9 +50,12 @@ class NotoriaImportForm(forms.Form):
     choices_dp = [('YS', 'Yearly'),
                   ('QS', 'Quarterly')]
 
-    chosen_sheets_bs = forms.MultipleChoiceField(choices=choices_bs, widget=forms.CheckboxSelectMultiple, required=False)
-    chosen_sheets_fr = forms.MultipleChoiceField(choices=choices_fr, widget=forms.CheckboxSelectMultiple, required=False)
-    chosen_sheets_dp = forms.MultipleChoiceField(choices=choices_dp, widget=forms.CheckboxSelectMultiple, required=False)
+    chosen_sheets_bs = forms.MultipleChoiceField(choices=choices_bs, widget=forms.CheckboxSelectMultiple,
+                                                 required=False)
+    chosen_sheets_fr = forms.MultipleChoiceField(choices=choices_fr, widget=forms.CheckboxSelectMultiple,
+                                                 required=False)
+    chosen_sheets_dp = forms.MultipleChoiceField(choices=choices_dp, widget=forms.CheckboxSelectMultiple,
+                                                 required=False)
 
     bs_sheet = 'Balance sheet'
     fr_sheet = 'Financial ratios'
@@ -35,7 +63,6 @@ class NotoriaImportForm(forms.Form):
     gpw_sheet = 'GPW Capitalization'
 
     period_end = forms.DateField()
-
 
 
 class StooqOneCompanyImportForm(forms.Form):

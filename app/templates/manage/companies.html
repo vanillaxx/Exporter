@@ -1,3 +1,5 @@
+{% extends '../base.html' %}
+{% block content %}
 {% load static %}
 <link href="{% static 'css/bootstrap-grid.css' %}" rel="stylesheet">
 <table class="table table-sm table-bordered">
@@ -20,3 +22,5 @@
     {% endfor %}
     </tbody>
 </table>
+
+{% endblock %}

@@ -4,6 +4,7 @@ from .forms import NotoriaImportForm, NotoriaExportForm, GpwImportForm
 from common.Parsers import excel_parser, pdf_gpw_parser, pdf_yearbook_parser
 import common.Export.export as export
 from common.Utils.Errors import CompanyNotFoundError
+from .models import Company
 
 
 def index(request):
@@ -78,16 +79,25 @@ def import_gpw(request):
 
 def export_notoria(request):
     if request.method == 'POST':
-        form = NotoriaExportForm(request.POST)
+        form = NotoriaExportForm(request.POST, count=request.POST.get('date_ranges_count'))
         if form.is_valid():
             file_name = request.POST.get('file_name', None)
             chosen_data = request.POST.get('chosen_data', None)
-            chosen_companies = form.cleaned_data.get('chosen_companies')
-            print(chosen_companies)
-            for company in chosen_companies:
-                export.functions[chosen_data](company.id, file_name)
+            chosen_companies = list(form.cleaned_data.get('chosen_companies').values_list('id', flat=True))
+            start_date = form.cleaned_data.get('start_date')
+            end_date = form.cleaned_data.get('end_date')
+            export.functions[chosen_data](chosen_companies, start_date, end_date, file_name)
             return HttpResponse('Data exported successfully')
     else:
         form = NotoriaExportForm()
 
     return render(request, 'export/notoria.html', {'form': form})
+
+
+def manage(request):
+    return render(request, 'manage/home.html')
+
+
+def get_companies(request):
+    companies = Company.objects.all()
+    return render(request, 'manage/companies.html', {'companies': companies})

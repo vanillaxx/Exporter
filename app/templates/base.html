@@ -20,7 +20,10 @@
 <button onclick="window.location.href=window.location.origin+'/export/notoria'" id="exportButton" class="buttons">
     Export
 </button>
-<button onclick="" id="manageDataButton" class="buttons">Manage data</button>
+<button onclick="showManageOptions()" id="manageDataButton" class="buttons">Manage data</button>
+<ul id="manage-options" style="display: none">
+    <li><a href="{% url 'get_companies' %}" id="show-companies">Show companies</a></li>
+</ul>
 
 {% block content %}
 {% endblock %}
@@ -44,6 +47,10 @@
         } else {
             list.style.display = "none";
         }
+    }
+
+    function showManageOptions() {
+        $('#manage-options').toggle()
     }
 </script>
 </body>
