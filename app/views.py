@@ -34,7 +34,7 @@ def import_notoria(request):
                     excel_parser.functions['gpw'](file_path, period_end)
                 except CompanyNotFoundError as err:
                     return render(request, 'import/notoria.html', {'form': form, 'error': err})
-            return HttpResponse('Parsed notoria successfully')
+            return render(request, 'manage/home.html', {'message': "Parsed notoria succsessfully"})
     else:
         form = NotoriaImportForm()
 
@@ -122,7 +122,7 @@ def export(request):
                 else:
                     export_methods.functions[chosen_data](chosen_companies, start_date, end_date, file_name,
                                                   add_description=False)
-            return HttpResponse('Data exported successfully')
+            return render(request, 'manage/home.html', {'message': "Data exported succsessfully"})
     else:
         form = ExportForm()
 
