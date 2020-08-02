@@ -40,12 +40,14 @@ class NotoriaExportForm(forms.Form):
             self.fields['start_date_{index}'.format(index=index)] = forms.DateField(label='To: ',
                                                                                     widget=DatePickerInput(
                                                                                         format='%d/%m/%Y',
-                                                                                        attrs={'type': 'date'}
+                                                                                        attrs={'type': 'date',
+                                                                                               'class': 'datepicker'}
                                                                                     ))
             self.fields['end_date_{index}'.format(index=index)] = forms.DateField(label='To: ',
                                                                                   widget=DatePickerInput(
                                                                                       format='%d/%m/%Y',
-                                                                                      attrs={'type': 'date'}
+                                                                                      attrs={'type': 'date',
+                                                                                             'class': 'datepicker'}
                                                                                   ))
             # if index != 0:
             # self.fields['start_date_{index}'.format(index=index)] = forms.DateField()
