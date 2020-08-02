@@ -58,10 +58,10 @@ def import_stooq(request):
             if not company and not ticker and not date:
                 return HttpResponse('Wrong form')
 
-            if (company or ticker) and (not date_from or not date_to):
+            if (company or ticker) and (not date_from or not date_to) and not date:
                 return HttpResponse('Wrong form')
 
-            if date_to < date_from:
+            if date_to and date_from and date_to < date_from and (company or ticker):
                 return HttpResponse('Wrong form')
 
             if company and not ticker:
@@ -74,7 +74,6 @@ def import_stooq(request):
                 SP.download_all_companies(date)
 
             return HttpResponse('Parsed stooq successfully')
-
         else:
             return HttpResponse('Wrong form')
     else:
