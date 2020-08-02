@@ -82,16 +82,15 @@ class StooqImportForm(forms.Form):
     ticker = forms.CharField(label='Ticker of the company', max_length=20, required=False)
     company_choices = Company.objects.all()
     company = forms.ModelChoiceField(queryset=company_choices, required=False)
-    date_from = forms.DateTimeField(input_formats=['%d.%m.%Y'], required=False, widget=DatePickerInput(
-                                                                                      format='%d/%m/%Y',
-                                                                                      attrs={'type': 'date',
-                                                                                             'class': 'datepicker'}
-                                                                                  ))
-    date_to = forms.DateTimeField(input_formats=['%d.%m.%Y'], required=False, widget=DatePickerInput(
-                                                                                      format='%d/%m/%Y',
-                                                                                      attrs={'type': 'date',
-                                                                                             'class': 'datepicker'}
-                                                                                  ))
+    date_from = forms.DateTimeField(required=False, widget=DatePickerInput(format='%d.%m.%Y',
+                                                                            attrs={'type': 'date',
+                                                                                    'class': 'datepicker'}
+                                                                            ))
+    date_to = forms.DateTimeField(required=False, widget=DatePickerInput(
+                                                                        format='%d.%m.%Y',
+                                                                        attrs={'type': 'date',
+                                                                                'class': 'datepicker'}
+                                                                        ))
 
     choices_interval = [('d', 'Daily'),
                         ('w', 'Weekly'),
@@ -99,7 +98,7 @@ class StooqImportForm(forms.Form):
                         ('q', 'Quarterly'),
                         ('y', 'Yearly')]
 
-    interval = forms.ChoiceField(choices=choices_interval, initial='d', widget=forms.RadioSelect, required=False)
+    interval = forms.ChoiceField(choices=choices_interval, initial='d', widget=forms.RadioSelect, required=True)
 
     ticker_sheet = 'Ticker'
     company_sheet = 'Company'
@@ -108,11 +107,11 @@ class StooqImportForm(forms.Form):
     interval_sheet = 'Interval'
 
     date_sheet = 'Date'
-    date = forms.DateTimeField(input_formats=['%d.%m.%Y'], required=False, widget=DatePickerInput(
-                                                                                      format='%d/%m/%Y',
-                                                                                      attrs={'type': 'date',
-                                                                                             'class': 'datepicker'}
-                                                                                  ))
+    date = forms.DateTimeField(required=False, widget=DatePickerInput(
+                                                                    format='%d.%m.%Y',
+                                                                    attrs={'type': 'date',
+                                                                            'class': 'datepicker'}
+                                                                    ))
 
 
 class GpwImportForm(forms.Form):
