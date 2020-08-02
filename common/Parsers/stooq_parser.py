@@ -2,8 +2,7 @@ import lxml
 import numbers
 import requests
 import pandas as pd
-from common.DAL.db_queries import insert_company, insert_stock_quotes, get_company_id_from_ticker
-from common.Utils.Errors import CompanyNotFoundError
+from common.DAL.db_queries import insert_company, insert_stock_quotes, get_company_id_from_ticker, get_interval_id_from_shortcut
 import re
 from datetime import date, timedelta
 
@@ -19,6 +18,7 @@ class StooqParser:
     def download_all_companies(self, user_date):
         day, month, year = user_date.day, user_date.month, user_date.year
         new_companies = []
+        interval_id = get_interval_id_from_shortcut('d')
 
         i = 1
         frames = []
@@ -100,7 +100,8 @@ class StooqParser:
                 new_companies.append(row['Symbol'])
 
             insert_stock_quotes((company_id, date(year, month, day), date(year, month, day), row['Last'],
-                                 row['Change.1'], row['Open'], row['High'], row['Low'], row['Volume'], row['Turnover']))
+                                 row['Change.1'], row['Open'], row['High'], row['Low'], row['Volume'],
+                                 row['Turnover'], interval_id))
 
         return new_companies
 
@@ -113,6 +114,7 @@ class StooqParser:
         frames = []
         found = False
         new_companies = []
+        interval_id = get_interval_id_from_shortcut(interval)
 
         company_id = get_company_id_from_ticker(company)
         if company_id is None:
@@ -175,7 +177,7 @@ class StooqParser:
                 raise ValueError('Wrong date')
 
             insert_stock_quotes((company_id, previous_date, parsed_date, row['Close'],
-                                row['Change.1'], row['Open'], row['High'], row['Low'], row['Volume'], None))
+                                row['Change.1'], row['Open'], row['High'], row['Low'], row['Volume'], None, interval_id))
 
             previous_date = parsed_date + timedelta(days=1)
 

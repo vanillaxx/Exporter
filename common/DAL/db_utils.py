@@ -34,6 +34,7 @@ def set_up_database_tables(connection):
         set_up_assets_table(connection)
         set_up_assets_categories_table(connection)
         set_up_equity_liabilities_categories_table(connection)
+        set_up_interval_table(connection)
         set_up_stock_quotes_table(connection)
         set_up_financial_ratios_table(connection)
         set_up_du_pont_table(connection)
@@ -227,8 +228,27 @@ def set_up_stock_quotes_table(connection):
         Low REAL,
         Volume INTEGER,
         Turnover INTEGER,
-        FOREIGN KEY(CompanyID) REFERENCES Company(ID)
+        Interval INTEGER NOT NULL,
+        FOREIGN KEY(CompanyID) REFERENCES Company(ID),
+        FOREIGN KEY(Interval) REFERENCES Interval(ID)
         );''')
+
+
+def set_up_interval_table(connection):
+    connection.execute('''CREATE TABLE IF NOT EXISTS Interval
+        (ID INTEGER PRIMARY KEY AUTOINCREMENT,
+        Shortcut CHAR UNIQUE NOT NULL,
+        FullName VARCHAR NOT NULL
+        );''')
+
+    try:
+        connection.execute('INSERT OR IGNORE INTO Interval (Shortcut, FullName) VALUES (\'d\', \'daily\')')
+        connection.execute('INSERT OR IGNORE INTO Interval (Shortcut, FullName) VALUES (\'w\', \'weekly\')')
+        connection.execute('INSERT OR IGNORE INTO Interval (Shortcut, FullName) VALUES (\'m\', \'monthly\')')
+        connection.execute('INSERT OR IGNORE INTO Interval (Shortcut, FullName) VALUES (\'q\', \'quaterly\')')
+        connection.execute('INSERT OR IGNORE INTO Interval (Shortcut, FullName) VALUES (\'y\', \'yearly\')')
+    except:
+        pass
 
 
 # TODO conflicts

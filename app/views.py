@@ -1,10 +1,9 @@
 from django.shortcuts import render
 from django.http import HttpResponse
-from .forms import NotoriaImportForm, NotoriaExportForm, GpwImportForm, StooqImportForm
+from .forms import NotoriaImportForm, ExportForm, GpwImportForm, StooqImportForm
 from common.Parsers import excel_parser, pdf_gpw_parser, stooq_parser, pdf_yearbook_parser, excel_yearbook_parser, excel_gpw_parser
-import common.Export.export as export
+import common.Export.export as export_methods
 from common.Utils.Errors import CompanyNotFoundError
-from datetime import datetime
 from .models import Company
 
 
@@ -56,6 +55,15 @@ def import_stooq(request):
 
             interval = form.cleaned_data.get('interval', None)
 
+            if not company and not ticker and not date:
+                return HttpResponse('Wrong form')
+
+            if (company or ticker) and (not date_from or not date_to):
+                return HttpResponse('Wrong form')
+
+            if date_to < date_from:
+                return HttpResponse('Wrong form')
+
             if company and not ticker:
                 ticker = company.ticker
 
@@ -97,9 +105,9 @@ def import_gpw(request):
     return render(request, 'import/gpw.html', {'form': form})
 
 
-def export_notoria(request):
+def export(request):
     if request.method == 'POST':
-        form = NotoriaExportForm(request.POST, count=request.POST.get('date_ranges_count'))
+        form = ExportForm(request.POST, count=request.POST.get('date_ranges_count'))
         if form.is_valid():
             print(form.cleaned_data)
             file_name = request.POST.get('file_name', None)
@@ -110,15 +118,15 @@ def export_notoria(request):
                 start_date = form.cleaned_data.get('start_date_{index}'.format(index=index))
                 end_date = form.cleaned_data.get('end_date_{index}'.format(index=index))
                 if index == 0:
-                    export.functions[chosen_data](chosen_companies, start_date, end_date, file_name)
+                    export_methods.functions[chosen_data](chosen_companies, start_date, end_date, file_name)
                 else:
-                    export.functions[chosen_data](chosen_companies, start_date, end_date, file_name,
+                    export_methods.functions[chosen_data](chosen_companies, start_date, end_date, file_name,
                                                   add_description=False)
             return HttpResponse('Data exported successfully')
     else:
-        form = NotoriaExportForm()
+        form = ExportForm()
 
-    return render(request, 'export/notoria.html', {'form': form})
+    return render(request, 'export/export.html', {'form': form})
 
 
 def manage(request):

@@ -4,7 +4,7 @@ from bootstrap_datepicker_plus import DatePickerInput
 from bootstrap_daterangepicker import widgets, fields
 
 
-class NotoriaExportForm(forms.Form):
+class ExportForm(forms.Form):
     file_name = forms.CharField(label='File name:', max_length=100)
     notoria_choices = [('-da', 'Detailed assets'),
                        ('-ca', 'Assets categories'),
@@ -23,7 +23,7 @@ class NotoriaExportForm(forms.Form):
     def __init__(self, *args, **kwargs):
         date_ranges = kwargs.pop('count', 0)
 
-        super(NotoriaExportForm, self).__init__(*args, **kwargs)
+        super(ExportForm, self).__init__(*args, **kwargs)
         self.fields['date_ranges_count'].initial = date_ranges
 
         for index in range(int(date_ranges) + 1):
@@ -70,8 +70,16 @@ class StooqImportForm(forms.Form):
     ticker = forms.CharField(label='Ticker of the company', max_length=20, required=False)
     company_choices = Company.objects.all()
     company = forms.ModelChoiceField(queryset=company_choices, required=False)
-    date_from = forms.DateTimeField(input_formats=['%d.%m.%Y'], required=False)
-    date_to = forms.DateTimeField(input_formats=['%d.%m.%Y'], required=False)
+    date_from = forms.DateTimeField(input_formats=['%d.%m.%Y'], required=False, widget=DatePickerInput(
+                                                                                      format='%d/%m/%Y',
+                                                                                      attrs={'type': 'date',
+                                                                                             'class': 'datepicker'}
+                                                                                  ))
+    date_to = forms.DateTimeField(input_formats=['%d.%m.%Y'], required=False, widget=DatePickerInput(
+                                                                                      format='%d/%m/%Y',
+                                                                                      attrs={'type': 'date',
+                                                                                             'class': 'datepicker'}
+                                                                                  ))
 
     choices_interval = [('d', 'Daily'),
                         ('w', 'Weekly'),
@@ -79,7 +87,7 @@ class StooqImportForm(forms.Form):
                         ('q', 'Quarterly'),
                         ('y', 'Yearly')]
 
-    interval = forms.ChoiceField(choices=choices_interval, widget=forms.RadioSelect, required=False)
+    interval = forms.ChoiceField(choices=choices_interval, initial='d', widget=forms.RadioSelect, required=False)
 
     ticker_sheet = 'Ticker'
     company_sheet = 'Company'
@@ -88,7 +96,11 @@ class StooqImportForm(forms.Form):
     interval_sheet = 'Interval'
 
     date_sheet = 'Date'
-    date = forms.DateTimeField(input_formats=['%d.%m.%Y'], required=False)
+    date = forms.DateTimeField(input_formats=['%d.%m.%Y'], required=False, widget=DatePickerInput(
+                                                                                      format='%d/%m/%Y',
+                                                                                      attrs={'type': 'date',
+                                                                                             'class': 'datepicker'}
+                                                                                  ))
 
 
 class GpwImportForm(forms.Form):

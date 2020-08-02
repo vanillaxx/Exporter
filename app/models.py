@@ -307,6 +307,16 @@ class MarketValues(models.Model):
         db_table = 'MarketValues'
 
 
+class Interval(models.Model):
+    id = models.AutoField(db_column='ID', primary_key=True, blank=True, null=False)  # Field name made lowercase.
+    shortcut = models.CharField(db_column='Shortcut', unique=True, blank=True, null=False, max_length=10)  # Field name made lowercase.
+    fullname = models.CharField(db_column='FullName', blank=True, null=False, max_length=255)  # Field name made lowercase.
+
+    class Meta:
+        managed = False
+        db_table = 'Interval'
+
+
 class StockQuotes(models.Model):
     id = models.AutoField(db_column='ID', primary_key=True, blank=True, null=False)  # Field name made lowercase.
     companyid = models.ForeignKey(Company, models.DO_NOTHING, db_column='CompanyID')  # Field name made lowercase.
@@ -319,6 +329,7 @@ class StockQuotes(models.Model):
     low = models.FloatField(db_column='Low', blank=True, null=True)  # Field name made lowercase.
     volume = models.IntegerField(db_column='Volume', blank=True, null=True)  # Field name made lowercase.
     turnover = models.IntegerField(db_column='Turnover', blank=True, null=True)  # Field name made lowercase.
+    interval = models.ForeignKey(Interval, models.DO_NOTHING, db_column='Interval')  # Field name made lowercase.
 
     class Meta:
         managed = False
