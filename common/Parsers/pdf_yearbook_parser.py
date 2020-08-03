@@ -185,16 +185,3 @@ class PdfYearbookParser:
             print(f'Company {company_name} not found')
             insert_company(company_name)
             self.save_value_to_database(row)
-
-
-if __name__ == '__main__':
-    path = 'C:\\Users\\Dominika\\Documents\\Studia\\Inżynierka\\examples\\Rocznik2013.pdf'
-    yearbook_year = None
-
-    parser = PdfYearbookParser()
-    data = parser.parse(path, yearbook_year)
-
-    with pd.option_context('display.max_rows', None,
-                           'display.max_columns', None,
-                           'display.float_format', '{:.0f}'.format):
-        print(data)

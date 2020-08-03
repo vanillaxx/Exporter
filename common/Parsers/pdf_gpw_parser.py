@@ -206,15 +206,3 @@ class PdfGPWParser:
             insert_company(company_name=company_name, company_isin=company_isin)
             self.save_value_to_database(row)
 
-
-if __name__ == '__main__':
-    path = 'C:\\Users\\Dominika\\Documents\\Studia\\Inżynierka\\examples\\2016_GPW.pdf'
-    doc_date = None
-
-    parser = PdfGPWParser()
-    data = parser.parse(path, doc_date)
-
-    with pd.option_context('display.max_rows', None,
-                           'display.max_columns', None,
-                           'display.float_format', '{:.0f}'.format):
-        print(data)

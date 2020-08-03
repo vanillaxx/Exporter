@@ -13,7 +13,9 @@ def get_data_with_percentage_values(data, description, add_description=True, col
         fresh_row = []
         sum = row[2]
         for value in row:
-            if skip > 0:
+            if value is None:
+                fresh_row.append('NULL')
+            elif skip > 0:
                 skip = skip - 1
                 fresh_row.append(value)
             else:
@@ -41,11 +43,19 @@ def put_data_to_csv(data, description, file_name, add_description=True):
         else:
             csv_list = []
         for row in data:
+            row = [__replace_none_with_null(value) for value in row]
             csv_list.append(row)
         save_to_csv(csv_list, file_name)
         print("Data saved to %s" % file_name)
     else:
         print("There is no data for such a company")
+
+
+def __replace_none_with_null(value):
+    if value is None:
+        return 'NULL'
+    else:
+        return value
 
 
 def export_detailed_assets(company_ids, start_date, end_date, file_name, add_description=True):
@@ -101,12 +111,8 @@ def export_market_values(company_ids, start_date, end_date, file_name):
 def export_assets_and_market_values_for_companies(company_ids, start_date, end_date, file_name, add_description=True):
     data, description = db_queries.get_assets_and_market_values_for_companies(company_ids, start_date, end_date)
     if data and data[0]:
-        print(len(data))
         data, removed_columns = __remove_market_value_columns(data)
-        print(data)
-        print(removed_columns)
         data = get_data_with_percentage_values(data, description, True, removed_columns)
-        print(data)
     put_data_to_csv(data, description, file_name, False)
 
 
@@ -115,7 +121,6 @@ def __remove_market_value_columns(data):
     new_data = []
     [new_data.append(list(row)) for row in data]
     for index in [len(new_data[0])-2, len(new_data[0])-2]:
-        print([len(row) for row in new_data])
         column = [row.pop(index) for row in new_data]
         columns.append(column)
     return new_data, columns

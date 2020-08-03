@@ -74,4 +74,3 @@ class ExcelGPWParser:
                     or find_date_in_yearly_statistics(value)
 
         return end_date
-

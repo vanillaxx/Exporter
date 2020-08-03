@@ -451,15 +451,41 @@ def get_assets_and_market_values_for_companies(connection, company_ids, start_da
                  Inventories, "Current intangible assets", "Biological assets", "Trade receivables",
                  "Loans and other receivables", "Financial assets", "Cash and cash equivalents",
                  Accruals, "Assets from current tax", "Derivative instruments", "Other assets",
-                 MV.PeriodEnd, MarketValue
+                 MV.PeriodEnd, MV.MarketValue
                 FROM Assets A 
                 JOIN Company C ON C.ID = A.CompanyID
-                JOIN MarketValues MV on C.ID = MV.CompanyID 
-                AND A.Date = MV.PeriodEnd
-                WHERE C.ID IN ({seq}) 
-                AND A.Date BETWEEN ? AND ?
-                ORDER BY C.Name, A.Date '''.format(seq=','.join(['?'] * len(company_ids)))
+                LEFT JOIN MarketValues MV on C.ID = MV.CompanyID AND A.Date = MV.PeriodEnd
+                WHERE C.ID IN ({seq1}) 
+                AND A.Date BETWEEN ? AND ? 
+                UNION ALL
+                SELECT C.Name, "Date", "Property, plant and equipment" +
+                "Exploration for and evaluation of mineral resources" + "Intangible assets" +
+                 Goodwill + "Investment property" + "Investment in affiliates" +
+                 "Non-current financial assets" + "Non-current loans and receivables" +
+                 "Deferred income tax" + "Non-current deferred charges and accruals" +
+                 "Non-current derivative instruments" + "Other non-current assets" +
+                 Inventories + "Current intangible assets" + "Biological assets" +
+                 "Trade receivables" + "Loans and other receivables" + "Financial assets" +
+                "Cash and cash equivalents" + Accruals + "Assets from current tax" +
+                "Derivative instruments" + "Other assets" AS Sum,
+                "Property, plant and equipment", "Exploration for and evaluation of mineral resources",
+                "Intangible assets", Goodwill, "Investment property", "Investment in affiliates",
+                "Non-current financial assets", "Non-current loans and receivables",
+                "Deferred income tax", "Non-current deferred charges and accruals",
+                "Non-current derivative instruments", "Other non-current assets",
+                 Inventories, "Current intangible assets", "Biological assets", "Trade receivables",
+                 "Loans and other receivables", "Financial assets", "Cash and cash equivalents",
+                 Accruals, "Assets from current tax", "Derivative instruments", "Other assets",
+                 MV.PeriodEnd, MV.MarketValue
+                 FROM MarketValues MV
+                 JOIN Company C on MV.CompanyID = C.ID
+                 LEFT JOIN Assets A on C.ID = A.CompanyID AND A.Date = MV.PeriodEnd
+                 WHERE C.ID IN ({seq2}) 
+                 AND MV.PeriodEnd BETWEEN ? AND ?
+                 AND A.Date IS NULL'''.format(seq1=','.join(['?'] * len(company_ids)),
+                                              seq2=','.join(['?'] * len(company_ids)))
     company_ids.extend([start_date, end_date])
+    company_ids.extend(company_ids)
     c.execute(query, tuple(company_ids))
     return c.fetchall(), list(map(lambda x: x[0], c.description))
 

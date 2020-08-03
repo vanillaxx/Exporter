@@ -98,10 +98,3 @@ class ExcelYearbookParser:
             insert_company(company_name=company_name, company_isin=company_isin)
             self.save_value_to_database(company_name, company_isin, market_value)
 
-
-if __name__ == '__main__':
-    path = 'C:\\Users\\Dominika\\Documents\\Studia\\Inżynierka\\examples\\Rocznik_2018_GR.xls'
-    yearbook_year = None
-
-    parser = ExcelYearbookParser()
-    print(parser.parse(path, yearbook_year))
