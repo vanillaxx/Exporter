@@ -1,0 +1,37 @@
+{% extends '../base.html' %}
+{% block content %}
+<h1>Export to csv</h1>
+<div id="export_notoria_form">
+    <form method="post">
+        {% csrf_token %}
+        <label for="file_name">Pass file name: </label>
+        <input id="file_name" type="text" name="file_name" value="{{ file_name }}">
+        {{form.chosen_data}}
+        {{form.chosen_companies}}
+        {{form.date_ranges_count}}
+        {{form.start_date_0}}
+        {{form.end_date_0}}
+        <button type="button" id="add-another">Add another</button>
+        <input type="submit" value="Export">
+    </form>
+</div>
+{{form.errors}}
+<script>
+    let form_count = Number($("[name=date_ranges_count]").val());
+
+    $("#add-another").click(function () {
+        form_count++;
+
+        let element = $('div.input-group.date').slice(-2).clone()
+        element.first().find('input').attr('name','start_date_'+form_count)
+                element.first().find('input').attr('id','id_start_date_'+form_count)
+
+        element.last().find('input').attr('name','end_date_'+form_count)
+                element.last().find('input').attr('id','id_end_date_'+form_count)
+
+        element.insertAfter($('div.input-group.date').last('div'))
+
+        $("[name=date_ranges_count]").val(form_count);
+    })
+</script>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends '../base.html' %}
+{% block content %}
+{% load static %}
+<link href="{% static 'css/bootstrap-grid.css' %}" rel="stylesheet">
+<table class="table table-sm table-bordered">
+    <thead>
+    <tr>
+        <th scope="col">Name</th>
+        <th scope="col">ISIN</th>
+        <th scope="col">Ticker</th>
+        <th scope="col">Bloomberg</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for company in companies %}
+    <tr>
+        <td>{{ company.name }}</td>
+        <td>{{ company.isin }}</td>
+        <td>{{ company.ticker }}</td>
+        <td>{{ company.bloomberg }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}
