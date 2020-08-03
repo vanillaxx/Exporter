@@ -3,12 +3,12 @@ import common.DAL.db_queries as db_queries
 from common.Export.save import save_to_csv
 
 
-def get_data_with_percentage_values(data, description, add_description=True):
+def get_data_with_percentage_values(data, description, add_description=True, columns_to_add=None):
     if add_description:
         csv_list = [description]
     else:
         csv_list = []
-    for row in data:
+    for index, row in enumerate(data):
         skip = 3
         fresh_row = []
         sum = row[2]
@@ -18,6 +18,9 @@ def get_data_with_percentage_values(data, description, add_description=True):
                 fresh_row.append(value)
             else:
                 fresh_row.append(value / sum)
+        if columns_to_add is not None:
+            for column in columns_to_add:
+                fresh_row.append(column[index])
         csv_list.append(fresh_row)
     return csv_list
 
@@ -90,9 +93,32 @@ def export_stock_quotes(company_ids, start_date, end_date, file_name):  # TODO i
     put_data_to_csv(data, description, file_name)
 
 
-def export_market_values(company_id, file_name):
-    data, description = db_queries.get_market_values_for_company(company_id)
+def export_market_values(company_ids, start_date, end_date, file_name):
+    data, description = db_queries.get_market_values_for_companies(company_ids, start_date, end_date)
     put_data_to_csv(data, description, file_name)
+
+
+def export_assets_and_market_values_for_companies(company_ids, start_date, end_date, file_name, add_description=True):
+    data, description = db_queries.get_assets_and_market_values_for_companies(company_ids, start_date, end_date)
+    if data and data[0]:
+        print(len(data))
+        data, removed_columns = __remove_market_value_columns(data)
+        print(data)
+        print(removed_columns)
+        data = get_data_with_percentage_values(data, description, True, removed_columns)
+        print(data)
+    put_data_to_csv(data, description, file_name, False)
+
+
+def __remove_market_value_columns(data):
+    columns = []
+    new_data = []
+    [new_data.append(list(row)) for row in data]
+    for index in [len(new_data[0])-2, len(new_data[0])-2]:
+        print([len(row) for row in new_data])
+        column = [row.pop(index) for row in new_data]
+        columns.append(column)
+    return new_data, columns
 
 
 functions = {'-da': export_detailed_assets,
@@ -104,7 +130,9 @@ functions = {'-da': export_detailed_assets,
              '-f': export_financial_ratios,
              '-d': export_du_pont_indicators,
              '-v': export_market_values,
-             '-s': export_stock_quotes
+             '-s': export_stock_quotes,
+             '-mv': export_market_values,
+             '-damv': export_assets_and_market_values_for_companies
              }
 
 if __name__ == "__main__":

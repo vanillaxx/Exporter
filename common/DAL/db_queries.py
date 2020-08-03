@@ -27,6 +27,19 @@ def insert_stock_quotes(connection, values):
         connection.execute(command, values)
 
 
+@with_connection
+def insert_market_value(connection, market_value, end_date, company_name, company_isin=None):
+    # TODO updating information about company
+    company_id = get_company_id_from_isin(company_isin) or get_company_id_from_name(company_name)
+    data = (company_id, end_date, market_value)
+    if company_id:
+        command = '''INSERT INTO MarketValues(CompanyID, PeriodEnd, MarketValue) VALUES (?, ?, ?)'''
+        with connection:
+            connection.execute(command, data)
+    else:
+        raise CompanyNotFoundError(name=company_name, isin=company_isin)
+
+
 def insert_ekd_section(ekd_section):
     insert_value(table_name='EKD_Section', column='Value', value=ekd_section)
 
@@ -404,25 +417,50 @@ def export_stock_quotes(connection, company_ids, start_date, end_date, interval)
 
 
 @with_connection
-def insert_market_value(connection, market_value, end_date, company_name, company_isin=None):
-    # TODO updating information about company
-    company_id = get_company_id_from_isin(company_isin) or get_company_id_from_name(company_name)
-    data = (company_id, end_date, market_value)
-    if company_id:
-        command = '''INSERT INTO MarketValues(CompanyID, PeriodEnd, MarketValue) VALUES (?, ?, ?)'''
-        with connection:
-            connection.execute(command, data)
-    else:
-        raise CompanyNotFoundError(name=company_name, isin=company_isin)
-
-
-def get_market_values_for_company(connection, company_id):
+def get_market_values_for_companies(connection, company_ids, start_date, end_date):
     c = connection.cursor()
-    c.execute('''SELECT C.Name, MarketValue, PeriodEnd
+    query = '''SELECT C.Name, MarketValue, PeriodEnd
                  FROM MarketValues MV
                  JOIN Company C ON C.ID = MV.CompanyID
-                 WHERE C.ID = ? 
-                 ORDER BY MV.PeriodEnd''', (company_id,))
+                 WHERE C.ID IN ({seq}) 
+                 AND MV.PeriodEnd BETWEEN ? AND ?
+                 ORDER BY C.Name, MV.PeriodEnd'''.format(seq=','.join(['?'] * len(company_ids)))
+    company_ids.extend([start_date, end_date])
+    c.execute(query, tuple(company_ids))
+    return c.fetchall(), list(map(lambda x: x[0], c.description))
+
+
+@with_connection
+def get_assets_and_market_values_for_companies(connection, company_ids, start_date, end_date):
+    c = connection.cursor()
+    query = '''SELECT C.Name, "Date", "Property, plant and equipment" +
+                "Exploration for and evaluation of mineral resources" + "Intangible assets" +
+                 Goodwill + "Investment property" + "Investment in affiliates" +
+                 "Non-current financial assets" + "Non-current loans and receivables" +
+                 "Deferred income tax" + "Non-current deferred charges and accruals" +
+                 "Non-current derivative instruments" + "Other non-current assets" +
+                 Inventories + "Current intangible assets" + "Biological assets" +
+                 "Trade receivables" + "Loans and other receivables" + "Financial assets" +
+                "Cash and cash equivalents" + Accruals + "Assets from current tax" +
+                "Derivative instruments" + "Other assets" AS Sum,
+                "Property, plant and equipment", "Exploration for and evaluation of mineral resources",
+                "Intangible assets", Goodwill, "Investment property", "Investment in affiliates",
+                "Non-current financial assets", "Non-current loans and receivables",
+                "Deferred income tax", "Non-current deferred charges and accruals",
+                "Non-current derivative instruments", "Other non-current assets",
+                 Inventories, "Current intangible assets", "Biological assets", "Trade receivables",
+                 "Loans and other receivables", "Financial assets", "Cash and cash equivalents",
+                 Accruals, "Assets from current tax", "Derivative instruments", "Other assets",
+                 MV.PeriodEnd, MarketValue
+                FROM Assets A 
+                JOIN Company C ON C.ID = A.CompanyID
+                JOIN MarketValues MV on C.ID = MV.CompanyID 
+                AND A.Date = MV.PeriodEnd
+                WHERE C.ID IN ({seq}) 
+                AND A.Date BETWEEN ? AND ?
+                ORDER BY C.Name, A.Date '''.format(seq=','.join(['?'] * len(company_ids)))
+    company_ids.extend([start_date, end_date])
+    c.execute(query, tuple(company_ids))
     return c.fetchall(), list(map(lambda x: x[0], c.description))
 
 

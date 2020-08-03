@@ -1,7 +1,7 @@
 import xlrd
 import re
 from datetime import date
-from common.DAL.db_queries import insert_market_value
+from common.DAL.db_queries import insert_market_value, insert_company
 from common.Utils.Errors import CompanyNotFoundError, ParseError
 
 
@@ -90,11 +90,13 @@ class ExcelYearbookParser:
 
         return company_column, isin_column, market_value_column
 
-    def save_value_to_database(self, company_name, isin, market_value):
+    def save_value_to_database(self, company_name, company_isin, market_value):
         try:
-            insert_market_value(market_value, self.date, company_name, isin)
+            insert_market_value(market_value, self.date, company_name, company_isin)
         except CompanyNotFoundError:
             print(f'Company {company_name} not found')
+            insert_company(company_name=company_name, company_isin=company_isin)
+            self.save_value_to_database(company_name, company_isin, market_value)
 
 
 if __name__ == '__main__':

@@ -1,10 +1,6 @@
 import common.DAL.db_queries
 from common.Utils.Errors import CompanyNotFoundError, ParseError
 from common.Parsers.Common.dates import *
-import re
-from datetime import date, datetime
-import calendar
-import locale
 import xlrd
 
 
@@ -13,7 +9,7 @@ class ExcelGPWParser:
         self.workbook = None
 
     def parse(self, path, end_date=None):
-        self.workbook = xlrd.open_workbook(pdf_path)
+        self.workbook = xlrd.open_workbook(path)
 
         sheet_name = 'kap'
         excel_sheet = self.workbook.sheet_by_name(sheet_name)

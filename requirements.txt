@@ -9,6 +9,8 @@ configobj==5.0.6
 configparser==5.0.0
 decorator==4.4.2
 Django==3.0.8
+django-bootstrap-datepicker-plus==3.0.5
+django-bootstrap-daterangepicker==1.0.6
 et-xmlfile==1.0.1
 etelemetry==0.2.1
 filelock==3.0.12

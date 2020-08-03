@@ -97,7 +97,7 @@ def import_gpw(request):
             file_type = form.cleaned_data['file_type']
             parser = parsers[file_type]()
             parser.parse(path)
-            return HttpResponse('Parsed GPW file successfully')
+            return render(request, 'manage/home.html', {'message': "Parsed GPW file successfully"})
     else:
         form = GpwImportForm()
 

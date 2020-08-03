@@ -14,6 +14,8 @@ class ExportForm(forms.Form):
                        ('-f', 'Financial ratios'),
                        ('-d', 'DuPont Indicators'),
                        ('-s', 'Stock quotes'),
+                       ('-mv', 'Market values'),
+                       ('-damv', 'Detailed assets and market values')
                        ]
     company_choices = Company.objects.all()
     chosen_data = forms.ChoiceField(choices=notoria_choices)

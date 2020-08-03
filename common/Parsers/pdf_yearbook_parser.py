@@ -183,10 +183,8 @@ class PdfYearbookParser:
             insert_market_value(market_value, self.date, company_name)
         except CompanyNotFoundError:
             print(f'Company {company_name} not found')
-            # TODO (what next?)
-            # insert_company(company_name)
-            # print(f'Company {company_name} inserted')
-            # self.save_value_to_database(row)
+            insert_company(company_name)
+            self.save_value_to_database(row)
 
 
 if __name__ == '__main__':
