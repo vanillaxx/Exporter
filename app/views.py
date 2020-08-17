@@ -73,7 +73,7 @@ def import_stooq(request):
             if date:
                 SP.download_all_companies(date)
 
-            return HttpResponse('Parsed stooq successfully')
+            return render(request, 'manage/home.html', {'message': "Parsed stooq.com data successfully"})
         else:
             return HttpResponse('Wrong form')
     else:
