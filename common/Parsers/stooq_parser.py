@@ -9,7 +9,7 @@ from datetime import date, timedelta
 
 class StooqParser:
     def __init__(self):
-        self._all_companies_date_ulr_base = 'https://stooq.com/t/?i=513&n=0&v=1&d={year:04d}{month:02d}{day:02d}&l={number}'
+        self._all_companies_date_ulr_base = 'https://stooq.com/t/?i=513&n=1&v=1&d={year:04d}{month:02d}{day:02d}&l={number}'
         self._all_companies_date_ulr_change = 'https://stooq.com/t/?i=513&n=0&v=0&d={year:04d}{month:02d}{day:02d}&l={number}'
         self._company_url_base = 'https://stooq.com/q/d/?s={company}&c=0&i={interval}&d1={year1:04d}{month1:02d}{day1:02d}&d2={year2:04d}{month2:02d}{day2:02d}&l={number}'
         self._tables_filter = re.compile(r'.*:.*')
@@ -96,8 +96,9 @@ class StooqParser:
         for index, row in result.iterrows():
             company_id = get_company_id_from_ticker(row['Symbol'])
             if company_id is None:
-                insert_company(company_name=row['Symbol'], company_ticker=row['Symbol'], company_isin=None)
-                new_companies.append(row['Symbol'])
+                insert_company(company_name=row['Name'], company_ticker=row['Symbol'], company_isin=None)
+                new_companies.append(row['Name'])
+                company_id = get_company_id_from_ticker(row['Symbol'])
 
             insert_stock_quotes((company_id, date(year, month, day), date(year, month, day), row['Last'],
                                  row['Change.1'], row['Open'], row['High'], row['Low'], row['Volume'],
@@ -118,8 +119,18 @@ class StooqParser:
 
         company_id = get_company_id_from_ticker(company)
         if company_id is None:
-            insert_company(company_name=company, company_ticker=company, company_isin=None)
-            new_companies.append(company)
+            url = self._company_url_base.format(number=1, company=company,
+                                                day1=start_day, month1=start_month, year1=start_year,
+                                                day2=end_day, month2=end_month, year2=end_year,
+                                                interval=interval)
+            site_html = requests.get(url).content.decode("utf-8")
+            company_name = re.search('Historical data:  (.*) \(', str(site_html)).group(1)
+            if not company_name:
+                company_name = company
+
+            insert_company(company_name=company_name, company_ticker=company, company_isin=None)
+            new_companies.append(company_name)
+            company_id = get_company_id_from_ticker(company)
 
         while True:
             url = self._company_url_base.format(number=i, company=company,
