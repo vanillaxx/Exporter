@@ -55,9 +55,11 @@ class Assets(models.Model):
                                      null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'Assets'
-
+        constraints = [
+            models.UniqueConstraint(fields=['companyid', 'date'], name='assets_company_date_unique')
+        ]
 
 class AssetsCategories(models.Model):
     id = models.AutoField(db_column='ID', primary_key=True, blank=True, null=False)  # Field name made lowercase.
@@ -77,8 +79,11 @@ class AssetsCategories(models.Model):
                                    null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'AssetsCategories'
+        constraints = [
+            models.UniqueConstraint(fields=['companyid', 'date'], name='assets_categories_company_date_unique')
+        ]
 
 
 class EkdClass(models.Model):
@@ -86,7 +91,7 @@ class EkdClass(models.Model):
     value = models.IntegerField(db_column='Value', unique=True, blank=True, null=True)  # Field name made lowercase.
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'EKD_Class'
 
 
@@ -95,7 +100,7 @@ class EkdSection(models.Model):
     value = models.IntegerField(db_column='Value', unique=True, blank=True, null=True)  # Field name made lowercase.
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'EKD_Section'
 
 
@@ -117,7 +122,7 @@ class Company(models.Model):
         return self.name
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'Company'
 
 
@@ -147,9 +152,11 @@ class DuPontIndicators(models.Model):
                                       null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'DuPontIndicators'
-
+        constraints = [
+            models.UniqueConstraint(fields=['periodstart', 'periodend', 'companyid'], name='dupont_indicators_company_date_unique')
+        ]
 
 class EquityLiabilities(models.Model):
     id = models.AutoField(db_column='ID', primary_key=True, blank=True, null=False)  # Field name made lowercase.
@@ -216,9 +223,11 @@ class EquityLiabilities(models.Model):
                                                  null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters. Field renamed because it ended with '_'.
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'EquityLiabilities'
-
+        constraints = [
+            models.UniqueConstraint(fields=['date', 'companyid'], name='equity_liabilities_company_date_unique')
+        ]
 
 class EquityLiabilitiesCategories(models.Model):
     id = models.AutoField(db_column='ID', primary_key=True, blank=True, null=False)  # Field name made lowercase.
@@ -238,7 +247,11 @@ class EquityLiabilitiesCategories(models.Model):
         null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
 
     class Meta:
-        managed = False
+        constraints = [
+            models.UniqueConstraint(fields=['companyid', 'date'],
+                                    name='equity_liabilities_categories_company_date_unique')
+        ]
+        managed = True
         db_table = 'EquityLiabilitiesCategories'
 
 
@@ -292,8 +305,11 @@ class FinancialRatios(models.Model):
                                            null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'FinancialRatios'
+        constraints = [
+            models.UniqueConstraint(fields=['periodstart', 'periodend', 'companyid'], name='financial_ratios_company_date_unique')
+        ]
 
 
 class MarketValues(models.Model):
@@ -303,7 +319,7 @@ class MarketValues(models.Model):
     marketvalue = models.FloatField(db_column='MarketValue')  # Field name made lowercase.
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'MarketValues'
 
 
@@ -313,7 +329,7 @@ class Interval(models.Model):
     fullname = models.CharField(db_column='FullName', blank=True, null=False, max_length=255)  # Field name made lowercase.
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'Interval'
 
 
@@ -332,5 +348,5 @@ class StockQuotes(models.Model):
     interval = models.ForeignKey(Interval, models.DO_NOTHING, db_column='Interval')  # Field name made lowercase.
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'StockQuotes'

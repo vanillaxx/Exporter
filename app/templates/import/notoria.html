@@ -20,7 +20,9 @@
     <input type="submit" value="Import">
 </form>
 {%if error%}
-{% include 'import/company_not_found.html' %}
+<div id="pop-up" class="modal fade" role="dialog">
+    {% include 'import/overlapping_data.html' %}
+</div>
 {%endif%}
 
 {{ form.errors }}
