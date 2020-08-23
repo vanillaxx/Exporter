@@ -6,13 +6,27 @@ from common.Parsers import excel_parser, pdf_gpw_parser, stooq_parser, pdf_yearb
 import common.Export.export as export_methods
 from common.Utils.Errors import UniqueError
 from .models import Company
-from common.DAL.db_queries import replace_values, get_existing_data_balance_sheet
+from common.DAL.db_queries import replace_values, get_existing_data_balance_sheet, get_existing_data_ratios
 import json
+
+
 def index(request):
     return render(request, 'index.html')
 
 
 def import_notoria(request):
+    def render_overlapping_data_popup(chosen_sheet, sheet_shortcut, get_existing_data_func):
+        for sheet in chosen_sheet:
+            try:
+                excel_parser.functions[sheet_shortcut](file_path, sheet)
+            except UniqueError as e:
+                existing_data = []
+                for data in e.overlapping_data:
+                    existing = get_existing_data_func(data)
+                    existing_without_id = list(map(lambda x: x[1:], existing))
+                    existing_data.append(existing_without_id)
+                return existing_data, e
+
     if request.method == 'POST':
         form = NotoriaImportForm(request.POST)
         if form.is_valid():
@@ -20,40 +34,46 @@ def import_notoria(request):
             chosen_sheets_bs = form.cleaned_data.get('chosen_sheets_bs')
             chosen_sheets_fr = form.cleaned_data.get('chosen_sheets_fr')
             chosen_sheets_dp = form.cleaned_data.get('chosen_sheets_dp')
+            existing_data_bs = []
+            existing_data_fr = []
+            existing_data_dp = []
+            error_bs = []
+            error_fr = []
+            error_dp = []
+            overlap_bs = []
+            overlap_fr = []
+            overlap_dp = []
             if chosen_sheets_bs:
-                for sheet in chosen_sheets_bs:
-                    try:
-                        excel_parser.functions['bs'](file_path, sheet)
-                    except UniqueError as e:
-                        existing_data = []
-                        for data in e.overlapping_data:
-                            existing = get_existing_data_balance_sheet(data)
-                            existing_without_id = list(map(lambda x: x[1:], existing))
-                            existing_data.append(existing_without_id)
-                        return render(request, 'import/notoria.html',
-                                      {'form': form,
-                                       "error": e,
-                                       "overlap": json.dumps(e.overlapping_data),
-                                       "exist": existing_data})
+                existing_data_bs, error_bs = render_overlapping_data_popup(chosen_sheets_bs, 'bs', get_existing_data_balance_sheet)
+                if error_bs:
+                    overlap_bs = error_bs.overlapping_data
             if chosen_sheets_fr:
-                for sheet in chosen_sheets_fr:
-                    try:
-                        excel_parser.functions['fr'](file_path, sheet)
-                    except UniqueError as e:
-                        return render(request, 'import/notoria.html',
-                                      {'form': form,
-                                       "error": e,
-                                       "json_data": json.dumps(e.overlapping_data)})
+                existing_data_fr, error_fr = render_overlapping_data_popup(chosen_sheets_fr, 'fr', get_existing_data_ratios)
 
+                if error_fr:
+                    overlap_fr = error_fr.overlapping_data
             if chosen_sheets_dp:
-                for sheet in chosen_sheets_dp:
-                    try:
-                        excel_parser.functions['dp'](file_path, sheet)
-                    except UniqueError as e:
-                        return render(request, 'import/notoria.html',
-                                      {'form': form,
-                                       "error": e,
-                                       "json_data": json.dumps(e.overlapping_data)})
+                existing_data_dp, error_dp = render_overlapping_data_popup(chosen_sheets_dp, 'dp', get_existing_data_ratios)
+                if error_dp:
+                    overlap_dp = error_dp.overlapping_data
+
+            if existing_data_bs or existing_data_fr or existing_data_dp:
+                print(existing_data_bs)
+                print(existing_data_fr)
+                print(existing_data_dp)
+
+                return render(request, 'import/notoria.html',
+                              {'form': form,
+                               "error_bs": error_bs,
+                               "error_fr": error_fr,
+                               "error_dp": error_dp,
+                               "overlap_bs": json.dumps(overlap_bs),
+                               "overlap_fr": json.dumps(overlap_fr),
+                               "overlap_dp": json.dumps(overlap_dp),
+                               "exist_bs": existing_data_bs,
+                               "exist_fr": existing_data_fr,
+                               "exist_dp": existing_data_dp})
+
             return render(request, 'manage/home.html', {'message': "Parsed notoria succsessfully"})
     else:
         form = NotoriaImportForm()
@@ -167,5 +187,3 @@ def replace_data(request):
         for value in values:
             replace_values(table_name, columns, value)
     return HttpResponse({'message': "Data replaced successfully"})
-
-

@@ -523,3 +523,20 @@ def get_existing_data_balance_sheet(connection, overlapping_data):
                                               dates=tuple(map(lambda x: x[1], overlapping_data["values"])))
     c.execute(query)
     return c.fetchall()
+
+
+@with_connection
+def get_existing_data_ratios(connection, overlapping_data):
+    c = connection.cursor()
+    date_condition_template = ""
+    values = overlapping_data["values"]
+    values_length = (len(values))
+    for i in range(values_length - 1):
+        date_condition_template += ' ( PeriodStart = "{start}" AND PeriodEnd = "{end}" ) OR'.format(start=values[i][1], end=values[i][2])
+    date_condition_template += ' ( PeriodStart = "{start}" AND PeriodEnd = "{end}" )'.format(start=values[values_length - 1][1],
+                                                                                           end=values[values_length - 1][2])
+    query = '''SELECT * FROM {table}  
+              WHERE{date_condition}'''.format(table=overlapping_data["table_name"],
+                                               date_condition=date_condition_template)
+    c.execute(query)
+    return c.fetchall()
