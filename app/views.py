@@ -8,6 +8,8 @@ from common.Utils.Errors import UniqueError
 from .models import Company
 from common.DAL.db_queries import replace_values, get_existing_data_balance_sheet, get_existing_data_ratios
 import json
+import os.path
+import uuid
 
 
 def index(request):
@@ -148,8 +150,15 @@ def export(request):
     if request.method == 'POST':
         form = ExportForm(request.POST, count=request.POST.get('date_ranges_count'))
         if form.is_valid():
-            print(form.cleaned_data)
             file_name = request.POST.get('file_name', None)
+            is_file_name_unique = True
+            if not file_name.endswith(".csv"):
+                file_name += ".csv"
+            if os.path.isfile(file_name):
+                is_file_name_unique = False
+                csv_index = file_name.rfind(".csv")
+                file_name = file_name[:csv_index] + str(uuid.uuid4()) + file_name[csv_index:]
+
             chosen_data = request.POST.get('chosen_data', None)
             chosen_companies = list(form.cleaned_data.get('chosen_companies').values_list('id', flat=True))
             date_ranges_count = request.POST.get('date_ranges_count', None)
@@ -161,7 +170,11 @@ def export(request):
                 else:
                     export_methods.functions[chosen_data](chosen_companies, start_date, end_date, file_name,
                                                           add_description=False)
-            return render(request, 'manage/home.html', {'message': "Data exported succsessfully"})
+            if is_file_name_unique:
+                return render(request, 'manage/home.html', {'message': "Data exported to %s" % file_name})
+            else:
+                return render(request, 'manage/home.html', {'message': "Passed file name exists. Data exported to %s" % file_name})
+
     else:
         form = ExportForm()
 
