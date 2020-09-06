@@ -101,22 +101,16 @@ class StockQuotesModelForm(BSModalModelForm):
 
 class ExportForm(forms.Form):
     file_name = forms.CharField(label='File name:', max_length=100)
-    notoria_choices = [('-da', 'Detailed assets'),
-                       ('-ca', 'Assets categories'),
-                       ('-fa', 'Full assets'),
-                       ('-de', 'Detailed equity and liabilities'),
-                       ('-ce', 'Equity and liabilities categories'),
-                       ('-fe', 'Full equity and liabilities'),
-                       ('-f', 'Financial ratios'),
-                       ('-d', 'DuPont Indicators'),
-                       ('-s', 'Stock quotes'),
-                       ('-mv', 'Market values'),
-                       ('-damv', 'Detailed assets and market values')
-                       ]
     company_choices = Company.objects.all()
-    chosen_data = forms.ChoiceField(choices=notoria_choices)
     chosen_companies = forms.ModelMultipleChoiceField(queryset=company_choices)
     date_ranges_count = forms.CharField(widget=forms.HiddenInput())
+    choices_i = [('d', 'Daily'),
+                        ('w', 'Weekly'),
+                        ('m', 'Monthly'),
+                        ('q', 'Quarterly'),
+                        ('y', 'Yearly')]
+
+    chosen_interval = forms.ChoiceField(choices=choices_i, initial='d', widget=forms.RadioSelect, required=False)
 
     def __init__(self, *args, **kwargs):
         date_ranges = kwargs.pop('count', 0)

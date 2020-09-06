@@ -6,8 +6,21 @@
         {% csrf_token %}
         <label for="file_name">Pass file name: </label>
         <input id="file_name" type="text" name="file_name" value="{{ file_name }}">
-        {{form.chosen_data}}
+        <select id="id_chosen_data" name="chosen_data" onchange="tableChange()">
+            <option value="-da">Detailed assets</option>
+            <option value="-ca">Assets categories</option>
+            <option value="-fa">Full assets</option>
+            <option value="-de">Detailed equity and liabilities</option>
+            <option value="-ce">Equity and liabilities categories</option>
+            <option value="-fe">Full equity and liabilities</option>
+            <option value="-f">Financial ratios</option>
+            <option value="-d">DuPont Indicators</option>
+            <option value="-s">Stock quotes</option>
+            <option value="-mv">Detailed assets and market values</option>
+            <option value="-damv">Detailed assets and market values</option>
+        </select>
         {{form.chosen_companies}}
+        <div id="id_chosen_interval">{{form.chosen_interval}}</div>
         {{form.date_ranges_count}}
         {{form.start_date_0}}
         {{form.end_date_0}}
@@ -33,5 +46,18 @@
 
         $("[name=date_ranges_count]").val(form_count);
     })
+
+    function tableChange() {
+        console.log(document.getElementById('id_chosen_data').options[document.getElementById('id_chosen_data').selectedIndex].value)
+        if(document.getElementById('id_chosen_data').options[document.getElementById('id_chosen_data').selectedIndex].value == "-s") {
+             document.getElementById('id_chosen_interval').style.display = '';
+        } else {
+             document.getElementById('id_chosen_interval').style.display = 'none';
+        }
+    }
+
+    window.onload = function() {
+        document.getElementById('id_chosen_interval').style.display = 'none';
+    };
 </script>
 {% endblock %}

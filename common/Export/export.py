@@ -98,8 +98,8 @@ def export_du_pont_indicators(company_ids, start_date, end_date, file_name, add_
     put_data_to_csv(data, description, file_name, add_description)
 
 
-def export_stock_quotes(company_ids, start_date, end_date, file_name, add_description=True):  # TODO interval options
-    data, description = db_queries.export_stock_quotes(company_ids, start_date, end_date, 'd')
+def export_stock_quotes(company_ids, start_date, end_date, file_name, interval, add_description=True):
+    data, description = db_queries.export_stock_quotes(company_ids, start_date, end_date, interval)
     put_data_to_csv(data, description, file_name, add_description)
 
 
