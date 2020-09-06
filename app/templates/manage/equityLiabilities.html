@@ -1,0 +1,119 @@
+{% extends '../base.html' %}
+{% block content %}
+{% load static %}
+
+<div class="modal fade" id="create-modal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" tabindex="-1" role="dialog" id="modal">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content"></div>
+  </div>
+</div>
+
+<button id="create-equity-liabilities" class="btn btn-primary" type="button" name="button">Create equity liabilities</button>
+
+<table class="table table-sm table-bordered">
+    <thead>
+    <tr>
+        <th scope="col">Company</th>
+        <th scope="col">Date</th>
+        <th scope="col">Share capital</th>
+        <th scope="col">Called up share capital</th>
+        <th scope="col">Treasury shares</th>
+        <th scope="col">Supplementary capital</th>
+        <th scope="col">Valuation and exchange differences</th>
+        <th scope="col">Other capitals</th>
+        <th scope="col">Retained earnings / accumulated losses</th>
+        <th scope="col">Non-current liabilities from derivatives</th>
+        <th scope="col">Non-current loans and borrowings</th>
+        <th scope="col">Non-current liabilities from bonds</th>
+        <th scope="col">Non-current liabilities from finance leases</th>
+        <th scope="col">Non-current trade payables</th>
+        <th scope="col">Long-term provision for employee benefits</th>
+        <th scope="col">Deferred tax liabilities</th>
+        <th scope="col">Non-current provision</th>
+        <th scope="col">Other non-current liabilities</th>
+        <th scope="col">Non-current accruals (liability)</th>
+        <th scope="col">Liabilities from derivatives</th>
+        <th scope="col">Financial liabilities (loans and borrowings)</th>
+        <th scope="col">Bond liabilities</th>
+        <th scope="col">Liabilities from finance leases</th>
+        <th scope="col">Trade payables</th>
+        <th scope="col">Employee benefits</th>
+        <th scope="col">Current tax liabilities</th>
+        <th scope="col">Provisions</th>
+        <th scope="col">Other liabilities</th>
+        <th scope="col">Accruals (liability)</th>
+        <th scope="col"></th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for el in liabilities %}
+    <tr>
+        <td>{{ el.company_id }}</td>
+        <td>{{ el.date|date:"Y-m-d" }}</td>
+        <td>{{ el.share_capital }}</td>
+        <td>{{ el.called_up_share_capital }}</td>
+        <td>{{ el.treasury_shares }}</td>
+        <td>{{ el.supplementary_capital }}</td>
+        <td>{{ el.valuation_and_exchange_differences }}</td>
+        <td>{{ el.other_capitals }}</td>
+        <td>{{ el.retained_earnings_accumulated_losses  }}</td>
+        <td>{{ el.non_current_liabilities_from_derivatives }}</td>
+        <td>{{ el.non_current_loans_and_borrowings }}</td>
+        <td>{{ el.non_current_liabilities_from_bonds }}</td>
+        <td>{{ el.non_current_liabilities_from_finance_leases }}</td>
+        <td>{{ el.non_current_trade_payables }}</td>
+        <td>{{ el.long_term_provision_for_employee_benefits }}</td>
+        <td>{{ el.deferred_tax_liabilities }}</td>
+        <td>{{ el.non_current_provision }}</td>
+        <td>{{ el.other_non_current_liabilities }}</td>
+        <td>{{ el.non_current_accruals_liability_field }}</td>
+        <td>{{ el.liabilities_from_derivatives }}</td>
+        <td>{{ el.financial_liabilities_loans_and_borrowings_field }}</td>
+        <td>{{ el.bond_liabilities }}</td>
+        <td>{{ el.liabilities_from_finance_leases }}</td>
+        <td>{{ el.trade_payables }}</td>
+        <td>{{ el.employee_benefits }}</td>
+        <td>{{ el.current_tax_liabilities }}</td>
+        <td>{{ el.provisions }}</td>
+        <td>{{ el.other_liabilities }}</td>
+        <td>{{ el.accruals_liability_field }}</td>
+        <td>
+            <button type="button" id="update-equity-liabilities" class="bs-modal btn btn-sm btn-primary"
+                    data-form-url="{% url 'update_equity_liabilities' el.id %}">
+                <span class="fa fa-pencil"></span>
+            </button>
+            <button type="button" id="delete-equity-liabilities" class="bs-modal btn btn-sm btn-danger"
+                    data-form-url="{% url 'delete_equity_liabilities' el.id %}">
+                <span class="fa fa-trash"></span>
+            </button>
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<script type="text/javascript">
+  $(function () {
+
+    $(".bs-modal").each(function () {
+      $(this).modalForm({
+          formURL: $(this).data('form-url')
+      });
+    });
+
+    $("#create-equity-liabilities").modalForm({
+        formURL: "{% url 'create_equity_liabilities' %}",
+        modalID: "#create-modal"
+    });
+
+  });
+</script>
+
+{% endblock %}

@@ -39,8 +39,8 @@ def insert_value(connection, table_name, column, value):
 @with_connection
 def insert_stock_quotes(connection, values):
     command = '''INSERT OR IGNORE INTO StockQuotes
-                (CompanyID, StartDate, EndDate, Stock, Change, Open, High, Low, Volume, Turnover, Interval)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'''
+                (CompanyID, 'Period end', Stock, Change, Open, High, Low, Volume, Turnover, Interval)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'''
     with connection:
         connection.execute(command, values)
 
@@ -51,7 +51,7 @@ def insert_market_value(connection, market_value, end_date, company_name, compan
     company_id = get_company_id_from_isin(company_isin) or get_company_id_from_name(company_name)
     data = (company_id, end_date, market_value)
     if company_id:
-        command = '''INSERT INTO MarketValues(CompanyID, PeriodEnd, MarketValue) VALUES (?, ?, ?)'''
+        command = '''INSERT INTO MarketValues(CompanyID, "Period end", MarketValue) VALUES (?, ?, ?)'''
         with connection:
             connection.execute(command, data)
     else:
@@ -341,16 +341,16 @@ def get_full_assets_for_companies(connection, company_ids, start_date, end_date)
 @with_connection
 def get_du_pont_indicators_for_companies(connection, company_ids, start_date, end_date):
     c = connection.cursor()
-    query = '''SELECT C.Name, PeriodStart, PeriodEnd, "Return on equity (ROE)",
+    query = '''SELECT C.Name, "Period start", "Period end", "Return on equity (ROE)",
                 "Return on assets (ROA)", "Leverage (EM)", "Net profit margin",
                 "Asset utilization (AU)", "Load gross profit", "Load operating profit",
                 "Operating profit margin", "EBITDA margin"
               FROM DuPontIndicators D
               JOIN Company C ON C.ID = D.CompanyID
                 WHERE C.ID IN ({seq}) 
-                AND D.PeriodStart >= ?
-                AND D.PeriodEnd <= ?
-                ORDER BY C.Name, D.PeriodStart '''.format(seq=','.join(['?'] * len(company_ids)))
+                AND D."Period start" >= ?
+                AND D."Period end" <= ?
+                ORDER BY C.Name, D."Period start" '''.format(seq=','.join(['?'] * len(company_ids)))
     company_ids.extend([start_date, end_date])
     c.execute(query, tuple(company_ids))
     return c.fetchall(), list(map(lambda x: x[0], c.description))
@@ -359,7 +359,7 @@ def get_du_pont_indicators_for_companies(connection, company_ids, start_date, en
 @with_connection
 def get_financial_ratios_for_companies(connection, company_ids, start_date, end_date):
     c = connection.cursor()
-    query = '''SELECT C.Name, PeriodStart, PeriodEnd,
+    query = '''SELECT C.Name, "Period start", "Period end",
                 "Gross profit margin on sales", "Operating profit margin",
                 "Gross profit margin", "Net profit margin", "Return on equity (ROE)",
                 "Return on assets (ROA)", "Working capital ratio", "Current ratio",
@@ -370,9 +370,9 @@ def get_financial_ratios_for_companies(connection, company_ids, start_date, end_
               FROM FinancialRatios F
               JOIN Company C ON C.ID = F.CompanyID
                 WHERE C.ID IN ({seq}) 
-                AND F.PeriodStart >= ?
-                AND F.PeriodEnd <= ?
-                ORDER BY C.Name, F.PeriodStart '''.format(seq=','.join(['?'] * len(company_ids)))
+                AND D."Period start" >= ?
+                AND D."Period end" <= ?
+                ORDER BY C.Name, F."Period start" '''.format(seq=','.join(['?'] * len(company_ids)))
     company_ids.extend([start_date, end_date])
     c.execute(query, tuple(company_ids))
     return c.fetchall(), list(map(lambda x: x[0], c.description))
@@ -422,13 +422,13 @@ def get_full_equities_for_companies(connection, company_ids, start_date, end_dat
 def export_stock_quotes(connection, company_ids, start_date, end_date, interval):
     interval_id = get_interval_id_from_shortcut(interval)
     c = connection.cursor()
-    query = '''SELECT C.Name, StartDate, EndDate, Stock, Change, "Open", High, Low, Volume, Turnover
+    query = '''SELECT C.Name, "Period end", Stock, Change, "Open", High, Low, Volume, Turnover
                 FROM StockQuotes SQ 
                 JOIN Company C ON C.ID = SQ.CompanyID
                 WHERE C.ID IN ({seq}) 
-                AND SQ.EndDate BETWEEN ? AND ?
+                AND SQ."Period end" BETWEEN ? AND ?
                 AND Interval = ?
-                ORDER BY C.Name, SQ.EndDate'''.format(seq=','.join(['?'] * len(company_ids)))
+                ORDER BY C.Name, SQ."Period end" '''.format(seq=','.join(['?'] * len(company_ids)))
     company_ids.extend([start_date, end_date, interval_id])
     c.execute(query, tuple(company_ids))
     return c.fetchall(), list(map(lambda x: x[0], c.description))
@@ -437,12 +437,12 @@ def export_stock_quotes(connection, company_ids, start_date, end_date, interval)
 @with_connection
 def get_market_values_for_companies(connection, company_ids, start_date, end_date):
     c = connection.cursor()
-    query = '''SELECT C.Name, MarketValue, PeriodEnd
+    query = '''SELECT C.Name, MarketValue, "Period end"
                  FROM MarketValues MV
                  JOIN Company C ON C.ID = MV.CompanyID
                  WHERE C.ID IN ({seq}) 
-                 AND MV.PeriodEnd BETWEEN ? AND ?
-                 ORDER BY C.Name, MV.PeriodEnd'''.format(seq=','.join(['?'] * len(company_ids)))
+                 AND MV."Period end" BETWEEN ? AND ?
+                 ORDER BY C.Name, MV."Period end" '''.format(seq=','.join(['?'] * len(company_ids)))
     company_ids.extend([start_date, end_date])
     c.execute(query, tuple(company_ids))
     return c.fetchall(), list(map(lambda x: x[0], c.description))
@@ -469,10 +469,10 @@ def get_assets_and_market_values_for_companies(connection, company_ids, start_da
                  Inventories, "Current intangible assets", "Biological assets", "Trade receivables",
                  "Loans and other receivables", "Financial assets", "Cash and cash equivalents",
                  Accruals, "Assets from current tax", "Derivative instruments", "Other assets",
-                 MV.PeriodEnd, MV.MarketValue
+                 MV."Period end", MV.MarketValue
                 FROM Assets A 
                 JOIN Company C ON C.ID = A.CompanyID
-                LEFT JOIN MarketValues MV on C.ID = MV.CompanyID AND A.Date = MV.PeriodEnd
+                LEFT JOIN MarketValues MV on C.ID = MV.CompanyID AND A.Date = MV."Period end"
                 WHERE C.ID IN ({seq1}) 
                 AND A.Date BETWEEN ? AND ? 
                 UNION ALL
@@ -494,12 +494,12 @@ def get_assets_and_market_values_for_companies(connection, company_ids, start_da
                  Inventories, "Current intangible assets", "Biological assets", "Trade receivables",
                  "Loans and other receivables", "Financial assets", "Cash and cash equivalents",
                  Accruals, "Assets from current tax", "Derivative instruments", "Other assets",
-                 MV.PeriodEnd, MV.MarketValue
+                 MV."Period end", MV.MarketValue
                  FROM MarketValues MV
                  JOIN Company C on MV.CompanyID = C.ID
-                 LEFT JOIN Assets A on C.ID = A.CompanyID AND A.Date = MV.PeriodEnd
+                 LEFT JOIN Assets A on C.ID = A.CompanyID AND A.Date = MV."Period end"
                  WHERE C.ID IN ({seq2}) 
-                 AND MV.PeriodEnd BETWEEN ? AND ?
+                 AND MV."Period end" BETWEEN ? AND ?
                  AND A.Date IS NULL'''.format(seq1=','.join(['?'] * len(company_ids)),
                                               seq2=','.join(['?'] * len(company_ids)))
     company_ids.extend([start_date, end_date])
@@ -532,8 +532,8 @@ def get_existing_data_ratios(connection, overlapping_data):
     values = overlapping_data["values"]
     values_length = (len(values))
     for i in range(values_length - 1):
-        date_condition_template += ' ( PeriodStart = "{start}" AND PeriodEnd = "{end}" ) OR'.format(start=values[i][1], end=values[i][2])
-    date_condition_template += ' ( PeriodStart = "{start}" AND PeriodEnd = "{end}" )'.format(start=values[values_length - 1][1],
+        date_condition_template += ' ( "Period start" = "{start}" AND "Period end" = "{end}" ) OR'.format(start=values[i][1], end=values[i][2])
+        date_condition_template += ' ( "Period start" = "{start}" AND "Period end" = "{end}" )'.format(start=values[values_length - 1][1],
                                                                                            end=values[values_length - 1][2])
     query = '''SELECT * FROM {table}  
               WHERE{date_condition}'''.format(table=overlapping_data["table_name"],

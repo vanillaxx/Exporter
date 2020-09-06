@@ -1,0 +1,75 @@
+{% extends '../base.html' %}
+{% block content %}
+{% load static %}
+
+<div class="modal fade" id="create-modal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" tabindex="-1" role="dialog" id="modal">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content"></div>
+  </div>
+</div>
+
+<button id="create-equity-liabilities-category" class="btn btn-primary" type="button" name="button">Create equity liabilities category</button>
+
+<table class="table table-sm table-bordered">
+    <thead>
+    <tr>
+        <th scope="col">Company</th>
+        <th scope="col">Date</th>
+        <th scope="col">Equity shareholders of the parent</th>
+        <th scope="col">Non-controlling interests</th>
+        <th scope="col">Non-current liabilities</th>
+        <th scope="col">Current liabilities</th>
+        <th scope="col">Liabilities related to assets held for sale and discontinued operations</th>
+        <th scope="col"></th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for elc in liabilities_categories %}
+    <tr>
+        <td>{{ elc.company_id }}</td>
+        <td>{{ elc.date|date:"Y-m-d" }}</td>
+        <td>{{ elc.equity_shareholders_of_the_parent }}</td>
+        <td>{{ elc.non_controlling_interests }}</td>
+        <td>{{ elc.non_current_liabilities }}</td>
+        <td>{{ elc.current_liabilities }}</td>
+        <td>{{ elc.liabilities_related_to_assets_held_for_sale_and_discontinued_operations }}</td>
+        <td>
+            <button type="button" id="update-equity-liabilities-category" class="bs-modal btn btn-sm btn-primary"
+                    data-form-url="{% url 'update_equity_liabilities_category' elc.id %}">
+                <span class="fa fa-pencil"></span>
+            </button>
+            <button type="button" id="delete-equity-liabilities-category" class="bs-modal btn btn-sm btn-danger"
+                    data-form-url="{% url 'delete_equity_liabilities_category' elc.id %}">
+                <span class="fa fa-trash"></span>
+            </button>
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<script type="text/javascript">
+  $(function () {
+
+    $(".bs-modal").each(function () {
+      $(this).modalForm({
+          formURL: $(this).data('form-url')
+      });
+    });
+
+    $("#create-equity-liabilities-category").modalForm({
+        formURL: "{% url 'create_equity_liabilities_category' %}",
+        modalID: "#create-modal"
+    });
+
+  });
+</script>
+
+{% endblock %}

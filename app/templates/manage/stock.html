@@ -1,0 +1,81 @@
+{% extends '../base.html' %}
+{% block content %}
+{% load static %}
+
+<div class="modal fade" id="create-modal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" tabindex="-1" role="dialog" id="modal">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content"></div>
+  </div>
+</div>
+
+<button id="create-stock" class="btn btn-primary" type="button" name="button">Create stock quote</button>
+
+<table class="table table-sm table-bordered">
+    <thead>
+    <tr>
+        <th scope="col">Company</th>
+        <th scope="col">Period end</th>
+        <th scope="col">Stock</th>
+        <th scope="col">Change</th>
+        <th scope="col">Open</th>
+        <th scope="col">High</th>
+        <th scope="col">Low</th>
+        <th scope="col">Volume</th>
+        <th scope="col">Turnover</th>
+        <th scope="col">Interval</th>
+        <th scope="col"></th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for sq in stock %}
+    <tr>
+        <td>{{ sq.company_id }}</td>
+        <td>{{ sq.period_end|date:"Y-m-d" }}</td>
+        <td>{{ sq.stock }}</td>
+        <td>{{ sq.change }}</td>
+        <td>{{ sq.open }}</td>
+        <td>{{ sq.high }}</td>
+        <td>{{ sq.low }}</td>
+        <td>{{ sq.volume }}</td>
+        <td>{{ sq.turnover }}</td>
+        <td>{{ sq.interval }}</td>
+        <td>
+            <button type="button" id="update-stock" class="bs-modal btn btn-sm btn-primary"
+                    data-form-url="{% url 'update_stock' sq.id %}">
+                <span class="fa fa-pencil"></span>
+            </button>
+            <button type="button" id="delete-stock" class="bs-modal btn btn-sm btn-danger"
+                    data-form-url="{% url 'delete_stock' sq.id %}">
+                <span class="fa fa-trash"></span>
+            </button>
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<script type="text/javascript">
+  $(function () {
+
+    $(".bs-modal").each(function () {
+      $(this).modalForm({
+          formURL: $(this).data('form-url')
+      });
+    });
+
+    $("#create-stock").modalForm({
+        formURL: "{% url 'create_stock' %}",
+        modalID: "#create-modal"
+    });
+
+  });
+</script>
+
+{% endblock %}

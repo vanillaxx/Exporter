@@ -1,0 +1,75 @@
+{% extends '../base.html' %}
+{% block content %}
+{% load static %}
+
+<div class="modal fade" id="create-modal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" tabindex="-1" role="dialog" id="modal">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content"></div>
+  </div>
+</div>
+
+<button id="create-assets-category" class="btn btn-primary" type="button" name="button">Create assets category</button>
+
+<table class="table table-sm table-bordered">
+    <thead>
+    <tr>
+        <th scope="col">Company</th>
+        <th scope="col">Date</th>
+        <th scope="col">Non-current assets</th>
+        <th scope="col">Current assets</th>
+        <th scope="col">Assets held for sale and discontinuing operations</th>
+        <th scope="col">Called up capital</th>
+        <th scope="col">Own shares</th>
+        <th scope="col"></th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for ac in assets_categories %}
+    <tr>
+        <td>{{ ac.company_id }}</td>
+        <td>{{ ac.date|date:"Y-m-d" }}</td>
+        <td>{{ ac.non_current_assets }}</td>
+        <td>{{ ac.current_assets }}</td>
+        <td>{{ ac.assets_held_for_sale_and_discontinuing_operations }}</td>
+        <td>{{ ac.called_up_capital }}</td>
+        <td>{{ ac.own_shares }}</td>
+        <td>
+            <button type="button" id="update-assets-category" class="bs-modal btn btn-sm btn-primary"
+                    data-form-url="{% url 'update_assets_category' ac.id %}">
+                <span class="fa fa-pencil"></span>
+            </button>
+            <button type="button" id="delete-assets-category" class="bs-modal btn btn-sm btn-danger"
+                    data-form-url="{% url 'delete_assets_category' ac.id %}">
+                <span class="fa fa-trash"></span>
+            </button>
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<script type="text/javascript">
+  $(function () {
+
+    $(".bs-modal").each(function () {
+      $(this).modalForm({
+          formURL: $(this).data('form-url')
+      });
+    });
+
+    $("#create-assets-category").modalForm({
+        formURL: "{% url 'create_assets_category' %}",
+        modalID: "#create-modal"
+    });
+
+  });
+</script>
+
+{% endblock %}
