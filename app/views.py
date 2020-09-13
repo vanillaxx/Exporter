@@ -31,6 +31,7 @@ def import_notoria(request):
                     existing_without_id = list(map(lambda x: x[1:], existing))
                     existing_data.append(existing_without_id)
                 return existing_data, e
+            return [], []
 
     if request.method == 'POST':
         form = NotoriaImportForm(request.POST)
@@ -54,9 +55,7 @@ def import_notoria(request):
                 if error_bs:
                     overlap_bs = error_bs.overlapping_data
             if chosen_sheets_fr:
-                existing_data_fr, error_fr = render_overlapping_data_popup(chosen_sheets_fr, 'fr',
-                                                                           get_existing_data_ratios)
-
+                existing_data_fr, error_fr = render_overlapping_data_popup(chosen_sheets_fr, 'fr', get_existing_data_ratios)
                 if error_fr:
                     overlap_fr = error_fr.overlapping_data
             if chosen_sheets_dp:
@@ -66,10 +65,6 @@ def import_notoria(request):
                     overlap_dp = error_dp.overlapping_data
 
             if existing_data_bs or existing_data_fr or existing_data_dp:
-                print(existing_data_bs)
-                print(existing_data_fr)
-                print(existing_data_dp)
-
                 return render(request, 'import/notoria.html',
                               {'form': form,
                                "error_bs": error_bs,
