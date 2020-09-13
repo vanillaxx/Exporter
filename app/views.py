@@ -8,6 +8,8 @@ from common.Utils.Errors import UniqueError
 from .models import Company
 from common.DAL.db_queries import replace_values, get_existing_data_balance_sheet, get_existing_data_ratios
 import json
+import os.path
+import uuid
 
 
 def index(request):
@@ -26,6 +28,7 @@ def import_notoria(request):
                     existing_without_id = list(map(lambda x: x[1:], existing))
                     existing_data.append(existing_without_id)
                 return existing_data, e
+            return [], []
 
     if request.method == 'POST':
         form = NotoriaImportForm(request.POST)
@@ -49,7 +52,6 @@ def import_notoria(request):
                     overlap_bs = error_bs.overlapping_data
             if chosen_sheets_fr:
                 existing_data_fr, error_fr = render_overlapping_data_popup(chosen_sheets_fr, 'fr', get_existing_data_ratios)
-
                 if error_fr:
                     overlap_fr = error_fr.overlapping_data
             if chosen_sheets_dp:
@@ -58,10 +60,6 @@ def import_notoria(request):
                     overlap_dp = error_dp.overlapping_data
 
             if existing_data_bs or existing_data_fr or existing_data_dp:
-                print(existing_data_bs)
-                print(existing_data_fr)
-                print(existing_data_dp)
-
                 return render(request, 'import/notoria.html',
                               {'form': form,
                                "error_bs": error_bs,
@@ -148,8 +146,15 @@ def export(request):
     if request.method == 'POST':
         form = ExportForm(request.POST, count=request.POST.get('date_ranges_count'))
         if form.is_valid():
-            print(form.cleaned_data)
             file_name = request.POST.get('file_name', None)
+            is_file_name_unique = True
+            if not file_name.endswith(".csv"):
+                file_name += ".csv"
+            if os.path.isfile(file_name):
+                is_file_name_unique = False
+                csv_index = file_name.rfind(".csv")
+                file_name = file_name[:csv_index] + str(uuid.uuid4()) + file_name[csv_index:]
+
             chosen_data = request.POST.get('chosen_data', None)
             chosen_companies = list(form.cleaned_data.get('chosen_companies').values_list('id', flat=True))
             date_ranges_count = request.POST.get('date_ranges_count', None)
@@ -161,7 +166,11 @@ def export(request):
                 else:
                     export_methods.functions[chosen_data](chosen_companies, start_date, end_date, file_name,
                                                           add_description=False)
-            return render(request, 'manage/home.html', {'message': "Data exported succsessfully"})
+            if is_file_name_unique:
+                return render(request, 'manage/home.html', {'message': "Data exported to %s" % file_name})
+            else:
+                return render(request, 'manage/home.html', {'message': "Passed file name exists. Data exported to %s" % file_name})
+
     else:
         form = ExportForm()
 
