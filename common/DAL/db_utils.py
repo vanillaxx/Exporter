@@ -12,7 +12,7 @@ def with_connection(func):
             connection = sqlite3.connect(database_path)
             res = func(connection, *args, **kwargs)
         except sqlite3.DatabaseError as e:
-            print(e)
+            raise e
         finally:
             if connection:
                 connection.close()
@@ -263,4 +263,4 @@ def set_up_market_values_table(connection):
         );''')
 
 
-set_up_database_tables()
+#set_up_database_tables()

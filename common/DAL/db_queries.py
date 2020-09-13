@@ -3,6 +3,24 @@ from common.Utils.Errors import CompanyNotFoundError
 
 
 @with_connection
+def replace_values(connection, table_name, columns, values):
+    values = tuple(values)
+    columns = tuple(columns)
+    command = 'REPLACE INTO %s%s VALUES %s ' % (table_name, columns, values)
+    with connection:
+        connection.execute(command)
+
+
+@with_connection
+def insert_values_without_ignore(connection, table_name, columns, values):
+    values = tuple(values)
+    columns = tuple(columns)
+    command = 'INSERT INTO %s%s VALUES %s ' % (table_name, columns, values)
+    with connection:
+        connection.execute(command)
+
+
+@with_connection
 def insert_values(connection, table_name, columns, values):
     values = tuple(values)
     columns = tuple(columns)
@@ -494,4 +512,31 @@ def get_assets_and_market_values_for_companies(connection, company_ids, start_da
 def get_all_companies(connection):
     c = connection.cursor()
     c.execute("SELECT Name, Name FROM Company ")
+    return c.fetchall()
+
+
+@with_connection
+def get_existing_data_balance_sheet(connection, overlapping_data):
+    c = connection.cursor()
+    query = '''SELECT * FROM {table} 
+              WHERE Date IN {dates}'''.format(table=overlapping_data["table_name"],
+                                              dates=tuple(map(lambda x: x[1], overlapping_data["values"])))
+    c.execute(query)
+    return c.fetchall()
+
+
+@with_connection
+def get_existing_data_ratios(connection, overlapping_data):
+    c = connection.cursor()
+    date_condition_template = ""
+    values = overlapping_data["values"]
+    values_length = (len(values))
+    for i in range(values_length - 1):
+        date_condition_template += ' ( PeriodStart = "{start}" AND PeriodEnd = "{end}" ) OR'.format(start=values[i][1], end=values[i][2])
+    date_condition_template += ' ( PeriodStart = "{start}" AND PeriodEnd = "{end}" )'.format(start=values[values_length - 1][1],
+                                                                                           end=values[values_length - 1][2])
+    query = '''SELECT * FROM {table}  
+              WHERE{date_condition}'''.format(table=overlapping_data["table_name"],
+                                               date_condition=date_condition_template)
+    c.execute(query)
     return c.fetchall()

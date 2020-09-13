@@ -9,5 +9,7 @@ urlpatterns = [
     path('import/gpw/', views.import_gpw, name='import_gpw'),
     path('export', views.export, name='export'),
     path('manage/home', views.manage, name='manage_home'),
-    path('manage/companies', views.get_companies, name='get_companies')
+    path('manage/companies', views.get_companies, name='get_companies'),
+    path('import/replace_data', views.replace_data, name='replace_data')
+
 ]

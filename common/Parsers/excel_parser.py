@@ -4,7 +4,8 @@ import sys
 import datetime
 from calendar import monthrange
 import re
-from common.Utils.Errors import CompanyNotFoundError, ParseError
+from common.Utils.Errors import UniqueError, ParseError
+from sqlite3 import IntegrityError
 
 
 def get_start_end_date(period):
@@ -31,6 +32,12 @@ def insert_float_value(where, value):
         where.append(float(value))
     else:
         where.append(0.0)
+
+
+def init_overlapping_info(overlapping_info, table_name, columns):
+    overlapping_info["table_name"] = table_name
+    overlapping_info["columns"] = columns
+    overlapping_info["values"] = []
 
 
 class ExcelParser():
@@ -100,6 +107,10 @@ class ExcelParser():
         assets_categories = [company_id]
         equity_liabilities = [company_id]
         equity_liabilities_categories = [company_id]
+        overlapping_assets = {}
+        overlapping_assets_categories = {}
+        overlapping_equity_liabilities = {}
+        overlapping_equity_liabilities_categories = {}
         while curr_row < excel_sheet.nrows:
             if excel_sheet.cell(curr_row, curr_column).value == 'Balance sheet':
                 attributes_column = curr_column
@@ -133,7 +144,6 @@ class ExcelParser():
                             assets_attributes.append(attribute)
                             insert_float_value(assets, curr_value)
                         curr_row += 1
-
                     curr_row += 2
                     # omit headers and iterate until equities and liabilities end
                     while excel_sheet.cell(curr_row, attributes_column).value != 'Date of publication':
@@ -147,18 +157,48 @@ class ExcelParser():
                             insert_float_value(equity_liabilities, curr_value)
                         curr_row += 1
 
-                    common.DAL.db_queries.insert_values(table_name="Assets",
-                                                        columns=assets_attributes,
-                                                        values=assets)
-                    common.DAL.db_queries.insert_values(table_name="EquityLiabilities",
-                                                        columns=equity_liabilities_attributes,
-                                                        values=equity_liabilities)
-                    common.DAL.db_queries.insert_values(table_name="AssetsCategories",
-                                                        columns=assets_categories_attributes,
-                                                        values=assets_categories)
-                    common.DAL.db_queries.insert_values(table_name="EquityLiabilitiesCategories",
-                                                        columns=equity_liabilities_categories_attributes,
-                                                        values=equity_liabilities_categories)
+                    try:
+                        common.DAL.db_queries.insert_values_without_ignore(table_name="Assets",
+                                                                           columns=assets_attributes,
+                                                                           values=assets)
+                    except IntegrityError:
+                        if not overlapping_assets:
+                            init_overlapping_info(overlapping_assets, "Assets", assets_attributes)
+                        overlapping_assets["values"].append(assets)
+
+                    try:
+                        common.DAL.db_queries.insert_values_without_ignore(table_name="EquityLiabilities",
+                                                                           columns=equity_liabilities_attributes,
+                                                                           values=equity_liabilities)
+                    except IntegrityError:
+                        if not overlapping_equity_liabilities:
+                            init_overlapping_info(overlapping_equity_liabilities,
+                                                  "EquityLiabilities",
+                                                  equity_liabilities_attributes)
+                        overlapping_equity_liabilities["values"].append(equity_liabilities)
+
+                    try:
+                        common.DAL.db_queries.insert_values_without_ignore(table_name="AssetsCategories",
+                                                                           columns=assets_categories_attributes,
+                                                                           values=assets_categories)
+                    except IntegrityError:
+                        if not overlapping_assets_categories:
+                            init_overlapping_info(overlapping_assets_categories,
+                                                  "AssetsCategories",
+                                                  assets_categories_attributes)
+                        overlapping_assets_categories["values"].append(assets_categories)
+
+                    try:
+                        common.DAL.db_queries.insert_values_without_ignore(table_name="EquityLiabilitiesCategories",
+                                                                           columns=equity_liabilities_categories_attributes,
+                                                                           values=equity_liabilities_categories)
+                    except IntegrityError:
+                        if not overlapping_equity_liabilities_categories:
+                            init_overlapping_info(overlapping_equity_liabilities_categories,
+                                                  "EquityLiabilitiesCategories",
+                                                  equity_liabilities_categories_attributes)
+                        overlapping_equity_liabilities_categories["values"].append(equity_liabilities_categories)
+
                     assets_attributes = ['CompanyID', 'Date']
                     assets_categories_attributes = ['CompanyID', 'Date']
                     equity_liabilities_attributes = ['CompanyID', 'Date']
@@ -171,6 +211,9 @@ class ExcelParser():
                     curr_row = sum_row + 1
                 break
             curr_row += 1
+        if overlapping_assets or overlapping_assets_categories or overlapping_equity_liabilities or overlapping_equity_liabilities_categories:
+            raise UniqueError(overlapping_assets, overlapping_assets_categories, overlapping_equity_liabilities,
+                              overlapping_equity_liabilities_categories)
 
     def parse_financial_ratios(self, path, sheet_name):
         self.parse_ratios(path, sheet_name, 'Financial ratios', 'FinancialRatios')
@@ -188,6 +231,7 @@ class ExcelParser():
             curr_row = 225
         curr_column = 2
         ratios = [company_id]
+        overlapping_ratios = {}
         while curr_row < excel_sheet.nrows:
             if excel_sheet.cell(curr_row, curr_column).value == ratio_name:
                 attributes_column = curr_column
@@ -210,15 +254,26 @@ class ExcelParser():
                         insert_float_value(ratios, curr_value)
                         curr_row += 1
 
-                    common.DAL.db_queries.insert_values(table_name=table_name,
-                                                        columns=attributes,
-                                                        values=ratios)
+                    try:
+                        common.DAL.db_queries.insert_values_without_ignore(table_name=table_name,
+                                                                           columns=attributes,
+                                                                           values=ratios)
+                    except IntegrityError:
+                        if not overlapping_ratios:
+                            init_overlapping_info(overlapping_ratios,
+                                                  table_name,
+                                                  attributes)
+                        overlapping_ratios["values"].append(ratios)
+
                     attributes = ['CompanyID', 'PeriodStart', 'PeriodEnd']
                     ratios = [company_id]
                     curr_column += 1
                     curr_row = dates_row + 1
                 break
             curr_row += 1
+        if overlapping_ratios:
+            raise UniqueError(overlapping_ratios)
+
 
     def get_company_id_balance_sheet(self, path):
         self.parse_company(path)

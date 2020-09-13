@@ -20,3 +20,11 @@ class ParseError(Exception):
     def __str__(self):
         message = 'Cannot parse data. Not compatible with convention. Source: ' + self.source
         return message + self.details if self.details else message
+
+
+class UniqueError(Exception):
+    def __init__(self, *overlapping_data):
+        self.overlapping_data = overlapping_data
+
+    def __str__(self):
+        return 'Data for such company and dates already exists.\n'
