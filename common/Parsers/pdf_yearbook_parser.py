@@ -4,7 +4,7 @@ import re
 import collections
 import pandas as pd
 from datetime import date
-from common.DAL.db_queries import insert_market_value, insert_company
+from common.DAL.db_queries import insert_market_value, insert_company, get_company_id
 from common.Utils.Errors import CompanyNotFoundError
 
 
@@ -179,9 +179,8 @@ class PdfYearbookParser:
         company_name = row[self.company_column]
         market_value = row[self.market_value_column]
 
-        try:
-            insert_market_value(market_value, self.date, company_name)
-        except CompanyNotFoundError:
-            print(f'Company {company_name} not found')
-            insert_company(company_name)
-            self.save_value_to_database(row)
+        company_id = get_company_id(company_name=company_name)
+        if company_id is None:
+            company_id = insert_company(company_name=company_name)
+
+        insert_market_value(company_id, market_value, self.date)

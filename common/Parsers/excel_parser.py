@@ -92,9 +92,8 @@ class ExcelParser():
             raise ParseError(path, '(A26=EKD 1) of company should be in B26 cell')
 
         ekd_section, ekd_class = parse_ekd(company_ekd)
-        insert_ekd_data(ekd_section, ekd_class)
-        common.DAL.db_queries.insert_full_company(company_name, isin, company_ticker, company_bloomberg,
-                                                  ekd_section, ekd_class)
+
+        return company_name, isin, company_ticker, company_bloomberg, ekd_section, ekd_class
 
     def parse_balance_sheet(self, path, sheet_name):
         if sheet_name not in self.available_sheets:
@@ -274,19 +273,14 @@ class ExcelParser():
         if overlapping_ratios:
             raise UniqueError(overlapping_ratios)
 
-
     def get_company_id_balance_sheet(self, path):
-        self.parse_company(path)
-        excel_sheet = get_sheet(path, 'Info')
-        value_column = 1
-        name_row = 2
-        isin_row = 17
-        isin_column = 4
-        ticker_row = 12
-        company_name = excel_sheet.cell(name_row, value_column).value
-        company_ticker = excel_sheet.cell(ticker_row, value_column).value
-        company_isin = excel_sheet.cell(isin_row, isin_column).value
-        return common.DAL.db_queries.get_company_id(company_name, company_ticker, company_isin)
+        company_name, company_isin, company_ticker, company_bloomberg, ekd_section, ekd_class = self.parse_company(path)
+
+        company_id = common.DAL.db_queries.get_company_id(company_name, company_ticker, company_isin)
+        if company_id is None:
+            company_id = common.DAL.db_queries.insert_company(company_name, company_ticker, company_isin,
+                                                              company_bloomberg, ekd_section, ekd_class)
+        return company_id
 
 
 ep = ExcelParser()

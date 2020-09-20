@@ -4,7 +4,7 @@ import lxml
 import numbers
 import requests
 import pandas as pd
-from common.DAL.db_queries import insert_company, insert_stock_quotes, get_company_id_from_ticker, \
+from common.DAL.db_queries import insert_company, insert_stock_quotes, get_company_id, \
     get_interval_id_from_shortcut
 import re
 from datetime import date
@@ -106,12 +106,11 @@ class StooqParser:
         for index, row in result.iterrows():
             parsed_data = date(year, month, day)
             ticker = row['Symbol'].upper()
-            company_id = get_company_id_from_ticker(ticker)
+            company_id = get_company_id(company_ticker=ticker)
             if company_id is None:
                 error = CompanyNotFoundError(ticker)
                 print(error)
-                insert_company(company_name=row['Name'], company_ticker=ticker, company_isin=None)
-                company_id = get_company_id_from_ticker(ticker)
+                company_id = insert_company(company_name=row['Name'], company_ticker=ticker, company_isin=None)
 
             if row['Last'] is None:
                 continue
@@ -142,7 +141,7 @@ class StooqParser:
         company = company.upper()
         overlapping_stock = {}
 
-        company_id = get_company_id_from_ticker(company)
+        company_id = get_company_id(company_ticker=company)
         if company_id is None:
             error = CompanyNotFoundError(isin=company)
             print(error)
@@ -153,8 +152,7 @@ class StooqParser:
             site_html = requests.get(url).content.decode("utf-8")
             company_name = re.search('Historical data:  (.*) \(', str(site_html)).group(1)
 
-            insert_company(company_name=company_name, company_ticker=company, company_isin=None)
-            company_id = get_company_id_from_ticker(company)
+            company_id = insert_company(company_name=company_name, company_ticker=company, company_isin=None)
 
         while True:
             url = self._company_url_base.format(number=i, company=company,

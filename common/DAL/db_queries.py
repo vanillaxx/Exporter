@@ -168,16 +168,12 @@ def insert_stock_quotes(connection, values):
 
 
 @with_connection
-def insert_market_value(connection, market_value, end_date, company_name, company_isin=None):
+def insert_market_value(connection, company_id, market_value, end_date):
     # TODO updating information about company
-    company_id = get_company_id_from_isin(company_isin) or get_company_id_from_name(company_name)
     data = (company_id, end_date, market_value)
-    if company_id:
-        command = '''INSERT INTO MarketValues(CompanyID, "Period end", "Market value") VALUES (?, ?, ?)'''
-        with connection:
-            connection.execute(command, data)
-    else:
-        raise CompanyNotFoundError(name=company_name, isin=company_isin)
+    command = '''INSERT INTO MarketValues(CompanyID, "Period end", "Market value") VALUES (?, ?, ?)'''
+    with connection:
+        connection.execute(command, data)
 
 
 def insert_ekd_section(ekd_section):
@@ -188,41 +184,33 @@ def insert_ekd_class(ekd_class):
     insert_value(table_name='EKDClass', column='Value', value=ekd_class)
 
 
-def insert_full_company(company_name, isin, company_ticker, company_bloomberg, ekd_section, ekd_class):
-    section_id = get_ekd_section_id_from_value(ekd_section=ekd_section)
-    class_id = get_ekd_class_id_from_value(ekd_class=ekd_class)
-    insert_values(table_name='Company',
-                  columns=['Name', 'ISIN', 'Ticker', 'Bloomberg', 'EKDSectionID', 'EKDClassID'],
-                  values=[company_name, isin, company_ticker, company_bloomberg, section_id, class_id])
-
-
 @with_connection
-def insert_company(connection, company_name=None, company_ticker=None, company_isin=None):
-    values = company_name, company_ticker, company_isin
-    command = '''INSERT INTO Company(Name, Ticker, ISIN) VALUES (?, ?, ?)'''
+def insert_company(connection, company_name=None, company_ticker=None, company_isin=None, company_bloomberg=None,
+                   ekd_section=None, ekd_class=None):
+    if ekd_section is not None and ekd_class is not None:
+        ekd_section = get_ekd_section_id_from_value(ekd_section=ekd_section)
+        ekd_class = get_ekd_class_id_from_value(ekd_class=ekd_class)
+
+    values = company_name.upper, company_ticker, company_isin, company_bloomberg, ekd_section, ekd_class
+    command = '''INSERT INTO Company(Name, Ticker, ISIN, Bloomberg, EKD_SectionID, EKD_ClassID) 
+                 VALUES (?, ?, ?, ?, ?, ?)'''
+
     with connection:
-        connection.execute(command, values)
+        cursor = connection.cursor()
+        cursor.execute(command, values)
+        company_id = cursor.lastrowid
+
+    return company_id
 
 
 @with_connection
-def get_company_id_from_name(connection, company_name):
-    company_name = company_name.upper()
-    c = connection.cursor()
-    c.execute("SELECT ID FROM Company WHERE Name Like ?", (company_name,))
-    company = c.fetchone()
-    if not company:
-        return None
-    return company[0]
-
-
-@with_connection
-def get_company_id(connection, company_name, company_ticker, company_isin):
+def get_company_id(connection, company_name=None, company_ticker=None, company_isin=None):
     company_name = company_name.upper()
     c = connection.cursor()
     query = '''SELECT ID FROM Company
-              WHERE Name Like ?
-              OR Ticker Like ?
-              OR ISIN Like ?'''
+              WHERE Name = ?
+              OR Ticker = ?
+              OR ISIN = ?'''
     c.execute(query, (company_name, company_ticker, company_isin))
     company = c.fetchone()
     if not company:
@@ -239,19 +227,6 @@ def get_company_id_from_ticker(connection, ticker):
     if not company:
         return None
     return company[0]
-
-
-@with_connection
-def get_company_id_from_isin(connection, company_isin):
-    c = connection.cursor()
-    c.execute('''SELECT C.ID
-                FROM Company C
-                WHERE ISIN = ? ''', (company_isin,))
-    result = c.fetchone()
-    if result:
-        return result[0]
-    else:
-        return result
 
 
 @with_connection

@@ -30,13 +30,15 @@ class ExcelGPWParser:
                 isin = excel_sheet.cell(curr_row, isin_column).value
                 name = excel_sheet.cell(curr_row, name_column).value
                 value = excel_sheet.cell(curr_row, capitalization_column).value * milion
-                try:
-                    common.DAL.db_queries.insert_market_value(value, end_date, name, isin)
-                except CompanyNotFoundError as err:
-                    print(err)
-                    common.DAL.db_queries.insert_company(company_name=name, company_isin=isin)
-                    common.DAL.db_queries.insert_market_value(value, end_date, name, isin)
+
+                company_id = common.DAL.db_queries.get_company_id(company_name=name, company_isin=isin)
+                if company_id is None:
+                    company_id = common.DAL.db_queries.insert_company(company_name=name, company_isin=isin)
+
+                common.DAL.db_queries.insert_market_value(company_id, value, end_date)
+
                 curr_row = curr_row + 1
+
         elif "nazwa" in excel_sheet.cell(headers_check_row,
                                          isin_column).value.lower():  # case where name is in place of isin
             name_column = 1
@@ -44,12 +46,13 @@ class ExcelGPWParser:
             while curr_row < excel_sheet.nrows:
                 name = excel_sheet.cell(curr_row, name_column).value
                 value = excel_sheet.cell(curr_row, capitalization_column).value * milion
-                try:
-                    common.DAL.db_queries.insert_market_value(value, end_date, name)
-                except CompanyNotFoundError as err:
-                    print(err)
-                    common.DAL.db_queries.insert_company(company_name=name)
-                    common.DAL.db_queries.insert_market_value(value, end_date, name)
+
+                company_id = common.DAL.db_queries.get_company_id(company_name=name)
+                if company_id is None:
+                    company_id = common.DAL.db_queries.insert_company(company_name=name)
+
+                common.DAL.db_queries.insert_market_value(company_id, value, end_date)
+
                 curr_row = curr_row + 1
         else:
             raise ParseError(path, '1: "ISIN" should be in B5 cell and "Nazwa" should be in C5 cell or 2: "Nazwa" '

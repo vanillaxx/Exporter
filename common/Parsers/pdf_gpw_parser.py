@@ -3,7 +3,7 @@ import fitz
 import collections
 import pandas as pd
 import numpy as np
-from common.DAL.db_queries import insert_market_value, insert_company
+from common.DAL.db_queries import insert_market_value, insert_company, get_company_id
 from common.Utils.Errors import CompanyNotFoundError
 from common.Parsers.Common.dates import *
 
@@ -199,10 +199,9 @@ class PdfGPWParser:
         company_isin = row.get(self.isin_code_column)
         market_value = row[self.capitalisation_value_column]
 
-        try:
-            insert_market_value(market_value, self.date, company_name, company_isin)
-        except CompanyNotFoundError:
-            print(f'Company {company_name} not found')
-            insert_company(company_name=company_name, company_isin=company_isin)
-            self.save_value_to_database(row)
+        company_id = get_company_id(company_name=company_name, company_isin=company_isin)
+        if company_id is None:
+            company_id = insert_company(company_name=company_name, company_isin=company_isin)
+
+        insert_market_value(company_id, market_value, self.date)
 
