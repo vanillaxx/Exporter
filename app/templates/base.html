@@ -10,22 +10,22 @@
     <script src="{% static 'js/jquery.bootstrap.modal.forms.js' %}"></script>
     <link href="{% static 'css/bootstrap.css' %}" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link href="{% static 'css/base.css' %}" rel="stylesheet" type="text/css">
 </head>
-<body>
 <h1>EXPORTER</h1>
-
+<div id="button-div">
 <button onclick="showImportOptions()" id="importButton" class="buttons">Import</button>
-<ul id="import-options" style="display: none">
+<ul id="import-options" class="menu-options" style="display: none">
     <li><a href="{% url 'import_notoria' %}" id="importNotoria">Import from Notoria</a></li>
     <li><a href="{% url 'import_stooq' %}" id="importStooq">Import from Stooq</a></li>
     <li><a href="{% url 'import_gpw' %}" id="importGPW">Import from GPW</a></li>
 </ul>
 
-<button onclick="window.location.href=window.location.origin+'/export'" id="exportButton" class="buttons">
+<button onclick="changeExportButtonColor(); window.location.href=window.location.origin+'/export'" id="exportButton" class="buttons">
     Export
 </button>
 <button onclick="showManageOptions()" id="manageDataButton" class="buttons">Manage data</button>
-<ul id="manage-options" style="display: none">
+<ul id="manage-options" class="menu-options" style="display: none">
     <li><a href="{% url 'companies' %}" id="show-companies">Show companies</a></li>
     <li><a href="{% url 'assets' %}" id="show-assets">Show assets</a></li>
     <li><a href="{% url 'assets_categories' %}" id="show-assets-categories">Show assets categories</a></li>
@@ -38,27 +38,48 @@
     <li><a href="{% url 'market' %}" id="show-market">Show market values</a></li>
     <li><a href="{% url 'stock' %}" id="show-stock">Show stock quote</a></li>
 </ul>
+</div>
+
+<div id="content">
 
 {% block content %}
 {% endblock %}
 
+</div>
+
 <script>
     function showImportOptions() {
         if($('#import-options').is(":hidden")){
+            $('#importButton').css('background-color', '#86cfda');
+            $('#manageDataButton').css('background-color', '#e2e6ea');
+            $('#exportButton').css('background-color', '#e2e6ea');
+
             $('#import-options').show()
             $('#manage-options').hide()
         } else {
+            $('#importButton').css('background-color', '#e2e6ea');
             $('#import-options').hide()
         }
     }
 
     function showManageOptions() {
         if($('#manage-options').is(":hidden")){
+            $('#manageDataButton').css('background-color', '#86cfda');
+            $('#importButton').css('background-color', '#e2e6ea');
+            $('#exportButton').css('background-color', '#e2e6ea');
+
             $('#import-options').hide()
             $('#manage-options').show()
         } else {
+            $('#manageDataButton').css('background-color', '#e2e6ea');
             $('#manage-options').hide()
         }
+    }
+
+    function changeExportButtonColor() {
+        $('#manageDataButton').css('background-color', '#e2e6ea');
+        $('#importButton').css('background-color', '#e2e6ea');
+        $('#exportButton').css('background-color', '#86cfda');
     }
 
 </script>
