@@ -98,14 +98,14 @@ def export_du_pont_indicators(company_ids, start_date, end_date, file_name, add_
     put_data_to_csv(data, description, file_name, add_description)
 
 
-def export_stock_quotes(company_ids, start_date, end_date, file_name):  # TODO interval options
-    data, description = db_queries.export_stock_quotes(company_ids, start_date, end_date, 'd')
-    put_data_to_csv(data, description, file_name)
+def export_stock_quotes(company_ids, start_date, end_date, file_name, interval, add_description=True):
+    data, description = db_queries.export_stock_quotes(company_ids, start_date, end_date, interval)
+    put_data_to_csv(data, description, file_name, add_description)
 
 
-def export_market_values(company_ids, start_date, end_date, file_name):
+def export_market_values(company_ids, start_date, end_date, file_name, add_description=True):
     data, description = db_queries.get_market_values_for_companies(company_ids, start_date, end_date)
-    put_data_to_csv(data, description, file_name)
+    put_data_to_csv(data, description, file_name, add_description)
 
 
 def export_assets_and_market_values_for_companies(company_ids, start_date, end_date, file_name, add_description=True):

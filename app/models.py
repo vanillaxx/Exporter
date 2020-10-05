@@ -5,8 +5,8 @@ from django.db import models
 
 class Assets(models.Model):
     id = models.AutoField(db_column='ID', primary_key=True, blank=True, null=False)  # Field name made lowercase.
-    companyid = models.ForeignKey('Company', models.DO_NOTHING, db_column='CompanyID', blank=True,
-                                  null=True)  # Field name made lowercase.
+    company_id = models.ForeignKey('Company', models.CASCADE, db_column='CompanyID', blank=True,
+                                  null=False)  # Field name made lowercase.
     date = models.DateField(db_column='Date', blank=True, null=True)  # Field name made lowercase.
     property_plant_and_equipment = models.FloatField(db_column='Property, plant and equipment', blank=True,
                                                      null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
@@ -58,13 +58,14 @@ class Assets(models.Model):
         managed = True
         db_table = 'Assets'
         constraints = [
-            models.UniqueConstraint(fields=['companyid', 'date'], name='assets_company_date_unique')
+            models.UniqueConstraint(fields=['company_id', 'date'], name='assets_company_date_unique')
         ]
+
 
 class AssetsCategories(models.Model):
     id = models.AutoField(db_column='ID', primary_key=True, blank=True, null=False)  # Field name made lowercase.
-    companyid = models.ForeignKey('Company', models.DO_NOTHING, db_column='CompanyID', blank=True,
-                                  null=True)  # Field name made lowercase.
+    company_id = models.ForeignKey('Company', models.CASCADE, db_column='CompanyID', blank=True,
+                                  null=False)  # Field name made lowercase.
     date = models.DateField(db_column='Date', blank=True, null=True)  # Field name made lowercase.
     non_current_assets = models.FloatField(db_column='Non-current assets', blank=True,
                                            null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
@@ -82,7 +83,7 @@ class AssetsCategories(models.Model):
         managed = True
         db_table = 'AssetsCategories'
         constraints = [
-            models.UniqueConstraint(fields=['companyid', 'date'], name='assets_categories_company_date_unique')
+            models.UniqueConstraint(fields=['company_id', 'date'], name='assets_categories_company_date_unique')
         ]
 
 
@@ -90,18 +91,24 @@ class EkdClass(models.Model):
     id = models.AutoField(db_column='ID', primary_key=True, blank=True, null=False)  # Field name made lowercase.
     value = models.IntegerField(db_column='Value', unique=True, blank=True, null=True)  # Field name made lowercase.
 
+    def __str__(self):
+        return str(self.value)
+
     class Meta:
         managed = True
-        db_table = 'EKD_Class'
+        db_table = 'EKDClass'
 
 
 class EkdSection(models.Model):
     id = models.AutoField(db_column='ID', primary_key=True, blank=True, null=False)  # Field name made lowercase.
     value = models.IntegerField(db_column='Value', unique=True, blank=True, null=True)  # Field name made lowercase.
 
+    def __str__(self):
+        return str(self.value)
+
     class Meta:
         managed = True
-        db_table = 'EKD_Section'
+        db_table = 'EKDSection'
 
 
 class Company(models.Model):
@@ -113,13 +120,18 @@ class Company(models.Model):
                               max_length=255)  # Field name made lowercase.
     bloomberg = models.CharField(db_column='Bloomberg', blank=True, null=True,
                                  max_length=255)  # Field name made lowercase.
-    ekd_sectionid = models.ForeignKey('EkdSection', models.DO_NOTHING, db_column='EKD_SectionID', blank=True,
+    ekd_section_id = models.ForeignKey('EkdSection', models.DO_NOTHING, db_column='EKDSectionID', blank=True,
                                       null=True)  # Field name made lowercase.
-    ekd_classid = models.ForeignKey('EkdClass', models.DO_NOTHING, db_column='EKD_ClassID', blank=True,
+    ekd_class_id = models.ForeignKey('EkdClass', models.DO_NOTHING, db_column='EKDClassID', blank=True,
                                     null=True)  # Field name made lowercase.
 
     def __str__(self):
-        return self.name
+        if self.name:
+            return self.name
+        if self.ticker:
+            return "Ticker: " + self.ticker
+
+        return "ISIN: " + self.isin
 
     class Meta:
         managed = True
@@ -128,10 +140,10 @@ class Company(models.Model):
 
 class DuPontIndicators(models.Model):
     id = models.AutoField(db_column='ID', primary_key=True, blank=True, null=False)  # Field name made lowercase.
-    companyid = models.ForeignKey(Company, models.DO_NOTHING, db_column='CompanyID', blank=True,
-                                  null=True)  # Field name made lowercase.
-    periodstart = models.DateField(db_column='PeriodStart', blank=True, null=True)  # Field name made lowercase.
-    periodend = models.DateField(db_column='PeriodEnd', blank=True, null=True)  # Field name made lowercase.
+    company_id = models.ForeignKey(Company, models.CASCADE, db_column='CompanyID', blank=True,
+                                  null=False)  # Field name made lowercase.
+    period_start = models.DateField(db_column='Period start', blank=True, null=True)  # Field name made lowercase.
+    period_end = models.DateField(db_column='Period end', blank=True, null=True)  # Field name made lowercase.
     return_on_equity_roe_field = models.FloatField(db_column='Return on equity (ROE)', blank=True,
                                                    null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters. Field renamed because it ended with '_'.
     return_on_assets_roa_field = models.FloatField(db_column='Return on assets (ROA)', blank=True,
@@ -155,13 +167,14 @@ class DuPontIndicators(models.Model):
         managed = True
         db_table = 'DuPontIndicators'
         constraints = [
-            models.UniqueConstraint(fields=['periodstart', 'periodend', 'companyid'], name='dupont_indicators_company_date_unique')
+            models.UniqueConstraint(fields=['period_start', 'period_end', 'company_id'], name='dupont_indicators_company_date_unique')
         ]
+
 
 class EquityLiabilities(models.Model):
     id = models.AutoField(db_column='ID', primary_key=True, blank=True, null=False)  # Field name made lowercase.
-    companyid = models.ForeignKey(Company, models.DO_NOTHING, db_column='CompanyID', blank=True,
-                                  null=True)  # Field name made lowercase.
+    company_id = models.ForeignKey(Company, models.CASCADE, db_column='CompanyID', blank=True,
+                                  null=False)  # Field name made lowercase.
     date = models.DateField(db_column='Date', blank=True, null=True)  # Field name made lowercase.
     share_capital = models.FloatField(db_column='Share capital', blank=True,
                                       null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
@@ -226,13 +239,14 @@ class EquityLiabilities(models.Model):
         managed = True
         db_table = 'EquityLiabilities'
         constraints = [
-            models.UniqueConstraint(fields=['date', 'companyid'], name='equity_liabilities_company_date_unique')
+            models.UniqueConstraint(fields=['date', 'company_id'], name='equity_liabilities_company_date_unique')
         ]
+
 
 class EquityLiabilitiesCategories(models.Model):
     id = models.AutoField(db_column='ID', primary_key=True, blank=True, null=False)  # Field name made lowercase.
-    companyid = models.ForeignKey(Company, models.DO_NOTHING, db_column='CompanyID', blank=True,
-                                  null=True)  # Field name made lowercase.
+    company_id = models.ForeignKey(Company, models.CASCADE, db_column='CompanyID', blank=True,
+                                  null=False)  # Field name made lowercase.
     date = models.DateField(db_column='Date', blank=True, null=True)  # Field name made lowercase.
     equity_shareholders_of_the_parent = models.FloatField(db_column='Equity shareholders of the parent', blank=True,
                                                           null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
@@ -248,7 +262,7 @@ class EquityLiabilitiesCategories(models.Model):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['companyid', 'date'],
+            models.UniqueConstraint(fields=['company_id', 'date'],
                                     name='equity_liabilities_categories_company_date_unique')
         ]
         managed = True
@@ -257,10 +271,10 @@ class EquityLiabilitiesCategories(models.Model):
 
 class FinancialRatios(models.Model):
     id = models.AutoField(db_column='ID', primary_key=True, blank=True, null=False)  # Field name made lowercase.
-    companyid = models.ForeignKey(Company, models.DO_NOTHING, db_column='CompanyID', blank=True,
-                                  null=True)  # Field name made lowercase.
-    periodstart = models.DateField(db_column='PeriodStart', blank=True, null=True)  # Field name made lowercase.
-    periodend = models.DateField(db_column='PeriodEnd', blank=True, null=True)  # Field name made lowercase.
+    company_id = models.ForeignKey(Company, models.CASCADE, db_column='CompanyID', blank=True,
+                                  null=False)  # Field name made lowercase.
+    period_start = models.DateField(db_column='Period start', blank=True, null=True)  # Field name made lowercase.
+    period_end = models.DateField(db_column='Period end', blank=True, null=True)  # Field name made lowercase.
     gross_profit_margin_on_sales = models.FloatField(db_column='Gross profit margin on sales', blank=True,
                                                      null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
     operating_profit_margin = models.FloatField(db_column='Operating profit margin', blank=True,
@@ -308,15 +322,15 @@ class FinancialRatios(models.Model):
         managed = True
         db_table = 'FinancialRatios'
         constraints = [
-            models.UniqueConstraint(fields=['periodstart', 'periodend', 'companyid'], name='financial_ratios_company_date_unique')
+            models.UniqueConstraint(fields=['period_start', 'period_end', 'company_id'], name='financial_ratios_company_date_unique')
         ]
 
 
 class MarketValues(models.Model):
     id = models.AutoField(db_column='ID', primary_key=True, blank=True, null=False)  # Field name made lowercase.
-    companyid = models.ForeignKey(Company, models.DO_NOTHING, db_column='CompanyID')  # Field name made lowercase.
-    periodend = models.DateField(db_column='PeriodEnd')  # Field name made lowercase.
-    marketvalue = models.FloatField(db_column='MarketValue')  # Field name made lowercase.
+    company_id = models.ForeignKey(Company, models.CASCADE, db_column='CompanyID', null=False)  # Field name made lowercase.
+    period_end = models.DateField(db_column='Period end')  # Field name made lowercase.
+    market_value = models.FloatField(db_column='MarketValue')  # Field name made lowercase.
 
     class Meta:
         managed = True
@@ -328,16 +342,21 @@ class Interval(models.Model):
     shortcut = models.CharField(db_column='Shortcut', unique=True, blank=True, null=False, max_length=10)  # Field name made lowercase.
     fullname = models.CharField(db_column='FullName', blank=True, null=False, max_length=255)  # Field name made lowercase.
 
+    def __str__(self):
+        return self.fullname
+
     class Meta:
         managed = True
         db_table = 'Interval'
+        constraints = [
+            models.UniqueConstraint(fields=['shortcut'], name='interval_shortcut_unique')
+        ]
 
 
 class StockQuotes(models.Model):
     id = models.AutoField(db_column='ID', primary_key=True, blank=True, null=False)  # Field name made lowercase.
-    companyid = models.ForeignKey(Company, models.DO_NOTHING, db_column='CompanyID')  # Field name made lowercase.
-    startdate = models.DateField(db_column='StartDate')  # Field name made lowercase.
-    enddate = models.DateField(db_column='EndDate')  # Field name made lowercase.
+    company_id = models.ForeignKey(Company, models.CASCADE, db_column='CompanyID', null=False)  # Field name made lowercase.
+    period_end = models.DateField(db_column='Period end')  # Field name made lowercase.
     stock = models.FloatField(db_column='Stock')  # Field name made lowercase.
     change = models.FloatField(db_column='Change', blank=True, null=True)  # Field name made lowercase.
     open = models.FloatField(db_column='Open', blank=True, null=True)  # Field name made lowercase.
@@ -350,3 +369,7 @@ class StockQuotes(models.Model):
     class Meta:
         managed = True
         db_table = 'StockQuotes'
+
+        constraints = [
+            models.UniqueConstraint(fields=['company_id', 'period_end', 'interval'], name='stock_company_date_interval_unique')
+        ]

@@ -1,0 +1,87 @@
+{% extends '../base.html' %}
+{% block content %}
+{% load static %}
+
+<div class="modal fade" id="create-modal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" tabindex="-1" role="dialog" id="modal">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content"></div>
+  </div>
+</div>
+
+<button id="create-duPont" class="btn btn-primary" type="button" name="button">Create DuPont indicator</button>
+
+<table class="table table-sm table-bordered">
+    <thead>
+    <tr>
+        <th scope="col">Company</th>
+        <th scope="col">Period start</th>
+        <th scope="col">Period end</th>
+        <th scope="col">Return on equity (ROE)</th>
+        <th scope="col">Return on assets (ROA)</th>
+        <th scope="col">Leverage (EM)</th>
+        <th scope="col">Net profit margin</th>
+        <th scope="col">Asset utilization (AU)</th>
+        <th scope="col">Load gross profit</th>
+        <th scope="col">Load operating profit</th>
+        <th scope="col">Operating profit margin</th>
+        <th scope="col">EBITDA margin</th>
+        <th scope="col"></th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for indicator in indicators %}
+    <tr>
+        <td>{{ indicator.company_id }}</td>
+        <td>{{ indicator.period_start|date:"Y-m-d" }}</td>
+        <td>{{ indicator.period_end|date:"Y-m-d" }}</td>
+        <td>{{ indicator.return_on_equity_roe_field }}</td>
+        <td>{{ indicator.return_on_assets_roa_field }}</td>
+        <td>{{ indicator.leverage_em_field }}</td>
+        <td>{{ indicator.net_profit_margin }}</td>
+        <td>{{ indicator.asset_utilization_au_field }}</td>
+        <td>{{ indicator.load_gross_profit }}</td>
+        <td>{{ indicator.load_operating_profit }}</td>
+        <td>{{ indicator.operating_profit_margin }}</td>
+        <td>{{ indicator.ebitda_margin }}</td>
+        <td>
+            <!-- Update buttons -->
+            <button type="button" id="update-duPont" class="bs-modal btn btn-sm btn-primary"
+                    data-form-url="{% url 'update_dupont' indicator.id %}">
+                <span class="fa fa-pencil"></span>
+            </button>
+            <!-- Delete buttons -->
+            <button type="button" id="delete-duPont" class="bs-modal btn btn-sm btn-danger"
+                    data-form-url="{% url 'delete_dupont' indicator.id %}">
+                <span class="fa fa-trash"></span>
+            </button>
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<script type="text/javascript">
+  $(function () {
+
+    $(".bs-modal").each(function () {
+      $(this).modalForm({
+          formURL: $(this).data('form-url')
+      });
+    });
+
+    $("#create-duPont").modalForm({
+        formURL: "{% url 'create_dupont' %}",
+        modalID: "#create-modal"
+    });
+
+  });
+</script>
+
+{% endblock %}

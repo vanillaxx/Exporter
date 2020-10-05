@@ -5,6 +5,7 @@ import pandas as pd
 from common.DAL.db_queries import insert_company, insert_stock_quotes, get_company_id_from_ticker, get_interval_id_from_shortcut
 import re
 from datetime import date, timedelta
+from common.Utils.Errors import *
 
 
 class StooqParser:
@@ -17,13 +18,13 @@ class StooqParser:
     # daily StockQuotes for given date for all available companies (contains turnover)
     def download_all_companies(self, user_date):
         day, month, year = user_date.day, user_date.month, user_date.year
-        new_companies = []
         interval_id = get_interval_id_from_shortcut('d')
 
         i = 1
         frames = []
         frames_change = []
         found = False
+
         while True:
             url = self._all_companies_date_ulr_base.format(number=i, day=day, month=month, year=year)
             site_html = requests.get(url).content.decode("utf-8")
@@ -79,9 +80,9 @@ class StooqParser:
             found = False
 
         if len(frames) == 0:
-            raise ValueError("No stock quotes for companies")
+            raise ParseError(url, "No stock quotes find companies for given date")
         if len(frames_change) == 0:
-            raise ValueError("No stock quotes for companies")
+            raise ParseError(url_change, "No stock quotes find companies for given date")
 
         result = pd.concat(frames)
         result_change = pd.concat(frames_change)
@@ -91,20 +92,20 @@ class StooqParser:
             result['Volume'] = result['Volume'].apply(lambda x: _convert_kmb(x))
             result['Turnover'] = result['Turnover'].apply(lambda x: _convert_kmb(x))
         except ValueError:
-            raise ValueError('Wrong data in Volume/Turnover column')
+            raise ParseError(url, 'Wrong data in Volume/Turnover column')
 
         for index, row in result.iterrows():
-            company_id = get_company_id_from_ticker(row['Symbol'])
+            ticker = row['Symbol'].upper()
+            company_id = get_company_id_from_ticker(ticker)
             if company_id is None:
-                insert_company(company_name=row['Name'], company_ticker=row['Symbol'], company_isin=None)
-                new_companies.append(row['Name'])
-                company_id = get_company_id_from_ticker(row['Symbol'])
+                error = CompanyNotFoundError(ticker)
+                print(error)
+                insert_company(company_name=row['Name'], company_ticker=ticker, company_isin=None)
+                company_id = get_company_id_from_ticker(ticker)
 
-            insert_stock_quotes((company_id, date(year, month, day), date(year, month, day), row['Last'],
+            insert_stock_quotes((company_id, date(year, month, day), row['Last'],
                                  row['Change.1'], row['Open'], row['High'], row['Low'], row['Volume'],
                                  row['Turnover'], interval_id))
-
-        return new_companies
 
     def download_company(self, company, start_date, end_date,
                          interval='d'):  # interval StockQuotes for given dates for company (no turnover)
@@ -114,11 +115,13 @@ class StooqParser:
         i = 1
         frames = []
         found = False
-        new_companies = []
         interval_id = get_interval_id_from_shortcut(interval)
+        company = company.upper()
 
         company_id = get_company_id_from_ticker(company)
         if company_id is None:
+            error = CompanyNotFoundError(isin=company)
+            print(error)
             url = self._company_url_base.format(number=1, company=company,
                                                 day1=start_day, month1=start_month, year1=start_year,
                                                 day2=end_day, month2=end_month, year2=end_year,
@@ -129,7 +132,6 @@ class StooqParser:
                 company_name = company
 
             insert_company(company_name=company_name, company_ticker=company, company_isin=None)
-            new_companies.append(company_name)
             company_id = get_company_id_from_ticker(company)
 
         while True:
@@ -166,17 +168,7 @@ class StooqParser:
         try:
             result['Volume'] = result['Volume'].apply(lambda x: _convert_kmb(x))
         except ValueError:
-            raise ValueError('Wrong data in Volume column')
-
-        previous_date = date(start_year, start_month, start_day)
-        if interval == 'y':
-            previous_date = previous_date.replace(day=1, month=1)
-        elif interval == 'q':
-            previous_date = _get_first_day_of_the_quarter(previous_date)
-        elif interval == 'm':
-            previous_date = previous_date.replace(day=1)
-        elif interval == 'w':
-            previous_date = previous_date - timedelta(days=previous_date.weekday())
+            raise ParseError(url, 'Wrong data in Volume column')
 
         for index, row in result.iterrows():
             if pd.isnull(row['No.']):
@@ -185,14 +177,12 @@ class StooqParser:
             try:
                 parsed_date = _parse_date(row['Date'])
             except (ValueError, TypeError):
-                raise ValueError('Wrong date')
+                raise ParseError(url, 'Wrong date format')
 
-            insert_stock_quotes((company_id, previous_date, parsed_date, row['Close'],
+            insert_stock_quotes((company_id, parsed_date, row['Close'],
                                 row['Change.1'], row['Open'], row['High'], row['Low'], row['Volume'], None, interval_id))
 
             previous_date = parsed_date + timedelta(days=1)
-
-        return new_companies
 
 
 def _parse_date(date_str):

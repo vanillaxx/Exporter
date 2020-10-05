@@ -1,0 +1,111 @@
+{% extends '../base.html' %}
+{% block content %}
+{% load static %}
+
+<div class="modal fade" id="create-modal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" tabindex="-1" role="dialog" id="modal">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content"></div>
+  </div>
+</div>
+
+<button id="create-assets" class="btn btn-primary" type="button" name="button">Create assets</button>
+
+<table class="table table-sm table-bordered">
+    <thead>
+    <tr>
+        <th scope="col">Company</th>
+        <th scope="col">Date</th>
+        <th scope="col">Property, plant and equipment</th>
+        <th scope="col">Exploration for and evaluation of mineral resources</th>
+        <th scope="col">Intangible assets</th>
+        <th scope="col">Goodwill</th>
+        <th scope="col">Investment property</th>
+        <th scope="col">Investment in affiliates</th>
+        <th scope="col">Non current financial assets</th>
+        <th scope="col">Non current loans and receivables</th>
+        <th scope="col">Deferred income tax</th>
+        <th scope="col">Non current deferred charges and accruals</th>
+        <th scope="col">Non current derivative instruments</th>
+        <th scope="col">Other non current assets</th>
+        <th scope="col">Inventories</th>
+        <th scope="col">Current intangible assets</th>
+        <th scope="col">Biological assets</th>
+        <th scope="col">Trade receivables</th>
+        <th scope="col">Loans and other receivables</th>
+        <th scope="col">Financial assets</th>
+        <th scope="col">Cash and cash equivalents</th>
+        <th scope="col">Accruals</th>
+        <th scope="col">Assets from current tax</th>
+        <th scope="col">Derivative instruments</th>
+        <th scope="col">Other assets</th>
+        <th scope="col"></th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for ass in assets %}
+    <tr>
+        <td>{{ ass.company_id }}</td>
+        <td>{{ ass.date|date:"Y-m-d" }}</td>
+        <td>{{ ass.property_plant_and_equipment }}</td>
+        <td>{{ ass.exploration_for_and_evaluation_of_mineral_resources }}</td>
+        <td>{{ ass.intangible_assets }}</td>
+        <td>{{ ass.goodwill }}</td>
+        <td>{{ ass.investment_property }}</td>
+        <td>{{ ass.investment_in_affiliates }}</td>
+        <td>{{ ass.non_current_financial_assets }}</td>
+        <td>{{ ass.non_current_loans_and_receivables }}</td>
+        <td>{{ ass.deferred_income_tax }}</td>
+        <td>{{ ass.non_current_deferred_charges_and_accruals }}</td>
+        <td>{{ ass.non_current_derivative_instruments }}</td>
+        <td>{{ ass.other_non_current_assets }}</td>
+        <td>{{ ass.inventories }}</td>
+        <td>{{ ass.current_intangible_assets }}</td>
+        <td>{{ ass.biological_assets }}</td>
+        <td>{{ ass.trade_receivables }}</td>
+        <td>{{ ass.loans_and_other_receivables }}</td>
+        <td>{{ ass.financial_assets }}</td>
+        <td>{{ ass.cash_and_cash_equivalents }}</td>
+        <td>{{ ass.accruals }}</td>
+        <td>{{ ass.assets_from_current_tax }}</td>
+        <td>{{ ass.derivative_instruments }}</td>
+        <td>{{ ass.other_assets }}</td>
+        <td>
+            <button type="button" id="update-assets" class="bs-modal btn btn-sm btn-primary"
+                    data-form-url="{% url 'update_assets' ass.id %}">
+                <span class="fa fa-pencil"></span>
+            </button>
+            <button type="button" id="delete-assets" class="bs-modal btn btn-sm btn-danger"
+                    data-form-url="{% url 'delete_assets' ass.id %}">
+                <span class="fa fa-trash"></span>
+            </button>
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<script type="text/javascript">
+  $(function () {
+
+    $(".bs-modal").each(function () {
+      $(this).modalForm({
+          formURL: $(this).data('form-url')
+      });
+    });
+
+    $("#create-assets").modalForm({
+        formURL: "{% url 'create_assets' %}",
+        modalID: "#create-modal"
+    });
+
+  });
+</script>
+
+{% endblock %}

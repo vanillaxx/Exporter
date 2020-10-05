@@ -1,7 +1,25 @@
 {% extends '../base.html' %}
 {% block content %}
 {% load static %}
-<link href="{% static 'css/bootstrap-grid.css' %}" rel="stylesheet">
+
+<!-- Modal 1 with id="create-company"-->
+<div class="modal fade" id="create-modal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+    </div>
+  </div>
+</div>
+
+<!-- Modal 2 with id="modal" -->
+<div class="modal fade" tabindex="-1" role="dialog" id="modal">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content"></div>
+  </div>
+</div>
+
+<!-- Create company button -->
+<button id="create-company" class="btn btn-primary" type="button" name="button">Create company</button>
+
 <table class="table table-sm table-bordered">
     <thead>
     <tr>
@@ -9,6 +27,9 @@
         <th scope="col">ISIN</th>
         <th scope="col">Ticker</th>
         <th scope="col">Bloomberg</th>
+        <th scope="col">EKD section ID</th>
+        <th scope="col">EKD class ID</th>
+        <th scope="col"></th>
     </tr>
     </thead>
     <tbody>
@@ -18,9 +39,40 @@
         <td>{{ company.isin }}</td>
         <td>{{ company.ticker }}</td>
         <td>{{ company.bloomberg }}</td>
+        <td>{{ company.ekd_sectionid }}</td>
+        <td>{{ company.ekd_classid }}</td>
+        <td>
+            <!-- Update buttons -->
+            <button type="button" id="update-company" class="bs-modal btn btn-sm btn-primary"
+                    data-form-url="{% url 'update_company' company.id %}">
+                <span class="fa fa-pencil"></span>
+            </button>
+            <!-- Delete buttons -->
+            <button type="button" id="delete-company" class="bs-modal btn btn-sm btn-danger"
+                    data-form-url="{% url 'delete_company' company.id %}">
+                <span class="fa fa-trash"></span>
+            </button>
+        </td>
     </tr>
     {% endfor %}
     </tbody>
 </table>
+
+<script type="text/javascript">
+  $(function () {
+
+    $(".bs-modal").each(function () {
+      $(this).modalForm({
+          formURL: $(this).data('form-url')
+      });
+    });
+
+    $("#create-company").modalForm({
+        formURL: "{% url 'create_company' %}",
+        modalID: "#create-modal"
+    });
+
+  });
+</script>
 
 {% endblock %}

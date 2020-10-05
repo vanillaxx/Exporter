@@ -48,10 +48,10 @@ def set_up_company_table(connection):
         ISIN VARCHAR UNIQUE,
         Ticker VARCHAR UNIQUE,
         Bloomberg VARCHAR,
-        EKD_SectionID INTEGER,
-        EKD_ClassID INTEGER,
-        FOREIGN KEY(EKD_SectionID) REFERENCES EKD_Section(ID),
-        FOREIGN KEY(EKD_ClassID) REFERENCES EKD_Class(ID)
+        EKDSectionID INTEGER,
+        EKDClassID INTEGER,
+        FOREIGN KEY(EKDSectionID) REFERENCES EKDSection(ID),
+        FOREIGN KEY(EKDClassID) REFERENCES EKDClass(ID)
         );''')
 
 
@@ -152,14 +152,14 @@ def set_up_equity_liabilities_categories_table(connection):
 
 
 def set_up_ekd_section_table(connection):
-    connection.execute('''CREATE TABLE IF NOT EXISTS EKD_Section
+    connection.execute('''CREATE TABLE IF NOT EXISTS EKDSection
             (ID INTEGER PRIMARY KEY AUTOINCREMENT,
             Value INTEGER UNIQUE
             );''')
 
 
 def set_up_ekd_class_table(connection):
-    connection.execute('''CREATE TABLE IF NOT EXISTS EKD_Class
+    connection.execute('''CREATE TABLE IF NOT EXISTS EKDClass
             (ID INTEGER PRIMARY KEY AUTOINCREMENT,
             Value INTEGER UNIQUE 
             );''')
@@ -169,8 +169,8 @@ def set_up_financial_ratios_table(connection):
     connection.execute('''CREATE TABLE IF NOT EXISTS FinancialRatios
         (ID INTEGER PRIMARY KEY AUTOINCREMENT,
         CompanyID INTEGER,
-        PeriodStart DATE,
-        PeriodEnd DATE,
+        'Period start' DATE,
+        'Period end' DATE,
         'Gross profit margin on sales' REAL,
         'Operating profit margin' REAL,
         'Gross profit margin' REAL,
@@ -200,8 +200,8 @@ def set_up_du_pont_table(connection):
     connection.execute('''CREATE TABLE IF NOT EXISTS DuPontIndicators
         (ID INTEGER PRIMARY KEY AUTOINCREMENT,
         CompanyID INTEGER,
-        PeriodStart DATE,
-        PeriodEnd DATE,
+        'Period start' DATE,
+        'Period end' DATE,
         'Return on equity (ROE)' REAL,
         'Return on assets (ROA)' REAL,
         'Leverage (EM)' REAL,
@@ -219,8 +219,7 @@ def set_up_stock_quotes_table(connection):
     connection.execute('''CREATE TABLE IF NOT EXISTS StockQuotes
     (ID INTEGER PRIMARY KEY AUTOINCREMENT,
         CompanyID INTEGER NOT NULL,
-        StartDate DATE NOT NULL,
-        EndDate DATE NOT NULL,
+        'Period end' DATE NOT NULL,
         Stock REAL NOT NULL,
         Change REAL,
         Open REAL,
@@ -256,11 +255,11 @@ def set_up_market_values_table(connection):
     connection.execute('''CREATE TABLE IF NOT EXISTS MarketValues
         (ID INTEGER PRIMARY KEY AUTOINCREMENT,
         CompanyID INTEGER NOT NULL,
-        PeriodEnd DATE NOT NULL,
+        'Period end' DATE,
         MarketValue REAL NOT NULL,
-        UNIQUE(CompanyID, PeriodEnd) ON CONFLICT IGNORE, 
+        UNIQUE(CompanyID, 'Period end') ON CONFLICT IGNORE, 
         FOREIGN KEY(CompanyID) REFERENCES Company(ID)
         );''')
 
 
-#set_up_database_tables()
+# set_up_database_tables()

@@ -1,0 +1,109 @@
+{% extends '../base.html' %}
+{% block content %}
+{% load static %}
+
+<div class="modal fade" id="create-modal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" tabindex="-1" role="dialog" id="modal">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content"></div>
+  </div>
+</div>
+
+<button id="create-financial" class="btn btn-primary" type="button" name="button">Create financial ratios</button>
+
+<table class="table table-sm table-bordered">
+    <thead>
+    <tr>
+        <th scope="col">Company</th>
+        <th scope="col">Period start</th>
+        <th scope="col">Period end</th>
+        <th scope="col">Gross profit margin on sales</th>
+        <th scope="col">Operating profit margin</th>
+        <th scope="col">Gross profit margin</th>
+        <th scope="col">Net profit margin</th>
+        <th scope="col">Return on equity (ROE)</th>
+        <th scope="col">Return on assets (ROA)</th>
+        <th scope="col">Working capital ratio</th>
+        <th scope="col">Current ratio</th>
+        <th scope="col">Quick ratio</th>
+        <th scope="col">Cash ratio</th>
+        <th scope="col">Receivables turnover</th>
+        <th scope="col">Inventory turnover</th>
+        <th scope="col">The operating cycle</th>
+        <th scope="col">Rotation commitments</th>
+        <th scope="col">Cash conversion cycle</th>
+        <th scope="col">Rotation assets</th>
+        <th scope="col">Rotation of assets</th>
+        <th scope="col">Assets ratio</th>
+        <th scope="col">Debt ratio</th>
+        <th scope="col">Debt service ratio</th>
+        <th scope="col">Rate debt security</th>
+        <th scope="col"></th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for fr in ratios %}
+    <tr>
+        <td>{{ fr.company_id }}</td>
+        <td>{{ fr.period_start|date:"Y-m-d" }}</td>
+        <td>{{ fr.period_end|date:"Y-m-d" }}</td>
+        <td>{{ fr.gross_profit_margin_on_sales }}</td>
+        <td>{{ fr.operating_profit_margin }}</td>
+        <td>{{ fr.gross_profit_margin }}</td>
+        <td>{{ fr.net_profit_margin }}</td>
+        <td>{{ fr.return_on_equity_roe_field }}</td>
+        <td>{{ fr.return_on_assets_roa_field }}</td>
+        <td>{{ fr.working_capital_ratio }}</td>
+        <td>{{ fr.current_ratio }}</td>
+        <td>{{ fr.quick_ratio }}</td>
+        <td>{{ fr.cash_ratio }}</td>
+        <td>{{ fr.receivables_turnover }}</td>
+        <td>{{ fr.inventory_turnover }}</td>
+        <td>{{ fr.the_operating_cycle }}</td>
+        <td>{{ fr.rotation_commitments }}</td>
+        <td>{{ fr.cash_conversion_cycle }}</td>
+        <td>{{ fr.rotation_assets }}</td>
+        <td>{{ fr.rotation_of_assets }}</td>
+        <td>{{ fr.assets_ratio }}</td>
+        <td>{{ fr.debt_ratio }}</td>
+        <td>{{ fr.debt_service_ratio }}</td>
+        <td>{{ fr.rate_debt_security }}</td>
+        <td>
+            <button type="button" id="update-financial" class="bs-modal btn btn-sm btn-primary"
+                    data-form-url="{% url 'update_financial' fr.id %}">
+                <span class="fa fa-pencil"></span>
+            </button>
+            <button type="button" id="delete-financial" class="bs-modal btn btn-sm btn-danger"
+                    data-form-url="{% url 'delete_financial' fr.id %}">
+                <span class="fa fa-trash"></span>
+            </button>
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<script type="text/javascript">
+  $(function () {
+
+    $(".bs-modal").each(function () {
+      $(this).modalForm({
+          formURL: $(this).data('form-url')
+      });
+    });
+
+    $("#create-financial").modalForm({
+        formURL: "{% url 'create_financial' %}",
+        modalID: "#create-modal"
+    });
+
+  });
+</script>
+
+{% endblock %}

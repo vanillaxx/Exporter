@@ -1,0 +1,63 @@
+{% extends '../base.html' %}
+{% block content %}
+{% load static %}
+
+<div class="modal fade" id="create-modal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" tabindex="-1" role="dialog" id="modal">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content"></div>
+  </div>
+</div>
+
+<button id="create-ekd-section" class="btn btn-primary" type="button" name="button">Create EKD class</button>
+
+<table class="table table-sm table-bordered">
+    <thead>
+    <tr>
+        <th scope="col">Value</th>
+        <th scope="col"></th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for section in sections %}
+    <tr>
+        <td>{{ section.value }}</td>
+        <td>
+            <button type="button" id="update-ekd-section" class="bs-modal btn btn-sm btn-primary"
+                    data-form-url="{% url 'update_ekd_section' section.id %}">
+                <span class="fa fa-pencil"></span>
+            </button>
+            <button type="button" id="delete-ekd-section" class="bs-modal btn btn-sm btn-danger"
+                    data-form-url="{% url 'delete_ekd_section' section.id %}">
+                <span class="fa fa-trash"></span>
+            </button>
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<script type="text/javascript">
+  $(function () {
+
+    $(".bs-modal").each(function () {
+      $(this).modalForm({
+          formURL: $(this).data('form-url')
+      });
+    });
+
+    $("#create-ekd-section").modalForm({
+        formURL: "{% url 'create_ekd_section' %}",
+        modalID: "#create-modal"
+    });
+
+  });
+</script>
+
+{% endblock %}
