@@ -1,7 +1,22 @@
+from bootstrap_modal_forms.generic import BSModalFormView
 from django import forms
+from django.core.exceptions import ValidationError
+
 from .models import *
 from bootstrap_datepicker_plus import DatePickerInput
-from bootstrap_modal_forms.forms import BSModalModelForm
+from bootstrap_modal_forms.forms import BSModalModelForm, BSModalForm
+
+
+class MergeForm(BSModalForm):
+    merge_from = Company.objects.all().order_by('name')
+    merge_to = Company.objects.all().order_by('name')
+    chosen_from = forms.ModelChoiceField(queryset=merge_from)
+    chosen_to = forms.ModelChoiceField(queryset=merge_to)
+
+    def clean(self):
+        cleaned_data = super(MergeForm, self).clean()
+        if cleaned_data.get('chosen_from') == cleaned_data.get('chosen_to'):
+            raise ValidationError("Please, select different companies!")
 
 
 class CompanyModelForm(BSModalModelForm):
@@ -101,7 +116,7 @@ class StockQuotesModelForm(BSModalModelForm):
 
 class ExportForm(forms.Form):
     file_name = forms.CharField(label='File name:', max_length=100)
-    company_choices = Company.objects.all()
+    company_choices = Company.objects.all().order_by('name')
     chosen_companies = forms.ModelMultipleChoiceField(queryset=company_choices)
     date_ranges_count = forms.CharField(widget=forms.HiddenInput())
     choices_i = [('d', 'Daily'),

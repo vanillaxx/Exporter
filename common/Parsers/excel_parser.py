@@ -238,7 +238,7 @@ class ExcelParser():
                 curr_column += 1
                 dates_row = curr_row + 1
                 curr_row += 2
-                attributes = ['CompanyID', 'PeriodStart', 'PeriodEnd']
+                attributes = ['CompanyID', 'Period start', 'Period end']
                 while curr_column < excel_sheet.ncols:
                     date_value = excel_sheet.cell(dates_row, curr_column).value
                     if not date_value:
@@ -265,7 +265,7 @@ class ExcelParser():
                                                   attributes)
                         overlapping_ratios["values"].append(ratios)
 
-                    attributes = ['CompanyID', 'PeriodStart', 'PeriodEnd']
+                    attributes = ['CompanyID', 'Period start', 'Period end']
                     ratios = [company_id]
                     curr_column += 1
                     curr_row = dates_row + 1
