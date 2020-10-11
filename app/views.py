@@ -8,11 +8,16 @@ from common.Parsers import excel_parser, pdf_gpw_parser, stooq_parser, pdf_yearb
 import common.Export.export as export_methods
 from common.Utils.Errors import UniqueError
 from .models import *
-from common.DAL.db_queries import replace_values, get_existing_data_balance_sheet, get_existing_data_ratios
+from common.DAL.db_queries import replace_values, get_existing_data_balance_sheet, get_existing_data_ratios, \
+    merge_assets_categories
 import json
 import os.path
 import uuid
-from bootstrap_modal_forms.generic import BSModalCreateView, BSModalUpdateView, BSModalDeleteView
+from bootstrap_modal_forms.generic import BSModalCreateView, BSModalUpdateView, BSModalDeleteView, BSModalFormView
+from common.DAL.db_queries import merge_assets, merge_assets_categories, merge_dupont_indicators, \
+    merge_equity_liabilities_categories, merge_equity_liabilities, merge_financial_ratios, delete_from_assets, \
+    delete_from_assets_categories, delete_from_dupont_indicators, delete_from_equity_liabilities, \
+    delete_from_equity_liabilities_categories, delete_from_financial_ratios, delete_company
 
 
 def index(request):
@@ -28,10 +33,10 @@ def import_notoria(request):
                 existing_data = []
                 for data in e.overlapping_data:
                     existing = get_existing_data_func(data)
-                    existing_without_id = list(map(lambda x: x[1:], existing))
-                    existing_data.append(existing_without_id)
-                return existing_data, e
-            return [], []
+                    existing_data.append(existing)
+                    data["exists"] = list(map(lambda x: list(x), existing))
+                return e
+            return []
 
     if request.method == 'POST':
         form = NotoriaImportForm(request.POST)
@@ -40,9 +45,6 @@ def import_notoria(request):
             chosen_sheets_bs = form.cleaned_data.get('chosen_sheets_bs')
             chosen_sheets_fr = form.cleaned_data.get('chosen_sheets_fr')
             chosen_sheets_dp = form.cleaned_data.get('chosen_sheets_dp')
-            existing_data_bs = []
-            existing_data_fr = []
-            existing_data_dp = []
             error_bs = []
             error_fr = []
             error_dp = []
@@ -50,21 +52,22 @@ def import_notoria(request):
             overlap_fr = []
             overlap_dp = []
             if chosen_sheets_bs:
-                existing_data_bs, error_bs = render_overlapping_data_popup(chosen_sheets_bs, 'bs',
+                error_bs = render_overlapping_data_popup(chosen_sheets_bs, 'bs',
                                                                            get_existing_data_balance_sheet)
                 if error_bs:
                     overlap_bs = error_bs.overlapping_data
             if chosen_sheets_fr:
-                existing_data_fr, error_fr = render_overlapping_data_popup(chosen_sheets_fr, 'fr', get_existing_data_ratios)
+                error_fr = render_overlapping_data_popup(chosen_sheets_fr, 'fr',
+                                                                           get_existing_data_ratios)
                 if error_fr:
                     overlap_fr = error_fr.overlapping_data
             if chosen_sheets_dp:
-                existing_data_dp, error_dp = render_overlapping_data_popup(chosen_sheets_dp, 'dp',
+                error_dp = render_overlapping_data_popup(chosen_sheets_dp, 'dp',
                                                                            get_existing_data_ratios)
                 if error_dp:
                     overlap_dp = error_dp.overlapping_data
 
-            if existing_data_bs or existing_data_fr or existing_data_dp:
+            if error_bs or error_fr or error_dp:
                 return render(request, 'import/notoria.html',
                               {'form': form,
                                "error_bs": error_bs,
@@ -72,10 +75,7 @@ def import_notoria(request):
                                "error_dp": error_dp,
                                "overlap_bs": json.dumps(overlap_bs),
                                "overlap_fr": json.dumps(overlap_fr),
-                               "overlap_dp": json.dumps(overlap_dp),
-                               "exist_bs": existing_data_bs,
-                               "exist_fr": existing_data_fr,
-                               "exist_dp": existing_data_dp})
+                               "overlap_dp": json.dumps(overlap_dp)})
 
             return render(request, 'manage/home.html', {'message': "Parsed notoria succsessfully"})
     else:
@@ -176,10 +176,12 @@ def export(request):
                                                               add_description=False)
                 else:
                     if index == 0:
-                        export_methods.functions['-s'](chosen_companies, start_date, end_date, file_name, chosen_interval)
+                        export_methods.functions['-s'](chosen_companies, start_date, end_date, file_name,
+                                                       chosen_interval)
                     else:
-                        export_methods.functions['-s'](chosen_companies, start_date, end_date, file_name, chosen_interval,
-                                                              add_description=False)
+                        export_methods.functions['-s'](chosen_companies, start_date, end_date, file_name,
+                                                       chosen_interval,
+                                                       add_description=False)
             if is_file_name_unique:
                 return render(request, 'manage/home.html', {'message': "Data exported to %s" % file_name})
             else:
@@ -208,7 +210,7 @@ def replace_data(request):
     return HttpResponse({'message': "Data replaced successfully"})
 
 
-#region grid_edition_views
+# region grid_edition_views
 
 class CompanyView(generic.ListView):
     model = Company
@@ -236,6 +238,35 @@ class CompanyDeleteView(BSModalDeleteView):
     template_name = 'manage/companies/delete.html'
     success_message = 'Success: Company was deleted.'
     success_url = reverse_lazy('companies')
+
+
+class CompanyMergeView(BSModalFormView):
+    template_name = 'manage/companies/merge.html'
+    form_class = MergeForm
+    success_message = 'Success: Companies were merged.'
+    success_url = reverse_lazy('companies')
+
+    def form_valid(self, form):
+        self.merge_companies(form.cleaned_data)
+        return super(CompanyMergeView, self).form_valid(form)
+
+    def merge_companies(self, valid_data):
+        chosen_from = valid_data.get('chosen_from').id
+        chosen_to = valid_data.get('chosen_to').id
+        merge_assets(chosen_from, chosen_to)
+        merge_assets_categories(chosen_from, chosen_to)
+        merge_equity_liabilities(chosen_from, chosen_to)
+        merge_equity_liabilities_categories(chosen_from, chosen_to)
+        merge_financial_ratios(chosen_from, chosen_to)
+        merge_dupont_indicators(chosen_from, chosen_to)
+        delete_from_assets(chosen_from)
+        delete_from_assets_categories(chosen_from)
+        delete_from_equity_liabilities(chosen_from)
+        delete_from_equity_liabilities_categories(chosen_from)
+        delete_from_financial_ratios(chosen_from)
+        delete_from_dupont_indicators(chosen_from)
+        delete_company(chosen_from)
+        pass
 
 
 class AssetsView(generic.ListView):
@@ -517,4 +548,4 @@ class StockQuoteDeleteView(BSModalDeleteView):
     success_message = 'Success: Stock quote was deleted.'
     success_url = reverse_lazy('stock')
 
-#endregion
+# endregion

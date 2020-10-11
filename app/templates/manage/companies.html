@@ -18,8 +18,11 @@
 </div>
 
 <!-- Create company button -->
-<button id="create-company" class="btn btn-primary" type="button" name="button">Create company</button>
-
+<button id="create-company" class="btn btn-primary" type="button" name="button">
+    <span class="fa fa-plus"></span> Create company </button>
+<!-- Merge buttons -->
+<button type="button" id="merge-company" class="bs-modal btn btn-info" data-form-url="{% url 'merge_company' %}">
+    <span class="fa fa-clone"></span> Merge companies </button>
 <table class="table table-sm table-bordered">
     <thead>
     <tr>
