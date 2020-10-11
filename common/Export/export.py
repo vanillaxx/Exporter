@@ -1,28 +1,24 @@
 import sys
 import common.DAL.db_queries as db_queries
 from common.Export.save import save_to_csv
+from common.Utils.export_status import ExportStatus
 
 
-def get_data_with_percentage_values(data, description, add_description=True, columns_to_add=None):
+def get_data_with_percentage_values(data, description, add_description=True):
     if add_description:
         csv_list = [description]
     else:
         csv_list = []
-    for index, row in enumerate(data):
+    for row in data:
         skip = 3
         fresh_row = []
         sum = row[2]
         for value in row:
-            if value is None:
-                fresh_row.append('NULL')
-            elif skip > 0:
+            if skip > 0:
                 skip = skip - 1
                 fresh_row.append(value)
             else:
                 fresh_row.append(value / sum)
-        if columns_to_add is not None:
-            for column in columns_to_add:
-                fresh_row.append(column[index])
         csv_list.append(fresh_row)
     return csv_list
 
@@ -31,9 +27,9 @@ def put_percentage_data_to_csv(data, description, file_name, add_description=Tru
     if data:
         csv_list = get_data_with_percentage_values(data, description, add_description)
         save_to_csv(csv_list, file_name)
-        print("Data saved to %s" % file_name)
-    else:
-        print("There is no data for such a company")
+    status = get_status(data)
+    print(status.get_message(file_name))
+    return status
 
 
 def put_data_to_csv(data, description, file_name, add_description=True):
@@ -43,87 +39,75 @@ def put_data_to_csv(data, description, file_name, add_description=True):
         else:
             csv_list = []
         for row in data:
-            row = [__replace_none_with_null(value) for value in row]
             csv_list.append(row)
         save_to_csv(csv_list, file_name)
-        print("Data saved to %s" % file_name)
-    else:
-        print("There is no data for such a company")
+    status = get_status(data)
+    print(status.get_message(file_name))
+    return status
 
 
-def __replace_none_with_null(value):
-    if value is None:
-        return 'NULL'
+def get_status(data):
+    if data:
+        return ExportStatus.SUCCESS
     else:
-        return value
+        return ExportStatus.FAILURE
 
 
 def export_detailed_assets(company_ids, start_date, end_date, file_name, add_description=True):
     data, description = db_queries.get_assets_for_companies(company_ids, start_date, end_date)
-    put_percentage_data_to_csv(data, description, file_name, add_description)
+    return put_percentage_data_to_csv(data, description, file_name, add_description)
 
 
 def export_detailed_equities(company_ids, start_date, end_date, file_name, add_description=True):
     data, description = db_queries.get_equity_liabilities_for_companies(company_ids, start_date, end_date)
-    put_percentage_data_to_csv(data, description, file_name, add_description)
+    return put_percentage_data_to_csv(data, description, file_name, add_description)
 
 
 def export_assets_categories(company_ids, start_date, end_date, file_name, add_description=True):
     data, description = db_queries.get_assets_categories_for_companies(company_ids, start_date, end_date)
-    put_percentage_data_to_csv(data, description, file_name, add_description)
+    return put_percentage_data_to_csv(data, description, file_name, add_description)
 
 
 def export_equities_categories(company_ids, start_date, end_date, file_name, add_description=True):
     data, description = db_queries.get_equity_liabilities_categories_for_companies(company_ids, start_date, end_date)
-    put_percentage_data_to_csv(data, description, file_name, add_description)
+    return put_percentage_data_to_csv(data, description, file_name, add_description)
 
 
 def export_full_assets(company_ids, start_date, end_date, file_name, add_description=True):
     data, description = db_queries.get_full_assets_for_companies(company_ids, start_date, end_date)
-    put_percentage_data_to_csv(data, description, file_name, add_description)
+    return put_percentage_data_to_csv(data, description, file_name, add_description)
 
 
 def export_full_equities(company_ids, start_date, end_date, file_name, add_description=True):
     data, description = db_queries.get_full_equities_for_companies(company_ids, start_date, end_date)
-    put_percentage_data_to_csv(data, description, file_name, add_description)
+    return put_percentage_data_to_csv(data, description, file_name, add_description)
 
 
 def export_financial_ratios(company_ids, start_date, end_date, file_name, add_description=True):
     data, description = db_queries.get_financial_ratios_for_companies(company_ids, start_date, end_date)
-    put_data_to_csv(data, description, file_name, add_description)
+    return put_data_to_csv(data, description, file_name, add_description)
 
 
 def export_du_pont_indicators(company_ids, start_date, end_date, file_name, add_description=True):
     data, description = db_queries.get_du_pont_indicators_for_companies(company_ids, start_date, end_date)
-    put_data_to_csv(data, description, file_name, add_description)
+    return put_data_to_csv(data, description, file_name, add_description)
 
 
 def export_stock_quotes(company_ids, start_date, end_date, file_name, interval, add_description=True):
     data, description = db_queries.export_stock_quotes(company_ids, start_date, end_date, interval)
-    put_data_to_csv(data, description, file_name, add_description)
+    return put_data_to_csv(data, description, file_name, add_description)
 
 
-def export_market_values(company_ids, start_date, end_date, file_name, add_description=True):
-    data, description = db_queries.get_market_values_for_companies(company_ids, start_date, end_date)
-    put_data_to_csv(data, description, file_name, add_description)
-
-
-def export_assets_and_market_values_for_companies(company_ids, start_date, end_date, file_name, add_description=True):
-    data, description = db_queries.get_assets_and_market_values_for_companies(company_ids, start_date, end_date)
-    if data and data[0]:
-        data, removed_columns = __remove_market_value_columns(data)
-        data = get_data_with_percentage_values(data, description, True, removed_columns)
-    put_data_to_csv(data, description, file_name, False)
-
-
-def __remove_market_value_columns(data):
-    columns = []
-    new_data = []
-    [new_data.append(list(row)) for row in data]
-    for index in [len(new_data[0])-2, len(new_data[0])-2]:
-        column = [row.pop(index) for row in new_data]
-        columns.append(column)
-    return new_data, columns
+def export_market_values(company_ids, start_date, end_date, file_name, interval, add_description=True):
+    intervals = {
+        'm': None,
+        'q': ['03', '06', '09', '12'],
+        'hy': ['06', '12'],
+        'y': ['12']
+    }
+    data, description = db_queries.get_market_values_for_companies(company_ids, start_date, end_date,
+                                                                   intervals[interval])
+    return put_data_to_csv(data, description, file_name, add_description)
 
 
 functions = {'-da': export_detailed_assets,
@@ -134,10 +118,8 @@ functions = {'-da': export_detailed_assets,
              '-fe': export_full_equities,
              '-f': export_financial_ratios,
              '-d': export_du_pont_indicators,
-             '-v': export_market_values,
              '-s': export_stock_quotes,
-             '-mv': export_market_values,
-             '-damv': export_assets_and_market_values_for_companies
+             '-mv': export_market_values
              }
 
 if __name__ == "__main__":
