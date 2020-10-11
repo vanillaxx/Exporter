@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.http import HttpResponse
 from django.views import generic
+from common.Utils.export_status import ExportStatus
 from .forms import *
 from common.Parsers import excel_parser, pdf_gpw_parser, stooq_parser, pdf_yearbook_parser, excel_yearbook_parser, \
     excel_gpw_parser
@@ -168,6 +169,7 @@ def export(request):
             }
             date_ranges_count = request.POST.get('date_ranges_count', None)
 
+            statuses = []
             for index in range(int(date_ranges_count) + 1):
                 start_date = form.cleaned_data.get('start_date_{index}'.format(index=index))
                 end_date = form.cleaned_data.get('end_date_{index}'.format(index=index))
@@ -178,18 +180,23 @@ def export(request):
                     add_description = False
 
                 if chosen_data != '-s' and chosen_data != '-mv':
-                    export_methods.functions[chosen_data](chosen_companies, start_date, end_date, file_name,
-                                                          add_description)
+                    statuses.append(export_methods.functions[chosen_data](chosen_companies, start_date, end_date,
+                                                                          file_name, add_description))
                 else:
                     chosen_interval = intervals[chosen_data]
-                    export_methods.functions[chosen_data](chosen_companies, start_date, end_date, file_name,
-                                                          chosen_interval, add_description)
+                    statuses.append(export_methods.functions[chosen_data](chosen_companies, start_date, end_date,
+                                                                          file_name, chosen_interval, add_description))
 
-            if is_file_name_unique:
-                return render(request, 'manage/home.html', {'message': "Data exported to %s" % file_name})
+            success = [status for status in statuses if status is ExportStatus.SUCCESS]
+            if len(success) >= 1:
+                status = ExportStatus.SUCCESS
+                if is_file_name_unique:
+                    return render(request, 'manage/home.html', {'message': status.get_message(file_name)})
+                else:
+                    return render(request, 'manage/home.html',
+                                  {'message': f'Passed file name exists. {status.get_message(file_name)}'})
             else:
-                return render(request, 'manage/home.html',
-                              {'message': "Passed file name exists. Data exported to %s" % file_name})
+                return render(request, 'manage/home.html', {'message': ExportStatus.FAILURE.get_message()})
 
     else:
         form = ExportForm()
