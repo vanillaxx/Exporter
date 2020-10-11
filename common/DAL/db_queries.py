@@ -537,15 +537,28 @@ def export_stock_quotes(connection, company_ids, start_date, end_date, interval)
 
 
 @with_connection
-def get_market_values_for_companies(connection, company_ids, start_date, end_date):
+def get_market_values_for_companies(connection, company_ids, start_date, end_date, months=None):
     c = connection.cursor()
-    query = '''SELECT C.Name, MarketValue, "Period end"
-                 FROM MarketValues MV
-                 JOIN Company C ON C.ID = MV.CompanyID
-                 WHERE C.ID IN ({seq}) 
-                 AND MV."Period end" BETWEEN ? AND ?
-                 ORDER BY C.Name, MV."Period end" '''.format(seq=','.join(['?'] * len(company_ids)))
-    company_ids.extend([start_date, end_date])
+    if months is not None:
+        query = '''SELECT C.Name, MarketValue, "Period end"
+                     FROM MarketValues MV
+                     JOIN Company C ON C.ID = MV.CompanyID
+                     WHERE C.ID IN ({seq}) 
+                     AND MV."Period end" BETWEEN ? AND ?
+                     AND strftime('%m',  MV."Period end") IN ({months_seq})
+                     ORDER BY C.Name, MV."Period end" '''.format(seq=','.join(['?'] * len(company_ids)),
+                                                                 months_seq=','.join(['?'] * len(months)))
+        company_ids.extend([start_date, end_date])
+        company_ids.extend(months)
+    else:
+        query = '''SELECT C.Name, MarketValue, "Period end"
+                             FROM MarketValues MV
+                             JOIN Company C ON C.ID = MV.CompanyID
+                             WHERE C.ID IN ({seq}) 
+                             AND MV."Period end" BETWEEN ? AND ?
+                             ORDER BY C.Name, MV."Period end" '''.format(seq=','.join(['?'] * len(company_ids)))
+        company_ids.extend([start_date, end_date])
+
     c.execute(query, tuple(company_ids))
     return c.fetchall(), list(map(lambda x: x[0], c.description))
 

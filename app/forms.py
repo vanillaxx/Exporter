@@ -120,12 +120,15 @@ class ExportForm(forms.Form):
     chosen_companies = forms.ModelMultipleChoiceField(queryset=company_choices)
     date_ranges_count = forms.CharField(widget=forms.HiddenInput())
     choices_i = [('d', 'Daily'),
-                        ('w', 'Weekly'),
-                        ('m', 'Monthly'),
-                        ('q', 'Quarterly'),
-                        ('y', 'Yearly')]
+                 ('w', 'Weekly'),
+                 ('m', 'Monthly'),
+                 ('q', 'Quarterly'),
+                 ('y', 'Yearly')]
+    choices_i_gpw = choices_i[2:]
+    choices_i_gpw.insert(2, ('hy', 'Half-Yearly'))
 
-    chosen_interval = forms.ChoiceField(choices=choices_i, initial='d', widget=forms.RadioSelect, required=False)
+    chosen_interval_stooq = forms.ChoiceField(choices=choices_i, initial='d', widget=forms.RadioSelect, required=False)
+    chosen_interval_gpw = forms.ChoiceField(choices=choices_i_gpw, initial=choices_i_gpw[0], widget=forms.RadioSelect)
 
     def __init__(self, *args, **kwargs):
         date_ranges = kwargs.pop('count', 0)

@@ -26,9 +26,8 @@ def put_percentage_data_to_csv(data, description, file_name, add_description=Tru
     if data:
         csv_list = get_data_with_percentage_values(data, description, add_description)
         save_to_csv(csv_list, file_name)
-        print("Data saved to %s" % file_name)
-    else:
-        print("There is no data for such a company")
+    message = get_message(data, file_name)
+    print(message)
 
 
 def put_data_to_csv(data, description, file_name, add_description=True):
@@ -40,9 +39,15 @@ def put_data_to_csv(data, description, file_name, add_description=True):
         for row in data:
             csv_list.append(row)
         save_to_csv(csv_list, file_name)
-        print("Data saved to %s" % file_name)
+    message = get_message(data, file_name)
+    print(message)
+
+
+def get_message(data, file_name):
+    if data:
+        return "Data saved to %s" % file_name
     else:
-        print("There is no data for such a company")
+        return 'There is no data for such company'
 
 
 def export_detailed_assets(company_ids, start_date, end_date, file_name, add_description=True):
@@ -90,8 +95,15 @@ def export_stock_quotes(company_ids, start_date, end_date, file_name, interval, 
     put_data_to_csv(data, description, file_name, add_description)
 
 
-def export_market_values(company_ids, start_date, end_date, file_name, add_description=True):
-    data, description = db_queries.get_market_values_for_companies(company_ids, start_date, end_date)
+def export_market_values(company_ids, start_date, end_date, file_name, interval, add_description=True):
+    intervals = {
+        'm': None,
+        'q': ['03', '06', '09', '12'],
+        'hy': ['06', '12'],
+        'y': ['12']
+    }
+    data, description = db_queries.get_market_values_for_companies(company_ids, start_date, end_date,
+                                                                   intervals[interval])
     put_data_to_csv(data, description, file_name, add_description)
 
 
