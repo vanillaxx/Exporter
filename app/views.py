@@ -1,6 +1,7 @@
+from django.contrib.messages.views import SuccessMessageMixin
 from django.shortcuts import render
-from django.urls import reverse_lazy
-from django.http import HttpResponse
+from django.urls import reverse_lazy, reverse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.views import generic
 from .forms import *
 from common.Parsers import excel_parser, pdf_gpw_parser, stooq_parser, pdf_yearbook_parser, excel_yearbook_parser, \
@@ -240,15 +241,17 @@ class CompanyDeleteView(BSModalDeleteView):
     success_url = reverse_lazy('companies')
 
 
-class CompanyMergeView(BSModalFormView):
+class CompanyMergeView(SuccessMessageMixin, BSModalFormView):
     template_name = 'manage/companies/merge.html'
     form_class = MergeForm
     success_message = 'Success: Companies were merged.'
     success_url = reverse_lazy('companies')
 
     def form_valid(self, form):
-        self.merge_companies(form.cleaned_data)
-        return super(CompanyMergeView, self).form_valid(form)
+        if not self.request.is_ajax():
+            self.merge_companies(form.cleaned_data)
+        return super().form_valid(form)
+
 
     def merge_companies(self, valid_data):
         chosen_from = valid_data.get('chosen_from').id
