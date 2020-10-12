@@ -1,10 +1,13 @@
+from sqlite3 import IntegrityError
+
 import lxml
 import numbers
 import requests
 import pandas as pd
-from common.DAL.db_queries import insert_company, insert_stock_quotes, get_company_id_from_ticker, get_interval_id_from_shortcut
+from common.DAL.db_queries import insert_company, insert_stock_quotes, get_company_id_from_ticker, \
+    get_interval_id_from_shortcut
 import re
-from datetime import date, timedelta
+from datetime import date
 from common.Utils.Errors import *
 
 
@@ -14,11 +17,15 @@ class StooqParser:
         self._all_companies_date_ulr_change = 'https://stooq.com/t/?i=513&n=0&v=0&d={year:04d}{month:02d}{day:02d}&l={number}'
         self._company_url_base = 'https://stooq.com/q/d/?s={company}&c=0&i={interval}&d1={year1:04d}{month1:02d}{day1:02d}&d2={year2:04d}{month2:02d}{day2:02d}&l={number}'
         self._tables_filter = re.compile(r'.*:.*')
+        self._table_name = 'StockQuotes'
+        self._stock_attributes = ['CompanyID', 'Period end', 'Stock', 'Change', 'Open', 'High', 'Low', 'Volume', 'Turnover', 'Interval']
 
     # daily StockQuotes for given date for all available companies (contains turnover)
     def download_all_companies(self, user_date):
         day, month, year = user_date.day, user_date.month, user_date.year
         interval_id = get_interval_id_from_shortcut('d')
+
+        overlapping_stock = {}
 
         i = 1
         frames = []
@@ -88,6 +95,8 @@ class StooqParser:
         result_change = pd.concat(frames_change)
         result_change = result_change[['Symbol', 'Change.1']]
         result = result.join(result_change.set_index('Symbol'), on='Symbol')
+        result = result.where(result.notnull(), None)
+
         try:
             result['Volume'] = result['Volume'].apply(lambda x: _convert_kmb(x))
             result['Turnover'] = result['Turnover'].apply(lambda x: _convert_kmb(x))
@@ -95,6 +104,7 @@ class StooqParser:
             raise ParseError(url, 'Wrong data in Volume/Turnover column')
 
         for index, row in result.iterrows():
+            parsed_data = date(year, month, day)
             ticker = row['Symbol'].upper()
             company_id = get_company_id_from_ticker(ticker)
             if company_id is None:
@@ -103,13 +113,26 @@ class StooqParser:
                 insert_company(company_name=row['Name'], company_ticker=ticker, company_isin=None)
                 company_id = get_company_id_from_ticker(ticker)
 
-            insert_stock_quotes((company_id, date(year, month, day), row['Last'],
-                                 row['Change.1'], row['Open'], row['High'], row['Low'], row['Volume'],
-                                 row['Turnover'], interval_id))
+            if row['Last'] is None:
+                continue
 
-    def download_company(self, company, start_date, end_date,
-                         interval='d'):  # interval StockQuotes for given dates for company (no turnover)
-        # interval: 'd' - day, 'w' - week, 'm' - month, 'q' - quoter, 'y' - year
+            stock_quotes = [company_id, str(parsed_data), row['Last'],
+                            row['Change.1'], row['Open'], row['High'], row['Low'], row['Volume'],
+                            row['Turnover'], interval_id]
+
+            try:
+                insert_stock_quotes((company_id, parsed_data, row['Last'],
+                                     row['Change.1'], row['Open'], row['High'], row['Low'], row['Volume'],
+                                     row['Turnover'], interval_id))
+            except IntegrityError:
+                if not overlapping_stock:
+                    self._init_overlapping_info(overlapping_stock)
+                overlapping_stock["values"].append(stock_quotes)
+
+        if overlapping_stock:
+            raise UniqueError(overlapping_stock)
+
+    def download_company(self, company, start_date, end_date, interval='d'):  # no turnover
         start_day, start_month, start_year = start_date.day, start_date.month, start_date.year
         end_day, end_month, end_year = end_date.day, end_date.month, end_date.year
         i = 1
@@ -117,6 +140,7 @@ class StooqParser:
         found = False
         interval_id = get_interval_id_from_shortcut(interval)
         company = company.upper()
+        overlapping_stock = {}
 
         company_id = get_company_id_from_ticker(company)
         if company_id is None:
@@ -128,8 +152,6 @@ class StooqParser:
                                                 interval=interval)
             site_html = requests.get(url).content.decode("utf-8")
             company_name = re.search('Historical data:  (.*) \(', str(site_html)).group(1)
-            if not company_name:
-                company_name = company
 
             insert_company(company_name=company_name, company_ticker=company, company_isin=None)
             company_id = get_company_id_from_ticker(company)
@@ -164,6 +186,7 @@ class StooqParser:
 
         result = pd.concat(frames)
         result = result[::-1]
+        result = result.where(result.notnull(), None)
 
         try:
             result['Volume'] = result['Volume'].apply(lambda x: _convert_kmb(x))
@@ -174,15 +197,33 @@ class StooqParser:
             if pd.isnull(row['No.']):
                 continue
 
+            if row['Close'] is None:
+                continue
+
             try:
                 parsed_date = _parse_date(row['Date'])
             except (ValueError, TypeError):
                 raise ParseError(url, 'Wrong date format')
 
-            insert_stock_quotes((company_id, parsed_date, row['Close'],
-                                row['Change.1'], row['Open'], row['High'], row['Low'], row['Volume'], None, interval_id))
+            stock_quotes = [company_id, str(parsed_date), row['Close'], row['Change.1'], row['Open'], row['High'],
+                            row['Low'], row['Volume'], None, interval_id]
 
-            previous_date = parsed_date + timedelta(days=1)
+            try:
+                insert_stock_quotes((company_id, parsed_date, row['Close'],
+                                     row['Change.1'], row['Open'], row['High'], row['Low'], row['Volume'], None,
+                                     interval_id))
+            except IntegrityError:
+                if not overlapping_stock:
+                    self._init_overlapping_info(overlapping_stock)
+                overlapping_stock["values"].append(stock_quotes)
+
+        if overlapping_stock:
+            raise UniqueError(overlapping_stock)
+
+    def _init_overlapping_info(self, overlapping_info):
+        overlapping_info["table_name"] = self._table_name
+        overlapping_info["columns"] = self._stock_attributes
+        overlapping_info["values"] = []
 
 
 def _parse_date(date_str):
@@ -208,17 +249,6 @@ def _parse_date(date_str):
     return date(year, month, day)
 
 
-def _convert_comas_digit(val):
-    if pd.isnull(val) or val is None:
-        return None
-
-    if isinstance(val, numbers.Number):
-        return val
-    val = val.replace(',', '')
-
-    return int(val)
-
-
 def _convert_kmb(val):
     if pd.isnull(val) or val is None:
         return None
@@ -237,12 +267,3 @@ def _convert_kmb(val):
         return int(lookup[unit] * number)
 
     return int(val)
-
-
-def _get_quarter(input_date):
-    return (input_date.month - 1) / 3 + 1
-
-
-def _get_first_day_of_the_quarter(input_date):
-    quarter = _get_quarter(input_date)
-    return date(input_date.year, 3 * quarter - 2, 1)

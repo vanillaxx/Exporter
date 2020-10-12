@@ -1,0 +1,102 @@
+<div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content" style="width: 1000px">
+        <div class="modal-header">
+            <h3>Data for such companies, dates and interval already exists.</h3>
+            <button type="button" class="close" data-dismiss="modal">
+                <span aria-hidden="true">&times;</span><span class="sr-only">Close</span>
+            </button>
+        </div>
+        <div id="{{ sheet | escapejs }}" class="container">
+            {% for data in error.overlapping_data %}
+            <h3> {{ data.table_name }} </h3>
+            <div class="modal-body">
+                <h5 class="modal-title">
+                    Data imported from website
+                </h5>
+                <div style="overflow: scroll; height: 400px; width: 800px">
+                    <table id="{{ sheet | escapejs }}-overlapping-data-{{ forloop.counter0 | escapejs }}"
+                           class="table table-striped table-sm table-bordered table-hover" cellspacing="0"
+                           width="100%">
+                        <thead>
+                        <tr>
+                            {% for column in data.columns %}
+                            <th scope="col"> {{ column }}</th>
+                            {% endfor %}
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for values in data.values %}
+                        <tr>
+                            {% for value in values %}
+                            <td> {{ value }}</td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <h5 class="modal-title">
+                    Data already existing in database
+                </h5>
+                <div style="overflow: scroll; height: 400px; width: 800px">
+                    <table id="{{ sheet | escapejs }}-existing-data-{{ forloop.counter0 | escapejs }}"
+                           class="table table-striped table-sm table-bordered table-hover" cellspacing="0"
+                           width="100%">
+                        <thead>
+                        <tr>
+                            {% for column in data.columns %}
+                            <th scope="col"> {{ column }}</th>
+                            {% endfor %}
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for values in data.exists %}
+                        <tr>
+                            {% for value in values %}
+                            <td> {{ value }}</td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endfor %}
+            <div class="modal-footer">
+                <button id="{{ sheet | escapejs }}-replace-button" type="button" class="btn btn-primary">
+                    Replace data with the new one
+                </button>
+                <button id="{{ sheet | escapejs }}-ignore-button" type="button" class="btn btn-secondary"
+                        data-dismiss="modal">
+                    Ignore imported data
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript" src="/static/js/bootstrap.js"></script>
+<script>
+    $(document).ready(function () {
+        $(document).on('hidden.bs.modal', '.modal', function () {
+            $('.modal:visible').length && $(document.body).addClass('modal-open');
+        });
+        const sheet = '{{ sheet | escapejs }}'
+        const csrf_token = "{{ csrf_token | escapejs }}"
+        const overlap = '{{overlap|safe}}'
+        $('.modal-dialog').draggable({
+            handle: ".modal-header"
+        });
+        $('#pop-up-' + sheet).modal('show');
+
+        $("#" + sheet + "-replace-button").click(function () {
+            $.post('../replace_data', {
+                    data: overlap,
+                    'csrfmiddlewaretoken': csrf_token
+                },
+                function () {
+                    $('#' + sheet).html("Data replaced successfully");
+                });
+
+        })
+    })
+</script>
