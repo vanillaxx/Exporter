@@ -256,10 +256,10 @@ def _convert_kmb(val):
     if isinstance(val, numbers.Number):
         return val
 
-    if not val.endswith('k') and not val.endswith('m') and not val.endswith('b'):
+    if not val.endswith('k') and not val.endswith('m') and not val.endswith('b') and not val.endswith('g'):
         return int(val)
 
-    lookup = {'k': 1000, 'm': 1000000, 'b': 1000000000}
+    lookup = {'k': 1000, 'm': 1000000, 'g': 1000000000, 'b': 1000000000000}
     unit = val[-1]
     number = float(val[:-1])
 
