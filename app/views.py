@@ -97,7 +97,7 @@ def import_stooq(request):
             return e
         except ParseError as pe:
             raise pe
-        return [], []
+        return None
 
     def parse_stooq_all_companies(date_arg):
         SP = stooq_parser.StooqParser()
@@ -110,7 +110,7 @@ def import_stooq(request):
             return e
         except ParseError as pe:
             raise pe
-        return [], []
+        return None
 
     if request.method == 'POST':
         form = StooqImportForm(request.POST)
