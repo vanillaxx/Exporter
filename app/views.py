@@ -7,10 +7,10 @@ from .forms import *
 from common.Parsers import excel_parser, pdf_gpw_parser, stooq_parser, pdf_yearbook_parser, excel_yearbook_parser, \
     excel_gpw_parser
 import common.Export.export as export_methods
-from common.Utils.Errors import UniqueError
+from common.Utils.Errors import UniqueError, ParseError
 from .models import *
 from common.DAL.db_queries import replace_values, get_existing_data_balance_sheet, get_existing_data_ratios, \
-    merge_assets_categories
+    merge_assets_categories, get_existing_data_stock_quotes
 import json
 import os.path
 import uuid
@@ -31,10 +31,8 @@ def import_notoria(request):
             try:
                 excel_parser.functions[sheet_shortcut](file_path, sheet)
             except UniqueError as e:
-                existing_data = []
                 for data in e.overlapping_data:
                     existing = get_existing_data_func(data)
-                    existing_data.append(existing)
                     data["exists"] = list(map(lambda x: list(x), existing))
                 return e
             return []
@@ -57,11 +55,13 @@ def import_notoria(request):
                                                                            get_existing_data_balance_sheet)
                 if error_bs:
                     overlap_bs = error_bs.overlapping_data
+
             if chosen_sheets_fr:
                 error_fr = render_overlapping_data_popup(chosen_sheets_fr, 'fr',
                                                                            get_existing_data_ratios)
                 if error_fr:
                     overlap_fr = error_fr.overlapping_data
+
             if chosen_sheets_dp:
                 error_dp = render_overlapping_data_popup(chosen_sheets_dp, 'dp',
                                                                            get_existing_data_ratios)
@@ -86,40 +86,95 @@ def import_notoria(request):
 
 
 def import_stooq(request):
+    def parse_stooq_one_company(ticker_arg, date_from_arg, date_to_arg, interval_arg):
+        SP = stooq_parser.StooqParser()
+        try:
+            SP.download_company(ticker_arg, date_from_arg, date_to_arg, interval_arg)
+        except UniqueError as e:
+            for data in e.overlapping_data:
+                existing = get_existing_data_stock_quotes(data)
+                data["exists"] = list(map(lambda x: list(x), existing))
+            return e
+        except ParseError as pe:
+            raise pe
+        return None
+
+    def parse_stooq_all_companies(date_arg):
+        SP = stooq_parser.StooqParser()
+        try:
+            SP.download_all_companies(date_arg)
+        except UniqueError as e:
+            for data in e.overlapping_data:
+                existing = get_existing_data_stock_quotes(data)
+                data["exists"] = list(map(lambda x: list(x), existing))
+            return e
+        except ParseError as pe:
+            raise pe
+        return None
+
     if request.method == 'POST':
         form = StooqImportForm(request.POST)
         if form.is_valid():
-            SP = stooq_parser.StooqParser()
-            ticker = form.cleaned_data.get('ticker', None)
-            company = form.cleaned_data.get('company')
+            error = []
+            overlap = []
 
-            date = form.cleaned_data.get('date', None)
-            date_from = form.cleaned_data.get('date_from', None)
-            date_to = form.cleaned_data.get('date_to', None)
+            import_type = request.POST.get('import_type')
 
-            interval = form.cleaned_data.get('interval', None)
+            if import_type == 'one':
+                ticker = form.cleaned_data.get('ticker', None)
+                company = form.cleaned_data.get('company')
 
-            if not company and not ticker and not date:
-                return HttpResponse('Wrong form')
+                date_from = form.cleaned_data.get('date_from', None)
+                date_to = form.cleaned_data.get('date_to', None)
 
-            if (company or ticker) and (not date_from or not date_to) and not date:
-                return HttpResponse('Wrong form')
+                interval = form.cleaned_data.get('interval', None)
 
-            if date_to and date_from and date_to < date_from and (company or ticker):
-                return HttpResponse('Wrong form')
+                if not company and not ticker:
+                    return render(request, 'manage/home.html', {'message': "Wrong form"})
 
-            if company and not ticker:
-                ticker = company.ticker
+                if (company or ticker) and (not date_from or not date_to):
+                    return render(request, 'manage/home.html', {'message': "Wrong form"})
 
-            if ticker and date_from and date_to:
-                SP.download_company(ticker, date_from, date_to, interval)
+                if date_to and date_from and date_to < date_from and (company or ticker):
+                    return render(request, 'manage/home.html', {'message': "Wrong form"})
 
-            if date:
-                SP.download_all_companies(date)
+                if company and not ticker:
+                    ticker = company.ticker
+
+                if ticker and date_from and date_to:
+                    try:
+                        error = parse_stooq_one_company(ticker, date_from, date_to, interval)
+                        if error:
+                            overlap = error.overlapping_data
+                    except ParseError as e:
+                        message = "Parse error: " + e.details
+                        return render(request, 'manage/home.html', {'message': message})
+                else:
+                    return render(request, 'manage/home.html', {'message': "Wrong form"})
+
+            else:
+                date = form.cleaned_data.get('date', None)
+
+                if not date:
+                    return render(request, 'manage/home.html', {'message': "Wrong form"})
+
+                try:
+                    error = parse_stooq_all_companies(date)
+                    if error:
+                        overlap = error.overlapping_data
+                except ParseError as e:
+                    message = "Parse error: " + e.details
+                    return render(request, 'manage/home.html', {'message': message})
+
+            if error:
+                return render(request, 'import/stooq.html',
+                              {'form': StooqImportForm(),
+                               "error": error,
+                               "overlap": json.dumps(overlap)})
 
             return render(request, 'manage/home.html', {'message': "Parsed stooq.com data successfully"})
         else:
-            return HttpResponse('Wrong form')
+            return render(request, 'manage/home.html', {'message': "Wrong form"})
     else:
         form = StooqImportForm()
 

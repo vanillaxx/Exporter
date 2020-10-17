@@ -137,7 +137,6 @@ class ExportForm(forms.Form):
         self.fields['date_ranges_count'].initial = date_ranges
 
         for index in range(int(date_ranges) + 1):
-            print(index)
             self.fields['start_date_{index}'.format(index=index)] = forms.DateField(label='To: ',
                                                                                     widget=DatePickerInput(
                                                                                         format='%d/%m/%Y',

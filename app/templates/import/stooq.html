@@ -6,15 +6,16 @@
 <h2>Stooq</h2>
 <div class="siteDescription">
     Import stock quotes from <a href="https://stooq.com/">https://stooq.com/</a> website. <br>
-    If import data for one company is chosen, there is an option to choose any period of time and time interval
+    If "Import data for one company" option is chosen, there is an option to choose any company, any period of time and time interval
     (if only stooq.com contains such data), but there will be no information about turnover. <br>
-    If import data for all companies is chosen, only daily stock quotes from a few days back
+    If "Import data for all companies" option is chosen, only daily stock quotes from a few days back
     will be available, but it will download information about turnover.
 </div>
 
 <form method="post">{% csrf_token %}
 
-    <h3 class="styledHeading">Import data for one company</h3>
+    <input type="radio" id="radio_one" name="import_type" value="one" checked>
+    <label for="one">Import data for one company</label>
 
     <h4>{{form.ticker_sheet}}</h4>
     {{form.ticker}}
@@ -31,7 +32,8 @@
     <h4>{{form.interval_sheet}}</h4>
     {{form.interval}}
 
-<h3 class="styledHeading">Import data for all companies</h3>
+    <input type="radio" id="radio_all" name="import_type" value="all">
+    <label for="all">Import data for all companies</label>
 
     <h4>{{form.date_sheet}}</h4>
     {{form.date}}
@@ -39,5 +41,13 @@
 <button type="submit">Import</button>
 </form>
 
+<div id="pop-up-stooq" class="modal fade" role="dialog">
+                {% if error %}
+                {% include "import/overlapping_stooq_details.html" with error=error sheet='stooq' overlap=overlap %}
+                {% endif %}
+</div>
+
+{{ form.errors }}
+{{ form.non_field_errors }}
 
 {% endblock %}

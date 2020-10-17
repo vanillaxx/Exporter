@@ -1,6 +1,7 @@
 from common.DAL.db_utils import with_connection
 from common.Utils.Errors import CompanyNotFoundError
 
+
 @with_connection
 def delete_company(connection, company_id):
     values = company_id,
@@ -15,6 +16,7 @@ def delete_from_assets(connection, company_id):
     command = 'DELETE FROM Assets WHERE CompanyID = (?) '
     with connection:
         connection.execute(command, values)
+
 
 @with_connection
 def delete_from_assets_categories(connection, company_id):
@@ -108,9 +110,11 @@ def merge_dupont_indicators(connection, merge_from, merge_to):
 def replace_values(connection, table_name, columns, values):
     values = tuple(values)
     columns = tuple(columns)
-    command = 'REPLACE INTO %s%s VALUES %s ' % (table_name, columns, values)
+    command = 'REPLACE INTO {table} {columns} VALUES ({seq}) '.format(table=table_name,
+                                                                      columns=tuple(columns),
+                                                                      seq=','.join(['?'] * len(columns)))
     with connection:
-        connection.execute(command)
+        connection.execute(command, values)
 
 
 @with_connection
@@ -140,7 +144,7 @@ def insert_value(connection, table_name, column, value):
 
 @with_connection
 def insert_stock_quotes(connection, values):
-    command = '''INSERT OR IGNORE INTO StockQuotes
+    command = '''INSERT INTO StockQuotes
                 (CompanyID, 'Period end', Stock, Change, Open, High, Low, Volume, Turnover, Interval)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'''
     with connection:
@@ -626,6 +630,23 @@ def get_existing_data_balance_sheet(connection, overlapping_data):
               WHERE CompanyID = {company_id} AND Date IN {dates}'''.format(company_id=company_id, dates=dates)
     c.execute(query)
     return c.fetchall()
+
+
+@with_connection
+def get_existing_data_stock_quotes(connection, overlapping_data):
+    c = connection.cursor()
+    results = []
+
+    for data in overlapping_data["values"]:
+        query = '''SELECT CompanyID, "Period end", Stock, Change, Open, High, Low,
+              Volume, Turnover, Interval FROM StockQuotes
+              WHERE CompanyID = {company} AND "Period end" = ? AND Interval = {interval}''' \
+            .format(company=data[0], interval=data[9])
+        result = c.execute(query, (data[1],)).fetchall()
+        if len(result) > 0:
+            results.append(result[0])
+
+    return results
 
 
 @with_connection
