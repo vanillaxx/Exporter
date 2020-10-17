@@ -476,8 +476,8 @@ def get_financial_ratios_for_companies(connection, company_ids, start_date, end_
               FROM FinancialRatios F
               JOIN Company C ON C.ID = F.CompanyID
                 WHERE C.ID IN ({seq}) 
-                AND D."Period start" >= ?
-                AND D."Period end" <= ?
+                AND F."Period start" >= ?
+                AND F."Period end" <= ?
                 ORDER BY C.Name, F."Period start" '''.format(seq=','.join(['?'] * len(company_ids)))
     company_ids.extend([start_date, end_date])
     c.execute(query, tuple(company_ids))
