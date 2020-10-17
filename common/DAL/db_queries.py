@@ -1,6 +1,7 @@
 from common.DAL.db_utils import with_connection
 from common.Utils.Errors import CompanyNotFoundError
 
+
 @with_connection
 def delete_company(connection, company_id):
     values = company_id,
@@ -15,6 +16,7 @@ def delete_from_assets(connection, company_id):
     command = 'DELETE FROM Assets WHERE CompanyID = (?) '
     with connection:
         connection.execute(command, values)
+
 
 @with_connection
 def delete_from_assets_categories(connection, company_id):
@@ -108,9 +110,11 @@ def merge_dupont_indicators(connection, merge_from, merge_to):
 def replace_values(connection, table_name, columns, values):
     values = tuple(values)
     columns = tuple(columns)
-    command = 'REPLACE INTO %s%s VALUES %s ' % (table_name, columns, values)
+    command = 'REPLACE INTO {table} {columns} VALUES ({seq}) '.format(table=table_name,
+                                                                      columns=tuple(columns),
+                                                                      seq=','.join(['?'] * len(columns)))
     with connection:
-        connection.execute(command)
+        connection.execute(command, values)
 
 
 @with_connection
@@ -140,7 +144,7 @@ def insert_value(connection, table_name, column, value):
 
 @with_connection
 def insert_stock_quotes(connection, values):
-    command = '''INSERT OR IGNORE INTO StockQuotes
+    command = '''INSERT INTO StockQuotes
                 (CompanyID, 'Period end', Stock, Change, Open, High, Low, Volume, Turnover, Interval)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'''
     with connection:
@@ -472,8 +476,8 @@ def get_financial_ratios_for_companies(connection, company_ids, start_date, end_
               FROM FinancialRatios F
               JOIN Company C ON C.ID = F.CompanyID
                 WHERE C.ID IN ({seq}) 
-                AND D."Period start" >= ?
-                AND D."Period end" <= ?
+                AND F."Period start" >= ?
+                AND F."Period end" <= ?
                 ORDER BY C.Name, F."Period start" '''.format(seq=','.join(['?'] * len(company_ids)))
     company_ids.extend([start_date, end_date])
     c.execute(query, tuple(company_ids))
@@ -537,75 +541,28 @@ def export_stock_quotes(connection, company_ids, start_date, end_date, interval)
 
 
 @with_connection
-def get_market_values_for_companies(connection, company_ids, start_date, end_date):
+def get_market_values_for_companies(connection, company_ids, start_date, end_date, months=None):
     c = connection.cursor()
-    query = '''SELECT C.Name, MarketValue, "Period end"
-                 FROM MarketValues MV
-                 JOIN Company C ON C.ID = MV.CompanyID
-                 WHERE C.ID IN ({seq}) 
-                 AND MV."Period end" BETWEEN ? AND ?
-                 ORDER BY C.Name, MV."Period end" '''.format(seq=','.join(['?'] * len(company_ids)))
-    company_ids.extend([start_date, end_date])
-    c.execute(query, tuple(company_ids))
-    return c.fetchall(), list(map(lambda x: x[0], c.description))
+    if months is not None:
+        query = '''SELECT C.Name, MarketValue, "Period end"
+                     FROM MarketValues MV
+                     JOIN Company C ON C.ID = MV.CompanyID
+                     WHERE C.ID IN ({seq}) 
+                     AND MV."Period end" BETWEEN ? AND ?
+                     AND strftime('%m',  MV."Period end") IN ({months_seq})
+                     ORDER BY C.Name, MV."Period end" '''.format(seq=','.join(['?'] * len(company_ids)),
+                                                                 months_seq=','.join(['?'] * len(months)))
+        company_ids.extend([start_date, end_date])
+        company_ids.extend(months)
+    else:
+        query = '''SELECT C.Name, MarketValue, "Period end"
+                             FROM MarketValues MV
+                             JOIN Company C ON C.ID = MV.CompanyID
+                             WHERE C.ID IN ({seq}) 
+                             AND MV."Period end" BETWEEN ? AND ?
+                             ORDER BY C.Name, MV."Period end" '''.format(seq=','.join(['?'] * len(company_ids)))
+        company_ids.extend([start_date, end_date])
 
-
-@with_connection
-def get_assets_and_market_values_for_companies(connection, company_ids, start_date, end_date):
-    c = connection.cursor()
-    query = '''SELECT C.Name, "Date", "Property, plant and equipment" +
-                "Exploration for and evaluation of mineral resources" + "Intangible assets" +
-                 Goodwill + "Investment property" + "Investment in affiliates" +
-                 "Non-current financial assets" + "Non-current loans and receivables" +
-                 "Deferred income tax" + "Non-current deferred charges and accruals" +
-                 "Non-current derivative instruments" + "Other non-current assets" +
-                 Inventories + "Current intangible assets" + "Biological assets" +
-                 "Trade receivables" + "Loans and other receivables" + "Financial assets" +
-                "Cash and cash equivalents" + Accruals + "Assets from current tax" +
-                "Derivative instruments" + "Other assets" AS Sum,
-                "Property, plant and equipment", "Exploration for and evaluation of mineral resources",
-                "Intangible assets", Goodwill, "Investment property", "Investment in affiliates",
-                "Non-current financial assets", "Non-current loans and receivables",
-                "Deferred income tax", "Non-current deferred charges and accruals",
-                "Non-current derivative instruments", "Other non-current assets",
-                 Inventories, "Current intangible assets", "Biological assets", "Trade receivables",
-                 "Loans and other receivables", "Financial assets", "Cash and cash equivalents",
-                 Accruals, "Assets from current tax", "Derivative instruments", "Other assets",
-                 MV."Period end", MV.MarketValue
-                FROM Assets A 
-                JOIN Company C ON C.ID = A.CompanyID
-                LEFT JOIN MarketValues MV on C.ID = MV.CompanyID AND A.Date = MV."Period end"
-                WHERE C.ID IN ({seq1}) 
-                AND A.Date BETWEEN ? AND ? 
-                UNION ALL
-                SELECT C.Name, "Date", "Property, plant and equipment" +
-                "Exploration for and evaluation of mineral resources" + "Intangible assets" +
-                 Goodwill + "Investment property" + "Investment in affiliates" +
-                 "Non-current financial assets" + "Non-current loans and receivables" +
-                 "Deferred income tax" + "Non-current deferred charges and accruals" +
-                 "Non-current derivative instruments" + "Other non-current assets" +
-                 Inventories + "Current intangible assets" + "Biological assets" +
-                 "Trade receivables" + "Loans and other receivables" + "Financial assets" +
-                "Cash and cash equivalents" + Accruals + "Assets from current tax" +
-                "Derivative instruments" + "Other assets" AS Sum,
-                "Property, plant and equipment", "Exploration for and evaluation of mineral resources",
-                "Intangible assets", Goodwill, "Investment property", "Investment in affiliates",
-                "Non-current financial assets", "Non-current loans and receivables",
-                "Deferred income tax", "Non-current deferred charges and accruals",
-                "Non-current derivative instruments", "Other non-current assets",
-                 Inventories, "Current intangible assets", "Biological assets", "Trade receivables",
-                 "Loans and other receivables", "Financial assets", "Cash and cash equivalents",
-                 Accruals, "Assets from current tax", "Derivative instruments", "Other assets",
-                 MV."Period end", MV.MarketValue
-                 FROM MarketValues MV
-                 JOIN Company C on MV.CompanyID = C.ID
-                 LEFT JOIN Assets A on C.ID = A.CompanyID AND A.Date = MV."Period end"
-                 WHERE C.ID IN ({seq2}) 
-                 AND MV."Period end" BETWEEN ? AND ?
-                 AND A.Date IS NULL'''.format(seq1=','.join(['?'] * len(company_ids)),
-                                              seq2=','.join(['?'] * len(company_ids)))
-    company_ids.extend([start_date, end_date])
-    company_ids.extend(company_ids)
     c.execute(query, tuple(company_ids))
     return c.fetchall(), list(map(lambda x: x[0], c.description))
 
@@ -673,6 +630,23 @@ def get_existing_data_balance_sheet(connection, overlapping_data):
               WHERE CompanyID = {company_id} AND Date IN {dates}'''.format(company_id=company_id, dates=dates)
     c.execute(query)
     return c.fetchall()
+
+
+@with_connection
+def get_existing_data_stock_quotes(connection, overlapping_data):
+    c = connection.cursor()
+    results = []
+
+    for data in overlapping_data["values"]:
+        query = '''SELECT CompanyID, "Period end", Stock, Change, Open, High, Low,
+              Volume, Turnover, Interval FROM StockQuotes
+              WHERE CompanyID = {company} AND "Period end" = ? AND Interval = {interval}''' \
+            .format(company=data[0], interval=data[9])
+        result = c.execute(query, (data[1],)).fetchall()
+        if len(result) > 0:
+            results.append(result[0])
+
+    return results
 
 
 @with_connection
