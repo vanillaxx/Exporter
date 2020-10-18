@@ -10,6 +10,8 @@ urlpatterns = [
     path('export', views.export, name='export'),
     path('manage/home', views.manage, name='manage_home'),
     path('import/replace_data', views.replace_data, name='replace_data'),
+    path('manage/merge_data', views.merge_data, name='merge_data'),
+    path('manage/delete_data', views.delete_data, name='delete_data'),
 
     path('manage/companies', views.CompanyView.as_view(), name='companies'),
     path('manage/companies/create', views.CompanyCreateView.as_view(), name='create_company'),

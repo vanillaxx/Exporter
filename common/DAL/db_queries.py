@@ -113,6 +113,8 @@ def replace_values(connection, table_name, columns, values):
     command = 'REPLACE INTO {table} {columns} VALUES ({seq}) '.format(table=table_name,
                                                                       columns=tuple(columns),
                                                                       seq=','.join(['?'] * len(columns)))
+    print(command)
+    print(values)
     with connection:
         connection.execute(command, values)
 
