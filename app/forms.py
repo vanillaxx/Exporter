@@ -174,7 +174,7 @@ class NotoriaImportForm(forms.Form):
 
 class StooqImportForm(forms.Form):
     ticker = forms.CharField(label='Ticker of the company', max_length=20, required=False)
-    company_choices = Company.objects.all()
+    company_choices = Company.objects.filter(ticker__isnull=False)
     company = forms.ModelChoiceField(queryset=company_choices, required=False)
     date_from = forms.DateTimeField(required=False, widget=DatePickerInput(format='%d.%m.%Y',
                                                                             attrs={'type': 'date',
