@@ -209,20 +209,24 @@ def export(request):
         form = ExportForm(request.POST, count=request.POST.get('date_ranges_count'))
         if form.is_valid():
             file_name = request.POST.get('file_name', None)
-            is_file_name_unique = True
             if not file_name.endswith(".csv"):
                 file_name += ".csv"
             if os.path.isfile(file_name):
-                is_file_name_unique = False
-                csv_index = file_name.rfind(".csv")
-                file_name = file_name[:csv_index] + str(uuid.uuid4()) + file_name[csv_index:]
+                form.add_error('file_name', 'File with that name already exists.')
+                return render(request, 'export/export.html', {'form': form})
 
             chosen_data = request.POST.get('chosen_data', None)
             chosen_companies = list(form.cleaned_data.get('chosen_companies').values_list('id', flat=True))
             intervals = {
+                '-f': form.cleaned_data.get('chosen_interval_ratios', None),
+                '-d': form.cleaned_data.get('chosen_interval_ratios', None),
                 '-s': form.cleaned_data.get('chosen_interval_stooq', None),
                 '-mv': form.cleaned_data.get('chosen_interval_gpw', None)
             }
+            balance_sheet_intervals = ['-da', '-ca', '-fa', '-de', '-ce', '-fe']
+            for i in balance_sheet_intervals:
+                intervals[i] = form.cleaned_data.get('chosen_interval_balance', None)
+
             date_ranges_count = request.POST.get('date_ranges_count', None)
 
             statuses = []
@@ -235,22 +239,14 @@ def export(request):
                 else:
                     add_description = False
 
-                if chosen_data != '-s' and chosen_data != '-mv':
-                    statuses.append(export_methods.functions[chosen_data](chosen_companies, start_date, end_date,
-                                                                          file_name, add_description))
-                else:
-                    chosen_interval = intervals[chosen_data]
-                    statuses.append(export_methods.functions[chosen_data](chosen_companies, start_date, end_date,
-                                                                          file_name, chosen_interval, add_description))
+                chosen_interval = intervals[chosen_data]
+                statuses.append(export_methods.functions[chosen_data](chosen_companies, start_date, end_date,
+                                                                      file_name, chosen_interval, add_description))
 
             success = [status for status in statuses if status is ExportStatus.SUCCESS]
             if len(success) >= 1:
                 status = ExportStatus.SUCCESS
-                if is_file_name_unique:
-                    return render(request, 'manage/home.html', {'message': status.get_message(file_name)})
-                else:
-                    return render(request, 'manage/home.html',
-                                  {'message': f'Passed file name exists. {status.get_message(file_name)}'})
+                return render(request, 'manage/home.html', {'message': status.get_message(file_name)})
             else:
                 return render(request, 'manage/home.html', {'message': ExportStatus.FAILURE.get_message()})
 
