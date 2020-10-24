@@ -1,28 +1,44 @@
 {% extends '../base.html' %}
 {% block content %}
 {% load static %}
-
+{% if messages %}
+<div class="alert alert-success">
+    {% for m in messages %}
+    <li
+    {% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ m }}</li>
+    {% endfor %}
+</div>
+{% endif %}
 <!-- Modal 1 with id="create-company"-->
 <div class="modal fade" id="create-modal" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
+    <div class="modal-dialog">
+        <div class="modal-content">
+        </div>
     </div>
-  </div>
+</div>
+
+<div class="modal fade" id="merge-modal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+        </div>
+    </div>
 </div>
 
 <!-- Modal 2 with id="modal" -->
 <div class="modal fade" tabindex="-1" role="dialog" id="modal">
-  <div class="modal-dialog" role="document">
-    <div class="modal-content"></div>
-  </div>
+    <div class="modal-dialog" role="document">
+        <div class="modal-content"></div>
+    </div>
 </div>
 
 <!-- Create company button -->
 <button id="create-company" class="btn btn-primary" type="button" name="button">
-    <span class="fa fa-plus"></span> Create company </button>
+    <span class="fa fa-plus"></span> Create company
+</button>
 <!-- Merge buttons -->
-<button type="button" id="merge-company" class="bs-modal btn btn-info" data-form-url="{% url 'merge_company' %}">
-    <span class="fa fa-clone"></span> Merge companies </button>
+<button id="merge-company" class="btn btn-info" type="button">
+    <span class="fa fa-clone"></span> Merge companies
+</button>
 <table class="table table-sm table-bordered">
     <thead>
     <tr>
@@ -62,20 +78,24 @@
 </table>
 
 <script type="text/javascript">
-  $(function () {
+    $(document).ready(function () {
 
-    $(".bs-modal").each(function () {
-      $(this).modalForm({
-          formURL: $(this).data('form-url')
-      });
+        $(".bs-modal").each(function () {
+            $(this).modalForm({
+                formURL: $(this).data('form-url')
+            });
+        });
+
+        $("#create-company").modalForm({
+            formURL: "{% url 'create_company' %}",
+            modalID: "#create-modal"
+        });
+
+        $("#merge-company").modalForm({
+            formURL: "{% url 'merge_company' %}",
+            modalID: "#merge-modal"
+        });
     });
-
-    $("#create-company").modalForm({
-        formURL: "{% url 'create_company' %}",
-        modalID: "#create-modal"
-    });
-
-  });
 </script>
 
 {% endblock %}

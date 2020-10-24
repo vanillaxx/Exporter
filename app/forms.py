@@ -126,7 +126,11 @@ class ExportForm(forms.Form):
                  ('y', 'Yearly')]
     choices_i_gpw = choices_i[2:]
     choices_i_gpw.insert(2, ('hy', 'Half-Yearly'))
+    choices_i_ratios = choices_i[3:]
+    choices_i_balance = choices_i_gpw[1:]
 
+    chosen_interval_balance = forms.ChoiceField(choices=choices_i_balance, initial='q', widget=forms.RadioSelect, required=False)
+    chosen_interval_ratios = forms.ChoiceField(choices=choices_i_ratios, initial='q', widget=forms.RadioSelect, required=False)
     chosen_interval_stooq = forms.ChoiceField(choices=choices_i, initial='d', widget=forms.RadioSelect, required=False)
     chosen_interval_gpw = forms.ChoiceField(choices=choices_i_gpw, initial=choices_i_gpw[0], widget=forms.RadioSelect)
 

@@ -19,11 +19,16 @@
             <option value="-mv">Market values</option>
         </select>
         {{form.chosen_companies}}
+        <div id="id_chosen_interval_balance">{{form.chosen_interval_balance}}</div>
+        <div id="id_chosen_interval_ratios">{{form.chosen_interval_ratios}}</div>
         <div id="id_chosen_interval_stooq">{{form.chosen_interval_stooq}}</div>
         <div id="id_chosen_interval_gpw">{{form.chosen_interval_gpw}}</div>
         {{form.date_ranges_count}}
-        {{form.start_date_0}}
-        {{form.end_date_0}}
+        <div id="dates">
+                <div>From: </div>{{form.start_date_0}}
+                <div>To: </div>{{form.end_date_0}}
+        </div>
+
         <button type="button" id="add-another">Add another</button>
         <input type="submit" value="Export">
     </form>
@@ -32,15 +37,34 @@
 <script>
     let form_count = Number($("[name=date_ranges_count]").val());
 
+    let stooq_interval_elem = $('#id_chosen_interval_stooq');
+    let gpw_interval_elem = $('#id_chosen_interval_gpw');
+    let ratios_interval_elem = $('#id_chosen_interval_ratios');
+    let balance_interval_elem = $('#id_chosen_interval_balance');
+
+    const intervals = {
+        '-f': ratios_interval_elem,
+        '-d': ratios_interval_elem,
+        '-s': stooq_interval_elem,
+        '-mv': gpw_interval_elem
+    }
+    let balance_sheet_intervals = ['-da', '-ca', '-fa', '-de', '-ce', '-fe']
+    balance_sheet_intervals.forEach(v => {
+        intervals[v] = balance_interval_elem
+    })
+
+    let dates = $("#dates").children();
+
     $("#add-another").click(function () {
         form_count++;
 
-        let element = $('div.input-group.date').slice(-2).clone();
+        let element = dates.clone();
+        //let element = $('div.input-group.date').slice(-2).clone();
         element.first().find('input').attr('name','start_date_'+form_count);
-                element.first().find('input').attr('id','id_start_date_'+form_count);
+        element.first().find('input').attr('id','id_start_date_'+form_count);
 
         element.last().find('input').attr('name','end_date_'+form_count);
-                element.last().find('input').attr('id','id_end_date_'+form_count);
+        element.last().find('input').attr('id','id_end_date_'+form_count);
 
         element.insertAfter($('div.input-group.date').last('div'));
 
@@ -48,27 +72,19 @@
     });
 
     function tableChange() {
-        const chosen_data_elem = document.getElementById('id_chosen_data');
-        const selected_value = chosen_data_elem.options[chosen_data_elem.selectedIndex].value;
-        let stooq_interval_elem = document.getElementById('id_chosen_interval_stooq');
-        let gpw_interval_elem = document.getElementById('id_chosen_interval_gpw');
-        console.log(selected_value);
-
-        if(selected_value === '-s') {
-            stooq_interval_elem.style.display = '';
-            gpw_interval_elem.style.display = 'none';
-        } else if(selected_value === '-mv') {
-            gpw_interval_elem.style.display = '';
-            stooq_interval_elem.style.display = 'none';
-        } else {
-             stooq_interval_elem.style.display = 'none';
-             gpw_interval_elem.style.display = 'none';
-        }
+        const selected_value = $('#id_chosen_data').children("option:selected").val();
+        $.each(intervals, function (k, v) {
+            v.hide();
+        })
+        intervals[selected_value].show();
     }
-
+    $(document).ready(function(){
+        $('#id_chosen_interval_ratios').hide();
+        $('#id_chosen_interval_stooq').hide();
+        $('#id_chosen_interval_gpw').hide();
+    })
     window.onload = function() {
-        document.getElementById('id_chosen_interval_stooq').style.display = 'none';
-        document.getElementById('id_chosen_interval_gpw').style.display = 'none';
+
     };
 </script>
 {% endblock %}
