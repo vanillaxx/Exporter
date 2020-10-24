@@ -113,6 +113,8 @@ def replace_values(connection, table_name, columns, values):
     command = 'REPLACE INTO {table} {columns} VALUES ({seq}) '.format(table=table_name,
                                                                       columns=tuple(columns),
                                                                       seq=','.join(['?'] * len(columns)))
+    print(command)
+    print(values)
     with connection:
         connection.execute(command, values)
 
@@ -263,7 +265,7 @@ def get_interval_id_from_shortcut(connection, shortcut):
 
 
 @with_connection
-def get_assets_for_companies(connection, company_ids, start_date, end_date):
+def get_assets_for_companies(connection, company_ids, start_date, end_date, months):
     c = connection.cursor()
     query = '''SELECT C.Name, "Date", "Property, plant and equipment" +
                 "Exploration for and evaluation of mineral resources" + "Intangible assets" +
@@ -287,14 +289,17 @@ def get_assets_for_companies(connection, company_ids, start_date, end_date):
                 JOIN Company C ON C.ID = A.CompanyID
                 WHERE C.ID IN ({seq}) 
                 AND A.Date BETWEEN ? AND ?
-                ORDER BY C.Name, A.Date '''.format(seq=','.join(['?'] * len(company_ids)))
+                AND strftime('%m',  A.Date) IN ({months_seq}) 
+                ORDER BY C.Name, A.Date '''.format(seq=','.join(['?'] * len(company_ids)),
+                                                   months_seq=','.join(['?'] * len(months)))
     company_ids.extend([start_date, end_date])
+    company_ids.extend(months)
     c.execute(query, tuple(company_ids))
     return c.fetchall(), list(map(lambda x: x[0], c.description))
 
 
 @with_connection
-def get_equity_liabilities_for_companies(connection, company_ids, start_date, end_date):
+def get_equity_liabilities_for_companies(connection, company_ids, start_date, end_date, months):
     c = connection.cursor()
     query = '''SELECT C.Name, "Date",
     "Share capital" + "Called up share capital" +
@@ -323,14 +328,17 @@ def get_equity_liabilities_for_companies(connection, company_ids, start_date, en
               JOIN Company C ON C.ID = E.CompanyID
                 WHERE C.ID IN ({seq}) 
                 AND E.Date BETWEEN ? AND ?
-                ORDER BY C.Name, E.Date '''.format(seq=','.join(['?'] * len(company_ids)))
+                AND strftime('%m',  E.Date) IN ({months_seq}) 
+                ORDER BY C.Name, E.Date '''.format(seq=','.join(['?'] * len(company_ids)),
+                                                   months_seq=','.join(['?'] * len(months)))
     company_ids.extend([start_date, end_date])
+    company_ids.extend(months)
     c.execute(query, tuple(company_ids))
     return c.fetchall(), list(map(lambda x: x[0], c.description))
 
 
 @with_connection
-def get_assets_equity_liabilities_for_companies(connection, company_ids, start_date, end_date):
+def get_assets_equity_liabilities_for_companies(connection, company_ids, start_date, end_date, months):
     c = connection.cursor()
     query = '''SELECT C.Name, E."Date",
                 "Property, plant and equipment" +
@@ -363,14 +371,17 @@ def get_assets_equity_liabilities_for_companies(connection, company_ids, start_d
                 JOIN Company C ON C.ID = E.CompanyID
                 WHERE C.ID IN ({seq}) 
                 AND E.Date BETWEEN ? AND ?
-                ORDER BY C.Name, E.Date '''.format(seq=','.join(['?'] * len(company_ids)))
+                AND strftime('%m',  E.Date) IN ({months_seq}) 
+                ORDER BY C.Name, E.Date '''.format(seq=','.join(['?'] * len(company_ids)),
+                                                   months_seq=','.join(['?'] * len(months)))
     company_ids.extend([start_date, end_date])
+    company_ids.extend(months)
     c.execute(query, tuple(company_ids))
     return c.fetchall(), list(map(lambda x: x[0], c.description))
 
 
 @with_connection
-def get_assets_categories_for_companies(connection, company_ids, start_date, end_date):
+def get_assets_categories_for_companies(connection, company_ids, start_date, end_date, months):
     c = connection.cursor()
     query = '''SELECT C.Name, "Date", "Non-current assets" + "Current assets" +
                 "Assets held for sale and discontinuing operations" +
@@ -382,14 +393,17 @@ def get_assets_categories_for_companies(connection, company_ids, start_date, end
                 JOIN Company C ON C.ID = AC.CompanyID
                 WHERE C.ID IN ({seq}) 
                 AND AC.Date BETWEEN ? AND ?
-                ORDER BY C.Name, AC.Date '''.format(seq=','.join(['?'] * len(company_ids)))
+                AND strftime('%m',  AC.Date) IN ({months_seq}) 
+                ORDER BY C.Name, AC.Date '''.format(seq=','.join(['?'] * len(company_ids)),
+                                                    months_seq=','.join(['?'] * len(months)))
     company_ids.extend([start_date, end_date])
+    company_ids.extend(months)
     c.execute(query, tuple(company_ids))
     return c.fetchall(), list(map(lambda x: x[0], c.description))
 
 
 @with_connection
-def get_equity_liabilities_categories_for_companies(connection, company_ids, start_date, end_date):
+def get_equity_liabilities_categories_for_companies(connection, company_ids, start_date, end_date, months):
     c = connection.cursor()
     query = '''SELECT C.Name, "Date", 
                 "Equity shareholders of the parent" + "Non-controlling interests" +
@@ -402,14 +416,17 @@ def get_equity_liabilities_categories_for_companies(connection, company_ids, sta
                 JOIN Company C ON C.ID = EC.CompanyID
                 WHERE C.ID IN ({seq}) 
                 AND EC.Date BETWEEN ? AND ?
-                ORDER BY C.Name, EC.Date '''.format(seq=','.join(['?'] * len(company_ids)))
+                AND strftime('%m',  EC.Date) IN ({months_seq}) 
+                ORDER BY C.Name, EC.Date '''.format(seq=','.join(['?'] * len(company_ids)),
+                                                    months_seq=','.join(['?'] * len(months)))
     company_ids.extend([start_date, end_date])
+    company_ids.extend(months)
     c.execute(query, tuple(company_ids))
     return c.fetchall(), list(map(lambda x: x[0], c.description))
 
 
 @with_connection
-def get_full_assets_for_companies(connection, company_ids, start_date, end_date):
+def get_full_assets_for_companies(connection, company_ids, start_date, end_date, months):
     c = connection.cursor()
     query = '''SELECT C.Name, A."Date", "Property, plant and equipment" +
                 "Exploration for and evaluation of mineral resources" + "Intangible assets" +
@@ -438,15 +455,20 @@ def get_full_assets_for_companies(connection, company_ids, start_date, end_date)
                 JOIN Company C ON C.ID = A.CompanyID
                 WHERE C.ID IN ({seq}) 
                 AND AC.Date BETWEEN ? AND ?
-                ORDER BY C.Name, AC.Date '''.format(seq=','.join(['?'] * len(company_ids)))
+                AND strftime('%m',  AC.Date) IN ({months_seq}) 
+                ORDER BY C.Name, AC.Date '''.format(seq=','.join(['?'] * len(company_ids)),
+                                                    months_seq=','.join(['?'] * len(months)))
     company_ids.extend([start_date, end_date])
+    company_ids.extend(months)
     c.execute(query, tuple(company_ids))
     return c.fetchall(), list(map(lambda x: x[0], c.description))
 
 
 @with_connection
-def get_du_pont_indicators_for_companies(connection, company_ids, start_date, end_date):
+def get_du_pont_indicators_for_companies(connection, company_ids, start_date, end_date, months):
     c = connection.cursor()
+    months_condition = ' OR '.join(['''( strftime('%m',  D.'Period start') = ?
+                                    AND strftime('%m',  D.'Period end') = ? )'''] * len(months))
     query = '''SELECT C.Name, "Period start", "Period end", "Return on equity (ROE)",
                 "Return on assets (ROA)", "Leverage (EM)", "Net profit margin",
                 "Asset utilization (AU)", "Load gross profit", "Load operating profit",
@@ -456,15 +478,21 @@ def get_du_pont_indicators_for_companies(connection, company_ids, start_date, en
                 WHERE C.ID IN ({seq}) 
                 AND D."Period start" >= ?
                 AND D."Period end" <= ?
-                ORDER BY C.Name, D."Period start" '''.format(seq=','.join(['?'] * len(company_ids)))
+                AND {months_condition}
+                ORDER BY C.Name, D."Period start" '''.format(seq=','.join(['?'] * len(company_ids)),
+                                                             months_condition=months_condition)
     company_ids.extend([start_date, end_date])
+    months_list = [month for pair in months for month in pair]
+    company_ids.extend(months_list)
     c.execute(query, tuple(company_ids))
     return c.fetchall(), list(map(lambda x: x[0], c.description))
 
 
 @with_connection
-def get_financial_ratios_for_companies(connection, company_ids, start_date, end_date):
+def get_financial_ratios_for_companies(connection, company_ids, start_date, end_date, months):
     c = connection.cursor()
+    months_condition = ' OR '.join(['''( strftime('%m',  D.'Period start') = ?
+                                    AND strftime('%m',  D.'Period end') = ? )'''] * len(months))
     query = '''SELECT C.Name, "Period start", "Period end",
                 "Gross profit margin on sales", "Operating profit margin",
                 "Gross profit margin", "Net profit margin", "Return on equity (ROE)",
@@ -478,8 +506,12 @@ def get_financial_ratios_for_companies(connection, company_ids, start_date, end_
                 WHERE C.ID IN ({seq}) 
                 AND F."Period start" >= ?
                 AND F."Period end" <= ?
-                ORDER BY C.Name, F."Period start" '''.format(seq=','.join(['?'] * len(company_ids)))
+                AND {months_condition} 
+                ORDER BY C.Name, F."Period start" '''.format(seq=','.join(['?'] * len(company_ids)),
+                                                             months_condition=months_condition)
     company_ids.extend([start_date, end_date])
+    months_list = [month for pair in months for month in pair]
+    company_ids.extend(months_list)
     c.execute(query, tuple(company_ids))
     return c.fetchall(), list(map(lambda x: x[0], c.description))
 

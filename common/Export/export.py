@@ -53,43 +53,87 @@ def get_status(data):
         return ExportStatus.FAILURE
 
 
-def export_detailed_assets(company_ids, start_date, end_date, file_name, add_description=True):
-    data, description = db_queries.get_assets_for_companies(company_ids, start_date, end_date)
+def export_detailed_assets(company_ids, start_date, end_date, file_name, interval, add_description=True):
+    months = {
+        'q': ['03', '06', '09', '12'],
+        'hy': ['06', '12'],
+        'y': ['12']
+    }
+    data, description = db_queries.get_assets_for_companies(company_ids, start_date, end_date, months[interval])
     return put_percentage_data_to_csv(data, description, file_name, add_description)
 
 
-def export_detailed_equities(company_ids, start_date, end_date, file_name, add_description=True):
-    data, description = db_queries.get_equity_liabilities_for_companies(company_ids, start_date, end_date)
+def export_detailed_equities(company_ids, start_date, end_date, file_name, interval, add_description=True):
+    months = {
+        'q': ['03', '06', '09', '12'],
+        'hy': ['06', '12'],
+        'y': ['12']
+    }
+    data, description = db_queries.get_equity_liabilities_for_companies(company_ids, start_date, end_date,
+                                                                        months[interval])
     return put_percentage_data_to_csv(data, description, file_name, add_description)
 
 
-def export_assets_categories(company_ids, start_date, end_date, file_name, add_description=True):
-    data, description = db_queries.get_assets_categories_for_companies(company_ids, start_date, end_date)
+def export_assets_categories(company_ids, start_date, end_date, file_name, interval, add_description=True):
+    months = {
+        'q': ['03', '06', '09', '12'],
+        'hy': ['06', '12'],
+        'y': ['12']
+    }
+    data, description = db_queries.get_assets_categories_for_companies(company_ids, start_date, end_date,
+                                                                       months[interval])
     return put_percentage_data_to_csv(data, description, file_name, add_description)
 
 
-def export_equities_categories(company_ids, start_date, end_date, file_name, add_description=True):
-    data, description = db_queries.get_equity_liabilities_categories_for_companies(company_ids, start_date, end_date)
+def export_equities_categories(company_ids, start_date, end_date, file_name, interval, add_description=True):
+    months = {
+        'q': ['03', '06', '09', '12'],
+        'hy': ['06', '12'],
+        'y': ['12']
+    }
+    data, description = db_queries.get_equity_liabilities_categories_for_companies(company_ids, start_date, end_date
+                                                                                   , months[interval])
     return put_percentage_data_to_csv(data, description, file_name, add_description)
 
 
-def export_full_assets(company_ids, start_date, end_date, file_name, add_description=True):
-    data, description = db_queries.get_full_assets_for_companies(company_ids, start_date, end_date)
+def export_full_assets(company_ids, start_date, end_date, file_name, interval, add_description=True):
+    months = {
+        'q': ['03', '06', '09', '12'],
+        'hy': ['06', '12'],
+        'y': ['12']
+    }
+    data, description = db_queries.get_full_assets_for_companies(company_ids, start_date, end_date, months[interval])
     return put_percentage_data_to_csv(data, description, file_name, add_description)
 
 
-def export_full_equities(company_ids, start_date, end_date, file_name, add_description=True):
-    data, description = db_queries.get_full_equities_for_companies(company_ids, start_date, end_date)
+def export_full_equities(company_ids, start_date, end_date, file_name, interval, add_description=True):
+    months = {
+        'q': ['03', '06', '09', '12'],
+        'hy': ['06', '12'],
+        'y': ['12']
+    }
+    data, description = db_queries.get_full_equities_for_companies(company_ids, start_date, end_date, months[interval])
     return put_percentage_data_to_csv(data, description, file_name, add_description)
 
 
-def export_financial_ratios(company_ids, start_date, end_date, file_name, add_description=True):
-    data, description = db_queries.get_financial_ratios_for_companies(company_ids, start_date, end_date)
+def export_financial_ratios(company_ids, start_date, end_date, file_name, interval, add_description=True):
+    months = {
+        'q': [('01', '03'), ('04', '06'), ('07', '09'), ('10', '12')],
+        'y': [('01', '12')]
+    }
+    data, description = db_queries.get_financial_ratios_for_companies(company_ids, start_date, end_date,
+                                                                      months[interval])
     return put_data_to_csv(data, description, file_name, add_description)
 
 
-def export_du_pont_indicators(company_ids, start_date, end_date, file_name, add_description=True):
-    data, description = db_queries.get_du_pont_indicators_for_companies(company_ids, start_date, end_date)
+def export_du_pont_indicators(company_ids, start_date, end_date, file_name, interval, add_description=True):
+    months = {
+        'q': [('01', '03'), ('04', '06'), ('07', '09'), ('10', '12')],
+        'y': [('01', '12')]
+    }
+
+    data, description = db_queries.get_du_pont_indicators_for_companies(company_ids, start_date, end_date,
+                                                                        months[interval])
     return put_data_to_csv(data, description, file_name, add_description)
 
 

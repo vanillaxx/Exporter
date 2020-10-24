@@ -1,6 +1,7 @@
+from django.contrib.messages.views import SuccessMessageMixin
 from django.shortcuts import render
-from django.urls import reverse_lazy
-from django.http import HttpResponse
+from django.urls import reverse_lazy, reverse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.views import generic
 from common.Utils.export_status import ExportStatus
 from .forms import *
@@ -52,19 +53,19 @@ def import_notoria(request):
             overlap_dp = []
             if chosen_sheets_bs:
                 error_bs = render_overlapping_data_popup(chosen_sheets_bs, 'bs',
-                                                                           get_existing_data_balance_sheet)
+                                                         get_existing_data_balance_sheet)
                 if error_bs:
                     overlap_bs = error_bs.overlapping_data
 
             if chosen_sheets_fr:
                 error_fr = render_overlapping_data_popup(chosen_sheets_fr, 'fr',
-                                                                           get_existing_data_ratios)
+                                                         get_existing_data_ratios)
                 if error_fr:
                     overlap_fr = error_fr.overlapping_data
 
             if chosen_sheets_dp:
                 error_dp = render_overlapping_data_popup(chosen_sheets_dp, 'dp',
-                                                                           get_existing_data_ratios)
+                                                         get_existing_data_ratios)
                 if error_dp:
                     overlap_dp = error_dp.overlapping_data
 
@@ -208,20 +209,24 @@ def export(request):
         form = ExportForm(request.POST, count=request.POST.get('date_ranges_count'))
         if form.is_valid():
             file_name = request.POST.get('file_name', None)
-            is_file_name_unique = True
             if not file_name.endswith(".csv"):
                 file_name += ".csv"
             if os.path.isfile(file_name):
-                is_file_name_unique = False
-                csv_index = file_name.rfind(".csv")
-                file_name = file_name[:csv_index] + str(uuid.uuid4()) + file_name[csv_index:]
+                form.add_error('file_name', 'File with that name already exists.')
+                return render(request, 'export/export.html', {'form': form})
 
             chosen_data = request.POST.get('chosen_data', None)
             chosen_companies = list(form.cleaned_data.get('chosen_companies').values_list('id', flat=True))
             intervals = {
+                '-f': form.cleaned_data.get('chosen_interval_ratios', None),
+                '-d': form.cleaned_data.get('chosen_interval_ratios', None),
                 '-s': form.cleaned_data.get('chosen_interval_stooq', None),
                 '-mv': form.cleaned_data.get('chosen_interval_gpw', None)
             }
+            balance_sheet_intervals = ['-da', '-ca', '-fa', '-de', '-ce', '-fe']
+            for i in balance_sheet_intervals:
+                intervals[i] = form.cleaned_data.get('chosen_interval_balance', None)
+
             date_ranges_count = request.POST.get('date_ranges_count', None)
 
             statuses = []
@@ -234,22 +239,14 @@ def export(request):
                 else:
                     add_description = False
 
-                if chosen_data != '-s' and chosen_data != '-mv':
-                    statuses.append(export_methods.functions[chosen_data](chosen_companies, start_date, end_date,
-                                                                          file_name, add_description))
-                else:
-                    chosen_interval = intervals[chosen_data]
-                    statuses.append(export_methods.functions[chosen_data](chosen_companies, start_date, end_date,
-                                                                          file_name, chosen_interval, add_description))
+                chosen_interval = intervals[chosen_data]
+                statuses.append(export_methods.functions[chosen_data](chosen_companies, start_date, end_date,
+                                                                      file_name, chosen_interval, add_description))
 
             success = [status for status in statuses if status is ExportStatus.SUCCESS]
             if len(success) >= 1:
                 status = ExportStatus.SUCCESS
-                if is_file_name_unique:
-                    return render(request, 'manage/home.html', {'message': status.get_message(file_name)})
-                else:
-                    return render(request, 'manage/home.html',
-                                  {'message': f'Passed file name exists. {status.get_message(file_name)}'})
+                return render(request, 'manage/home.html', {'message': status.get_message(file_name)})
             else:
                 return render(request, 'manage/home.html', {'message': ExportStatus.FAILURE.get_message()})
 
@@ -270,8 +267,11 @@ def replace_data(request):
         table_name = data_to_replace['table_name']
         columns = data_to_replace['columns']
         values = data_to_replace['values']
+        existing_company_id = data_to_replace["exists"][0][0]
         for value in values:
-            replace_values(table_name, columns, value)
+            listed_value = list(value)
+            listed_value[0] = existing_company_id
+            replace_values(table_name, columns, listed_value)
     return HttpResponse({'message': "Data replaced successfully"})
 
 
@@ -305,15 +305,16 @@ class CompanyDeleteView(BSModalDeleteView):
     success_url = reverse_lazy('companies')
 
 
-class CompanyMergeView(BSModalFormView):
+class CompanyMergeView(SuccessMessageMixin, BSModalFormView):
     template_name = 'manage/companies/merge.html'
     form_class = MergeForm
     success_message = 'Success: Companies were merged.'
     success_url = reverse_lazy('companies')
 
     def form_valid(self, form):
-        self.merge_companies(form.cleaned_data)
-        return super(CompanyMergeView, self).form_valid(form)
+        if not self.request.is_ajax():
+            return self.merge_companies(form.cleaned_data)
+        return super().form_valid(form)
 
     def merge_companies(self, valid_data):
         chosen_from = valid_data.get('chosen_from').id
@@ -324,14 +325,130 @@ class CompanyMergeView(BSModalFormView):
         merge_equity_liabilities_categories(chosen_from, chosen_to)
         merge_financial_ratios(chosen_from, chosen_to)
         merge_dupont_indicators(chosen_from, chosen_to)
-        delete_from_assets(chosen_from)
-        delete_from_assets_categories(chosen_from)
-        delete_from_equity_liabilities(chosen_from)
-        delete_from_equity_liabilities_categories(chosen_from)
-        delete_from_financial_ratios(chosen_from)
-        delete_from_dupont_indicators(chosen_from)
-        delete_company(chosen_from)
-        pass
+
+        try:
+            overlapping_assets = Assets.objects.filter(company_id=chosen_from).order_by('date')
+        except Assets.DoesNotExist:
+            overlapping_assets = None
+        try:
+            overlapping_assets_categories = AssetsCategories.objects.filter(company_id=chosen_from).order_by('date')
+        except AssetsCategories.DoesNotExist:
+            overlapping_assets_categories = None
+        try:
+            overlapping_equity_liabilities = EquityLiabilities.objects.filter(company_id=chosen_from).order_by('date')
+        except EquityLiabilities.DoesNotExist:
+            overlapping_equity_liabilities = None
+        try:
+            overlapping_equity_liabilities_categories = EquityLiabilitiesCategories.objects.filter(
+                company_id=chosen_from).order_by('date')
+        except EquityLiabilitiesCategories.DoesNotExist:
+            overlapping_equity_liabilities_categories = None
+        # delete_from_assets(chosen_from)
+        # delete_from_assets_categories(chosen_from)
+        # delete_from_equity_liabilities(chosen_from)
+        # delete_from_equity_liabilities_categories(chosen_from)
+        # delete_from_financial_ratios(chosen_from)
+        # delete_from_dupont_indicators(chosen_from)
+        # delete_company(chosen_from)
+        if overlapping_assets or overlapping_assets_categories or overlapping_equity_liabilities or overlapping_equity_liabilities_categories:
+            if overlapping_assets:
+                assets_values = Assets.objects.filter(company_id=chosen_to,
+                                                      date__in=overlapping_assets.values("date")).values_list(flat=True)
+
+                values = list(map(lambda x: list(x.values())[1:], overlapping_assets.values_list(flat=True).values()))
+                exists = list(map(lambda x: list(x.values())[1:], assets_values.values()))
+                assets_dict = {"table_name": Assets.objects.model._meta.db_table,
+                               "columns": [f.get_attname_column()[1] for f in Assets._meta.get_fields() if
+                                           f.name != 'id'],
+                               "values": values,
+                               "exists": exists}
+            if overlapping_assets_categories:
+                assets_categories_values = AssetsCategories.objects.filter(company_id=chosen_to,
+                                                                           date__in=overlapping_assets_categories.values(
+                                                                               "date")).values_list(flat=True)
+
+                values = list(
+                    map(lambda x: list(x.values())[1:], overlapping_assets_categories.values_list(flat=True).values()))
+                exists = list(map(lambda x: list(x.values())[1:], assets_categories_values.values()))
+                assets_categories_dict = {"table_name": AssetsCategories.objects.model._meta.db_table,
+                                          "columns": [f.get_attname_column()[1] for f in
+                                                      AssetsCategories._meta.get_fields() if f.name != 'id'],
+                                          "values": values,
+                                          "exists": exists}
+            if overlapping_equity_liabilities:
+                equity_liabilities_values = EquityLiabilities.objects.filter(company_id=chosen_to,
+                                                                             date__in=overlapping_equity_liabilities.values(
+                                                                                 "date")).values_list(flat=True)
+
+                values = list(
+                    map(lambda x: list(x.values())[1:], overlapping_equity_liabilities.values_list(flat=True).values()))
+                exists = list(map(lambda x: list(x.values())[1:], equity_liabilities_values.values()))
+                equity_liabilities_dict = {"table_name": EquityLiabilities.objects.model._meta.db_table,
+                                           "columns": [f.get_attname_column()[1] for f in
+                                                       EquityLiabilities._meta.get_fields() if f.name != 'id'],
+                                           "values": values,
+                                           "exists": exists}
+            if overlapping_equity_liabilities_categories:
+                equity_liabilities_categories_values = EquityLiabilitiesCategories.objects.filter(company_id=chosen_to,
+                                                                                                  date__in=overlapping_equity_liabilities_categories.values(
+                                                                                                      "date")).values_list(
+                    flat=True)
+
+                values = list(
+                    map(lambda x: list(x.values())[1:],
+                        overlapping_equity_liabilities_categories.values_list(flat=True).values()))
+                exists = list(map(lambda x: list(x.values())[1:], equity_liabilities_categories_values.values()))
+                equity_liabilities_categories_dict = {
+                    "table_name": EquityLiabilitiesCategories.objects.model._meta.db_table,
+                    "columns": [f.get_attname_column()[1] for f in EquityLiabilitiesCategories._meta.get_fields() if
+                                f.name != 'id'],
+                    "values": values,
+                    "exists": exists}
+
+            error_bs = UniqueError(assets_dict, assets_categories_dict, equity_liabilities_dict,
+                                   equity_liabilities_categories_dict)
+            overlap_bs = json.dumps(error_bs.overlapping_data, default=str)
+            return render(self.request, 'manage/home.html',
+                          {"company_to_delete_id": chosen_from,
+                           "error_bs": error_bs,
+                           "overlap_bs": overlap_bs})
+        else:
+            pass
+
+
+def merge_data(request):
+    data = request.POST.get('data', '')
+    json_data = json.loads(data)
+    for data_to_replace in json_data:
+        table_name = data_to_replace['table_name']
+        columns = data_to_replace['columns']
+        values = data_to_replace['values']
+        existing_company_id = data_to_replace["exists"][0][0]
+        company_to_delete_id = values[0][0]
+        for value in values:
+            listed_value = list(value)
+            listed_value[0] = existing_company_id
+            replace_values(table_name, columns, listed_value)
+    delete_from_assets(company_to_delete_id)
+    delete_from_assets_categories(company_to_delete_id)
+    delete_from_equity_liabilities(company_to_delete_id)
+    delete_from_equity_liabilities_categories(company_to_delete_id)
+    delete_from_financial_ratios(company_to_delete_id)
+    delete_from_dupont_indicators(company_to_delete_id)
+    delete_company(company_to_delete_id)
+    return HttpResponse({'message': "Data replaced successfully"})
+
+
+def delete_data(request):
+    company_to_delete_id = request.POST.get('company_to_delete_id', '')
+    delete_from_assets(company_to_delete_id)
+    delete_from_assets_categories(company_to_delete_id)
+    delete_from_equity_liabilities(company_to_delete_id)
+    delete_from_equity_liabilities_categories(company_to_delete_id)
+    delete_from_financial_ratios(company_to_delete_id)
+    delete_from_dupont_indicators(company_to_delete_id)
+    delete_company(company_to_delete_id)
+    return HttpResponse({'message': "Data replaced successfully"})
 
 
 class AssetsView(generic.ListView):

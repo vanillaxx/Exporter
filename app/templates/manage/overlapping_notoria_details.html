@@ -11,7 +11,7 @@
             <h3> {{ data.table_name }} </h3>
             <div class="modal-body">
                 <h5 class="modal-title">
-                    Data imported from file
+                    Data from company which will be deleted
                 </h5>
                 <div style="overflow: scroll; height: 400px; width: 800px">
                     <table id="{{ sheet | escapejs }}-overlapping-data-{{ forloop.counter0 | escapejs }}"
@@ -36,7 +36,7 @@
                     </table>
                 </div>
                 <h5 class="modal-title">
-                    Data already existing in database
+                    Data for company to which we merge data
                 </h5>
                 <div style="overflow: scroll; height: 400px; width: 800px">
                     <table id="{{ sheet | escapejs }}-existing-data-{{ forloop.counter0 | escapejs }}"
@@ -64,11 +64,11 @@
             {% endfor %}
             <div class="modal-footer">
                 <button id="{{ sheet | escapejs }}-replace-button" type="button" class="btn btn-primary">
-                    Replace data with the new one
+                    Get data from company which will be deleted
                 </button>
                 <button id="{{ sheet | escapejs }}-ignore-button" type="button" class="btn btn-secondary"
                         data-dismiss="modal">
-                    Ignore imported data
+                    Leave data for company which stays in database
                 </button>
             </div>
         </div>
@@ -83,13 +83,14 @@
         const sheet = '{{ sheet | escapejs }}'
         const csrf_token = "{{ csrf_token | escapejs }}"
         const overlap = '{{overlap|safe}}'
+        const company_to_delete_id = "{{ company_to_delete_id | escapejs}}"
         $('.modal-dialog').draggable({
             handle: ".modal-header"
         });
         $('#pop-up-' + sheet).modal('show');
 
         $("#" + sheet + "-replace-button").click(function () {
-            $.post('../replace_data', {
+            $.post('../merge_data', {
                     data: overlap,
                     'csrfmiddlewaretoken': csrf_token
                 },
@@ -98,8 +99,16 @@
                 });
 
         })
-        $("#" + sheet + "-ignored-button").click(function () {
-            $('#' + sheet).html("Data imported successfully. Data which overlapped ignored.");
+        console.log(company_to_delete_id)
+        $("#" + sheet + "-ignore-button").click(function () {
+            $.post('../delete_data', {
+                    company_to_delete_id: company_to_delete_id,
+                    'csrfmiddlewaretoken': csrf_token
+                },
+                function () {
+                    $('#' + sheet).html("Data replaced successfully");
+                });
+
         })
     })
 </script>
