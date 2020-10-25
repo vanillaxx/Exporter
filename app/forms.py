@@ -155,6 +155,20 @@ class ExportForm(forms.Form):
                                                                                   ))
 
 
+class ExportDatabaseForm(forms.Form):
+    folder = forms.CharField(label='Folder name:', max_length=100, required=True)
+    delete = forms.BooleanField(required=False)
+
+    folder_sheet = 'Folder where database file will be saved'
+    delete_sheet = 'Delete all data from database after export'
+
+
+class ImportDatabaseForm(forms.Form):
+    file = forms.CharField(label='File name:', max_length=100, required=True)
+
+    file_sheet = 'File with database to be imported'
+
+
 class NotoriaImportForm(forms.Form):
     file_path = forms.CharField(label='Path to files:', max_length=100)
     choices_bs = [('YS', 'Yearly'),

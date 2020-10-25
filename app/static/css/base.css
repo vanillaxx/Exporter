@@ -66,3 +66,7 @@ body {
     margin-left: -1px;
     transform: translateX(+55%);
 }
+
+.show-companies {
+    border-top: 3px solid #888888;
+}

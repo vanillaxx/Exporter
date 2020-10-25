@@ -1,0 +1,23 @@
+{% extends '../base.html' %}
+
+{% block content %}
+{% if messages %}
+<ul class="messages">
+    {% for message in messages %}
+    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+<br>
+<h3>Export database</h3>
+
+<form method="post">{% csrf_token %}
+    <h4>{{form.folder_sheet}}</h4>
+    {{form.folder}}
+<br>
+    {{form.delete}}  {{form.delete_sheet}}
+<br>
+<button type="submit">Export</button>
+</form>
+
+{% endblock %}

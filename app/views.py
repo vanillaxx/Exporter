@@ -8,10 +8,10 @@ from .forms import *
 from common.Parsers import excel_parser, pdf_gpw_parser, stooq_parser, pdf_yearbook_parser, excel_yearbook_parser, \
     excel_gpw_parser
 import common.Export.export as export_methods
-from common.Utils.Errors import UniqueError, ParseError
+from common.Utils.Errors import UniqueError, ParseError, DatabaseImportError
 from .models import *
 from common.DAL.db_queries import replace_values, get_existing_data_balance_sheet, get_existing_data_ratios, \
-    merge_assets_categories, get_existing_data_stock_quotes
+    get_existing_data_stock_quotes
 import json
 import os.path
 import uuid
@@ -19,7 +19,8 @@ from bootstrap_modal_forms.generic import BSModalCreateView, BSModalUpdateView, 
 from common.DAL.db_queries import merge_assets, merge_assets_categories, merge_dupont_indicators, \
     merge_equity_liabilities_categories, merge_equity_liabilities, merge_financial_ratios, delete_from_assets, \
     delete_from_assets_categories, delete_from_dupont_indicators, delete_from_equity_liabilities, \
-    delete_from_equity_liabilities_categories, delete_from_financial_ratios, delete_company
+    delete_from_equity_liabilities_categories, delete_from_financial_ratios, delete_company, merge_database
+from shutil import copyfile
 
 
 def index(request):
@@ -260,6 +261,68 @@ def manage(request):
     return render(request, 'manage/home.html')
 
 
+def export_database(request):
+    def copy_database_to_folder(path):
+        if not os.path.isdir(path):
+            return False
+
+        destination = os.path.join(path, 'exporter.db')
+        copyfile('exporter.db', destination)
+        return True
+
+    if request.method == 'POST':
+        form = ExportDatabaseForm(request.POST)
+        if form.is_valid():
+            folder = form.cleaned_data['folder']
+            delete = form.cleaned_data['delete']
+
+            copied_properly = copy_database_to_folder(folder)
+            if delete:
+                _delete_all_info_from_database()
+
+            if not copied_properly:
+                return render(request, 'manage/home.html', {'message': 'Wrong path to folder'})
+
+    form = ExportDatabaseForm()
+    return render(request, 'manage/databaseExport.html', {'form': form})
+
+
+def import_database(request):
+    def is_sqlite3(filename):
+        from os.path import isfile, getsize
+
+        if not isfile(filename):
+            return False
+        if getsize(filename) < 100:
+            return False
+
+        with open(filename, 'rb') as fd:
+            header = fd.read(100)
+        return header[:16] == b'SQLite format 3\x00' or header[:16] == 'SQLite format 3\x00'
+
+    def is_properly_database(path):
+        return is_sqlite3(path)
+
+    if request.method == 'POST':
+        form = ImportDatabaseForm(request.POST)
+        if form.is_valid():
+            file = form.cleaned_data['file']
+
+            if not is_properly_database(file):
+                return render(request, 'manage/home.html',
+                              {'message': 'Chosen file is not of properly SQLite3 file type'})
+
+            if not _is_database_empty():
+                return render(request, 'manage/databaseImport.html',
+                              {'form': ImportDatabaseForm(),
+                               'path': file.replace('\\', '\\\\')})
+
+            merge_database(file)
+
+    form = ImportDatabaseForm()
+    return render(request, 'manage/databaseImport.html', {'form': form})
+
+
 def replace_data(request):
     data = request.POST.get('data', '')
     json_data = json.loads(data)
@@ -275,7 +338,54 @@ def replace_data(request):
     return HttpResponse({'message': "Data replaced successfully"})
 
 
+def replace_database(request):
+    path = request.POST.get('path')
+    _delete_all_info_from_database()
+    try:
+        merge_database(path)
+    except DatabaseImportError as e:
+        return HttpResponse({'message': str(e)})
+
+    return HttpResponse({'message': "Database replaced successfully"})
+
+# region database_private_methods
+
+
+def _is_database_empty():
+    return Company.objects.all().count() == 0 and \
+           EkdClass.objects.all().count() == 0 and \
+           EkdSection.objects.all().count() == 0 and \
+           Assets.objects.all().count() == 0 and \
+           AssetsCategories.objects.all().count() == 0 and \
+           DuPontIndicators.objects.all().count() == 0 and \
+           EkdClass.objects.all().count() == 0 and \
+           EkdSection.objects.all().count() == 0 and \
+           EquityLiabilities.objects.all().count() == 0 and \
+           EquityLiabilitiesCategories.objects.all().count() == 0 and \
+           FinancialRatios.objects.all().count() == 0 and \
+           MarketValues.objects.all().count() == 0 and \
+           StockQuotes.objects.all().count() == 0
+
+
+def _delete_all_info_from_database():
+    Company.objects.all().delete()
+    EkdClass.objects.all().delete()
+    EkdSection.objects.all().delete()
+    Assets.objects.all().delete()
+    AssetsCategories.objects.all().delete()
+    DuPontIndicators.objects.all().delete()
+    EkdClass.objects.all().delete()
+    EkdSection.objects.all().delete()
+    EquityLiabilities.objects.all().delete()
+    EquityLiabilitiesCategories.objects.all().delete()
+    FinancialRatios.objects.all().delete()
+    MarketValues.objects.all().delete()
+    StockQuotes.objects.all().delete()
+
+# endregion
+
 # region grid_edition_views
+
 
 class CompanyView(generic.ListView):
     model = Company

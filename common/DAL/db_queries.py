@@ -1,6 +1,5 @@
 from common.DAL.db_utils import with_connection
-from common.Utils.Errors import CompanyNotFoundError
-
+from common.Utils.Errors import CompanyNotFoundError, DatabaseImportError
 
 @with_connection
 def delete_company(connection, company_id):
@@ -599,12 +598,6 @@ def get_market_values_for_companies(connection, company_ids, start_date, end_dat
     return c.fetchall(), list(map(lambda x: x[0], c.description))
 
 
-@with_connection
-def get_all_companies(connection):
-    c = connection.cursor()
-    c.execute("SELECT Name, Name FROM Company ")
-    return c.fetchall()
-
 
 @with_connection
 def get_existing_data_balance_sheet(connection, overlapping_data):
@@ -696,3 +689,30 @@ def get_existing_data_ratios(connection, overlapping_data):
                                                date_condition=date_condition_template)
     c.execute(query)
     return c.fetchall()
+
+
+@with_connection
+def merge_database(connection, path):
+    try:
+        connection.execute('ATTACH DATABASE ? AS to_import', (path,))
+
+        connection.execute('''INSERT INTO main.EKDClass(ID, Value) SELECT ID, Value FROM to_import.EKDClass;''')
+        connection.execute('''INSERT INTO main.EKDSection(ID, Value) SELECT ID, Value FROM to_import.EKDSection;''')
+        connection.commit()
+        connection.execute('''INSERT INTO main.Company(ID, Name, ISIN, Ticker, Bloomberg, EKDSectionID, EKDClassID)
+                  SELECT ID, Name, ISIN, Ticker, Bloomberg, EKDSectionID, EKDClassID FROM to_import.Company;''')
+        connection.commit()
+
+        connection.execute('''INSERT INTO main.StockQuotes(ID, CompanyID, "Period end", Stock, Change, Open,
+                          High, Low, Volume, Turnover, Interval)
+                          SELECT ID, CompanyID, "Period end", Stock, Change, Open,
+                          High, Low, Volume, Turnover, Interval FROM to_import.StockQuotes;''')
+
+        connection.execute('''INSERT INTO main.Assets(ID, CompanyID, Date, "Property, plant and equipment", 
+                  "Exploration for and evaluation of mineral resources", Change, Open,
+                  High, Low, Volume, Turnover, Interval)
+                  SELECT ID, CompanyID, "Period end", Stock, Change, Open,
+                  High, Low, Volume, Turnover, Interval FROM to_import.Assets;''')
+        connection.commit()
+    except Exception as e:
+        raise DatabaseImportError(e)

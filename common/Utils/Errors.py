@@ -28,3 +28,11 @@ class UniqueError(Exception):
 
     def __str__(self):
         return 'Data for such company and dates already exists.\n'
+
+
+class DatabaseImportError(Exception):
+    def __init__(self, error):
+        self.error = error
+
+    def __str__(self):
+        return 'Error occurred while importing database: {}'.format(str(self.error))
