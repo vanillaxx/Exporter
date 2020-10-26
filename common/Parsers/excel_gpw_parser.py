@@ -1,6 +1,6 @@
 import common.DAL.db_queries
 from common.Utils.Errors import CompanyNotFoundError, ParseError
-from common.Parsers.Common.dates import *
+from common.Utils.dates import *
 import xlrd
 
 
@@ -31,11 +31,7 @@ class ExcelGPWParser:
                 name = excel_sheet.cell(curr_row, name_column).value
                 value = excel_sheet.cell(curr_row, capitalization_column).value * milion
 
-                company_id = common.DAL.db_queries.get_company_id(company_name=name, company_isin=isin)
-                if company_id is None:
-                    company_id = common.DAL.db_queries.insert_company(company_name=name, company_isin=isin)
-
-                common.DAL.db_queries.insert_market_value(company_id, value, end_date)
+                self.save_value_to_database(name, isin, value, end_date)
 
                 curr_row = curr_row + 1
 
@@ -46,12 +42,9 @@ class ExcelGPWParser:
             while curr_row < excel_sheet.nrows:
                 name = excel_sheet.cell(curr_row, name_column).value
                 value = excel_sheet.cell(curr_row, capitalization_column).value * milion
+                isin = None
 
-                company_id = common.DAL.db_queries.get_company_id(company_name=name)
-                if company_id is None:
-                    company_id = common.DAL.db_queries.insert_company(company_name=name)
-
-                common.DAL.db_queries.insert_market_value(company_id, value, end_date)
+                self.save_value_to_database(name, isin, value, end_date)
 
                 curr_row = curr_row + 1
         else:
@@ -77,3 +70,11 @@ class ExcelGPWParser:
                     or find_date_in_yearly_statistics(value)
 
         return end_date
+
+    @staticmethod
+    def save_value_to_database(name, isin, value, end_date):
+        company_id = common.DAL.db_queries.get_company(company_name=name, company_isin=isin)
+        if company_id is None:
+            company_id = common.DAL.db_queries.insert_company(company_name=name, company_isin=isin)
+
+        common.DAL.db_queries.insert_market_value(company_id, value, end_date)

@@ -3,9 +3,8 @@ import fitz
 import collections
 import pandas as pd
 import numpy as np
-from common.DAL.db_queries import insert_market_value, insert_company, get_company_id
-from common.Utils.Errors import CompanyNotFoundError
-from common.Parsers.Common.dates import *
+from common.DAL.db_queries import insert_market_value, insert_company, get_company
+from common.Utils.dates import *
 
 
 class PdfGPWParser:
@@ -43,9 +42,9 @@ class PdfGPWParser:
         dataframes = [self.process_page(page, page_num) for page_num, page in enumerate(self.doc.pages())]
         dataframes = [dataframe for dataframe in dataframes if dataframe is not None]
         if dataframes:
-           return pd.concat(dataframes, ignore_index=True)
+            return pd.concat(dataframes, ignore_index=True)
         else:
-           raise ValueError('No data found')
+            raise ValueError('No data found')
 
     # TODO errors
     def find_data_date(self):
@@ -199,7 +198,7 @@ class PdfGPWParser:
         company_isin = row.get(self.isin_code_column)
         market_value = row[self.capitalisation_value_column]
 
-        company_id = get_company_id(company_name=company_name, company_isin=company_isin)
+        company_id = get_company(company_name=company_name, company_isin=company_isin)
         if company_id is None:
             company_id = insert_company(company_name=company_name, company_isin=company_isin)
 

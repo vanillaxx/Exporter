@@ -92,6 +92,7 @@ class ExcelParser():
             raise ParseError(path, '(A26=EKD 1) of company should be in B26 cell')
 
         ekd_section, ekd_class = parse_ekd(company_ekd)
+        insert_ekd_data(ekd_section, ekd_class)
 
         return company_name, isin, company_ticker, company_bloomberg, ekd_section, ekd_class
 
@@ -276,7 +277,7 @@ class ExcelParser():
     def get_company_id_balance_sheet(self, path):
         company_name, company_isin, company_ticker, company_bloomberg, ekd_section, ekd_class = self.parse_company(path)
 
-        company_id = common.DAL.db_queries.get_company_id(company_name, company_ticker, company_isin)
+        company_id = common.DAL.db_queries.get_company(company_name, company_ticker, company_isin, company_bloomberg)
         if company_id is None:
             company_id = common.DAL.db_queries.insert_company(company_name, company_ticker, company_isin,
                                                               company_bloomberg, ekd_section, ekd_class)

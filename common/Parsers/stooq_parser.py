@@ -4,8 +4,7 @@ import lxml
 import numbers
 import requests
 import pandas as pd
-from common.DAL.db_queries import insert_company, insert_stock_quotes, get_company_id, \
-    get_interval_id_from_shortcut
+from common.DAL.db_queries import insert_company, insert_stock_quotes, get_company, get_interval_id_from_shortcut
 import re
 from datetime import date
 from common.Utils.Errors import *
@@ -106,7 +105,7 @@ class StooqParser:
         for index, row in result.iterrows():
             parsed_data = date(year, month, day)
             ticker = row['Symbol'].upper()
-            company_id = get_company_id(company_ticker=ticker)
+            company_id = get_company(company_ticker=ticker)
             if company_id is None:
                 error = CompanyNotFoundError(ticker)
                 print(error)
@@ -141,7 +140,7 @@ class StooqParser:
         company = company.upper()
         overlapping_stock = {}
 
-        company_id = get_company_id(company_ticker=company)
+        company_id = get_company(company_ticker=company)
         if company_id is None:
             error = CompanyNotFoundError(isin=company)
             print(error)

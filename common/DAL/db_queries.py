@@ -1,5 +1,6 @@
 from common.DAL.db_utils import with_connection
 from common.Utils.Errors import CompanyNotFoundError, DatabaseImportError
+from common.Utils.company_unification import Company
 
 
 @with_connection
@@ -191,8 +192,11 @@ def insert_company(connection, company_name=None, company_ticker=None, company_i
         ekd_section = get_ekd_section_id_from_value(ekd_section=ekd_section)
         ekd_class = get_ekd_class_id_from_value(ekd_class=ekd_class)
 
-    values = company_name.upper, company_ticker, company_isin, company_bloomberg, ekd_section, ekd_class
-    command = '''INSERT INTO Company(Name, Ticker, ISIN, Bloomberg, EKD_SectionID, EKD_ClassID) 
+    company = Company(name=company_name, ticker=company_ticker, bloomberg=company_bloomberg, isin=company_isin)
+    company.standardise()
+
+    values = company.name, company.ticker, company.isin, company.bloomberg, ekd_section, ekd_class
+    command = '''INSERT INTO Company(Name, Ticker, ISIN, Bloomberg, EKDSectionID, EKDClassID) 
                  VALUES (?, ?, ?, ?, ?, ?)'''
 
     with connection:
@@ -203,9 +207,16 @@ def insert_company(connection, company_name=None, company_ticker=None, company_i
     return company_id
 
 
+def get_company(company_name=None, company_ticker=None, company_isin=None, company_bloomberg=None):
+    company = Company(name=company_name, ticker=company_ticker, bloomberg=company_bloomberg, isin=company_isin)
+    company.standardise()
+
+    return get_company_id(company.name, company.ticker, company.isin) or \
+        get_possible_company_id(company)
+
+
 @with_connection
-def get_company_id(connection, company_name=None, company_ticker=None, company_isin=None):
-    company_name = company_name.upper()
+def get_company_id(connection, company_name, company_ticker, company_isin):
     c = connection.cursor()
     query = '''SELECT ID FROM Company
               WHERE Name = ?
@@ -218,15 +229,18 @@ def get_company_id(connection, company_name=None, company_ticker=None, company_i
     return company[0]
 
 
+def get_possible_company_id(company):
+    companies = get_all_companies_info()
+    possible_companies = [company_id for (company_id, name, ticker, bloomberg) in companies
+                          if company.is_similar(Company(name=name, ticker=ticker, bloomberg=bloomberg))]
+    return None
+
+
 @with_connection
-def get_company_id_from_ticker(connection, ticker):
-    company_ticker = ticker.upper()
+def get_all_companies_info(connection):
     c = connection.cursor()
-    c.execute("SELECT ID FROM Company WHERE Ticker Like ?", (company_ticker,))
-    company = c.fetchone()
-    if not company:
-        return None
-    return company[0]
+    c.execute("SELECT ID, Name, Ticker, Bloomberg FROM Company ")
+    return c.fetchall()
 
 
 @with_connection
@@ -676,7 +690,7 @@ def get_existing_data_ratios(connection, overlapping_data):
                                                                                            end=values[values_length - 1][2])
     query = '''SELECT * FROM {table}  
               WHERE{date_condition}'''.format(table=overlapping_data["table_name"],
-                                               date_condition=date_condition_template)
+                                              date_condition=date_condition_template)
     c.execute(query)
     return c.fetchall()
 
