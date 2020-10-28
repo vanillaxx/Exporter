@@ -1,14 +1,7 @@
-{% extends '../base.html' %}
+{% extends './entitiesViewBase.html' %}
+{% block entity %}
+{% load static %}
 
-{% block content %}
-{% if messages %}
-<ul class="messages">
-    {% for message in messages %}
-    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-    {% endfor %}
-</ul>
-{% endif %}
-<br>
 <h3>Export database</h3>
 
 <form method="post">{% csrf_token %}
