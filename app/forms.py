@@ -110,7 +110,7 @@ class MarketValuesModelForm(BSModalModelForm):
 class StockQuotesModelForm(BSModalModelForm):
     class Meta:
         model = StockQuotes
-        fields = ['company_id', 'period_end', 'stock', 'change', 'open', 'high', 'low', 'volume', 'turnover',
+        fields = ['company_id', 'date', 'stock', 'change', 'open', 'high', 'low', 'volume', 'turnover',
                   'interval']
 
 

@@ -330,7 +330,7 @@ class MarketValues(models.Model):
     id = models.AutoField(db_column='ID', primary_key=True, blank=True, null=False)  
     company_id = models.ForeignKey(Company, models.CASCADE, db_column='CompanyID', null=False)  
     period_end = models.DateField(db_column='Period end')  
-    market_value = models.FloatField(db_column='MarketValue')  
+    market_value = models.FloatField(db_column='Market value')
 
     class Meta:
         managed = True
@@ -356,7 +356,7 @@ class Interval(models.Model):
 class StockQuotes(models.Model):
     id = models.AutoField(db_column='ID', primary_key=True, blank=True, null=False)  
     company_id = models.ForeignKey(Company, models.CASCADE, db_column='CompanyID', null=False)  
-    period_end = models.DateField(db_column='Period end')  
+    date = models.DateField(db_column='Date')
     stock = models.FloatField(db_column='Stock')  
     change = models.FloatField(db_column='Change', blank=True, null=True)  
     open = models.FloatField(db_column='Open', blank=True, null=True)  
@@ -371,5 +371,5 @@ class StockQuotes(models.Model):
         db_table = 'StockQuotes'
 
         constraints = [
-            models.UniqueConstraint(fields=['company_id', 'period_end', 'interval'], name='stock_company_date_interval_unique')
+            models.UniqueConstraint(fields=['company_id', 'date', 'interval'], name='stock_company_date_interval_unique')
         ]
