@@ -14,12 +14,13 @@ from common.DAL.db_queries import replace_values, get_existing_data_balance_shee
     get_existing_data_stock_quotes
 import json
 import os.path
-import uuid
+from django.contrib import messages
 from bootstrap_modal_forms.generic import BSModalCreateView, BSModalUpdateView, BSModalDeleteView, BSModalFormView
 from common.DAL.db_queries import merge_assets, merge_assets_categories, merge_dupont_indicators, \
     merge_equity_liabilities_categories, merge_equity_liabilities, merge_financial_ratios, delete_from_assets, \
     delete_from_assets_categories, delete_from_dupont_indicators, delete_from_equity_liabilities, \
-    delete_from_equity_liabilities_categories, delete_from_financial_ratios, delete_company, merge_database
+    delete_from_equity_liabilities_categories, delete_from_financial_ratios, delete_company, merge_database, \
+    merge_stock_quotes, delete_from_stock_quotes
 from shutil import copyfile
 
 
@@ -140,7 +141,7 @@ def import_stooq(request):
                 if date_to and date_from and date_to < date_from and (company or ticker):
                     return render(request, 'manage/home.html', {'message': "Wrong form"})
 
-                if company and not ticker:
+                if company:
                     ticker = company.ticker
 
                 if ticker and date_from and date_to:
@@ -281,10 +282,13 @@ def export_database(request):
                 _delete_all_info_from_database()
 
             if not copied_properly:
-                return render(request, 'manage/home.html', {'message': 'Wrong path to folder'})
+                messages.error(request, 'Cannot export database')
+                return render(request, 'manage/databaseExport.html', {'form': form})
+            else:
+                messages.success(request, 'Database exported successfully')
+                return render(request, 'manage/databaseExport.html', {'form': ExportDatabaseForm()})
 
-    form = ExportDatabaseForm()
-    return render(request, 'manage/databaseExport.html', {'form': form})
+    return render(request, 'manage/databaseExport.html', {'form': ExportDatabaseForm()})
 
 
 def import_database(request):
@@ -309,8 +313,8 @@ def import_database(request):
             file = form.cleaned_data['file']
 
             if not is_properly_database(file):
-                return render(request, 'manage/home.html',
-                              {'message': 'Chosen file is not of properly SQLite3 file type'})
+                messages.error(request, 'Chosen file is not of properly SQLite3 file type')
+                return render(request, 'manage/databaseExport.html', {'form': form})
 
             if not _is_database_empty():
                 return render(request, 'manage/databaseImport.html',
@@ -319,8 +323,10 @@ def import_database(request):
 
             merge_database(file)
 
-    form = ImportDatabaseForm()
-    return render(request, 'manage/databaseImport.html', {'form': form})
+            messages.success(request, 'Database imported successfully')
+            return render(request, 'manage/databaseImport.html', {'form': ImportDatabaseForm()})
+
+    return render(request, 'manage/databaseImport.html', {'form': ImportDatabaseForm()})
 
 
 def replace_data(request):
@@ -344,9 +350,12 @@ def replace_database(request):
     try:
         merge_database(path)
     except DatabaseImportError as e:
+        error = 'Cannot export database: {}'.format(e)
+        messages.error(request, 'Cannot export database')
         return HttpResponse({'message': str(e)})
 
     return HttpResponse({'message': "Database replaced successfully"})
+
 
 # region database_private_methods
 
@@ -381,6 +390,7 @@ def _delete_all_info_from_database():
     FinancialRatios.objects.all().delete()
     MarketValues.objects.all().delete()
     StockQuotes.objects.all().delete()
+
 
 # endregion
 
@@ -435,32 +445,43 @@ class CompanyMergeView(SuccessMessageMixin, BSModalFormView):
         merge_equity_liabilities_categories(chosen_from, chosen_to)
         merge_financial_ratios(chosen_from, chosen_to)
         merge_dupont_indicators(chosen_from, chosen_to)
+        merge_stock_quotes(chosen_from, chosen_to)
 
         try:
             overlapping_assets = Assets.objects.filter(company_id=chosen_from).order_by('date')
         except Assets.DoesNotExist:
             overlapping_assets = None
+
         try:
             overlapping_assets_categories = AssetsCategories.objects.filter(company_id=chosen_from).order_by('date')
         except AssetsCategories.DoesNotExist:
             overlapping_assets_categories = None
+
         try:
             overlapping_equity_liabilities = EquityLiabilities.objects.filter(company_id=chosen_from).order_by('date')
         except EquityLiabilities.DoesNotExist:
             overlapping_equity_liabilities = None
+
         try:
             overlapping_equity_liabilities_categories = EquityLiabilitiesCategories.objects.filter(
                 company_id=chosen_from).order_by('date')
         except EquityLiabilitiesCategories.DoesNotExist:
             overlapping_equity_liabilities_categories = None
-        # delete_from_assets(chosen_from)
-        # delete_from_assets_categories(chosen_from)
-        # delete_from_equity_liabilities(chosen_from)
-        # delete_from_equity_liabilities_categories(chosen_from)
-        # delete_from_financial_ratios(chosen_from)
-        # delete_from_dupont_indicators(chosen_from)
-        # delete_company(chosen_from)
-        if overlapping_assets or overlapping_assets_categories or overlapping_equity_liabilities or overlapping_equity_liabilities_categories:
+
+        try:
+            overlapping_stock_quotes = StockQuotes.objects.filter(
+                company_id=chosen_from).order_by('date', 'interval')
+        except StockQuotes.DoesNotExist:
+            overlapping_stock_quotes = None
+
+        assets_dict = {}
+        assets_categories_dict = {}
+        equity_liabilities_dict = {}
+        equity_liabilities_categories_dict = {}
+        stock_quotes_dict = {}
+
+        if overlapping_assets or overlapping_assets_categories or overlapping_equity_liabilities \
+                or overlapping_equity_liabilities_categories or overlapping_stock_quotes:
             if overlapping_assets:
                 assets_values = Assets.objects.filter(company_id=chosen_to,
                                                       date__in=overlapping_assets.values("date")).values_list(flat=True)
@@ -498,6 +519,7 @@ class CompanyMergeView(SuccessMessageMixin, BSModalFormView):
                                                        EquityLiabilities._meta.get_fields() if f.name != 'id'],
                                            "values": values,
                                            "exists": exists}
+
             if overlapping_equity_liabilities_categories:
                 equity_liabilities_categories_values = EquityLiabilitiesCategories.objects.filter(company_id=chosen_to,
                                                                                                   date__in=overlapping_equity_liabilities_categories.values(
@@ -515,8 +537,23 @@ class CompanyMergeView(SuccessMessageMixin, BSModalFormView):
                     "values": values,
                     "exists": exists}
 
+            if overlapping_stock_quotes:
+                stock_quotes_values = StockQuotes.objects.filter(company_id=chosen_to,
+                                                                 date__in=overlapping_stock_quotes.values("date"),
+                                                                 interval__in=overlapping_stock_quotes
+                                                                 .values("interval")).values_list(flat=True)
+
+                values = list(map(lambda x: list(x.values())[1:], overlapping_stock_quotes.values_list(flat=True)
+                                  .values()))
+                exists = list(map(lambda x: list(x.values())[1:], stock_quotes_values.values()))
+                stock_quotes_dict = {"table_name": StockQuotes.objects.model._meta.db_table,
+                                     "columns": [f.get_attname_column()[1] for f in
+                                                 StockQuotes._meta.get_fields() if f.name != 'id'],
+                                     "values": values,
+                                     "exists": exists}
+
             error_bs = UniqueError(assets_dict, assets_categories_dict, equity_liabilities_dict,
-                                   equity_liabilities_categories_dict)
+                                   equity_liabilities_categories_dict, stock_quotes_dict)
             overlap_bs = json.dumps(error_bs.overlapping_data, default=str)
             return render(self.request, 'manage/home.html',
                           {"company_to_delete_id": chosen_from,
@@ -530,6 +567,9 @@ def merge_data(request):
     data = request.POST.get('data', '')
     json_data = json.loads(data)
     for data_to_replace in json_data:
+        if not data_to_replace:
+            continue
+
         table_name = data_to_replace['table_name']
         columns = data_to_replace['columns']
         values = data_to_replace['values']
@@ -539,12 +579,14 @@ def merge_data(request):
             listed_value = list(value)
             listed_value[0] = existing_company_id
             replace_values(table_name, columns, listed_value)
+
     delete_from_assets(company_to_delete_id)
     delete_from_assets_categories(company_to_delete_id)
     delete_from_equity_liabilities(company_to_delete_id)
     delete_from_equity_liabilities_categories(company_to_delete_id)
     delete_from_financial_ratios(company_to_delete_id)
     delete_from_dupont_indicators(company_to_delete_id)
+    delete_from_stock_quotes(company_to_delete_id)
     delete_company(company_to_delete_id)
     return HttpResponse({'message': "Data replaced successfully"})
 
@@ -557,6 +599,7 @@ def delete_data(request):
     delete_from_equity_liabilities_categories(company_to_delete_id)
     delete_from_financial_ratios(company_to_delete_id)
     delete_from_dupont_indicators(company_to_delete_id)
+    delete_from_stock_quotes(company_to_delete_id)
     delete_company(company_to_delete_id)
     return HttpResponse({'message': "Data replaced successfully"})
 
