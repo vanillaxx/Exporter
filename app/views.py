@@ -20,7 +20,7 @@ from common.DAL.db_queries import merge_assets, merge_assets_categories, merge_d
     merge_equity_liabilities_categories, merge_equity_liabilities, merge_financial_ratios, delete_from_assets, \
     delete_from_assets_categories, delete_from_dupont_indicators, delete_from_equity_liabilities, \
     delete_from_equity_liabilities_categories, delete_from_financial_ratios, delete_company
-
+from django.contrib import messages
 
 def index(request):
     return render(request, 'index.html')
@@ -343,13 +343,6 @@ class CompanyMergeView(SuccessMessageMixin, BSModalFormView):
                 company_id=chosen_from).order_by('date')
         except EquityLiabilitiesCategories.DoesNotExist:
             overlapping_equity_liabilities_categories = None
-        # delete_from_assets(chosen_from)
-        # delete_from_assets_categories(chosen_from)
-        # delete_from_equity_liabilities(chosen_from)
-        # delete_from_equity_liabilities_categories(chosen_from)
-        # delete_from_financial_ratios(chosen_from)
-        # delete_from_dupont_indicators(chosen_from)
-        # delete_company(chosen_from)
         if overlapping_assets or overlapping_assets_categories or overlapping_equity_liabilities or overlapping_equity_liabilities_categories:
             if overlapping_assets:
                 assets_values = Assets.objects.filter(company_id=chosen_to,
@@ -413,7 +406,9 @@ class CompanyMergeView(SuccessMessageMixin, BSModalFormView):
                            "error_bs": error_bs,
                            "overlap_bs": overlap_bs})
         else:
-            pass
+            delete_company(chosen_from)
+            messages.success(self.request, self.success_message)
+            return HttpResponseRedirect(self.get_success_url())
 
 
 def merge_data(request):
