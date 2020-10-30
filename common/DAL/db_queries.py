@@ -763,7 +763,7 @@ def merge_database(connection, path):
         connection.execute('''INSERT INTO main.EquityLiabilities(ID, CompanyID, Date, "Share capital",
                         "Called up share capital", "Treasury shares", "Supplementary capital",
                         "Valuation and exchange differences", "Retained earnings / accumulated losses",
-                        "Non-current liabilities from derivatives", "Non-current loans and borrowings"
+                        "Non-current liabilities from derivatives", "Non-current loans and borrowings",
                         "Non-current liabilities from bonds", "Non-current liabilities from finance leases",
                         "Non-current trade payables", "Long-term provision for employee benefits",
                         "Deferred tax liabilities", "Non-current provision", "Other non-current liabilities",
@@ -774,7 +774,7 @@ def merge_database(connection, path):
                         SELECT ID, CompanyID, Date, "Share capital",
                         "Called up share capital", "Treasury shares", "Supplementary capital",
                         "Valuation and exchange differences", "Retained earnings / accumulated losses",
-                        "Non-current liabilities from derivatives", "Non-current loans and borrowings"
+                        "Non-current liabilities from derivatives", "Non-current loans and borrowings",
                         "Non-current liabilities from bonds", "Non-current liabilities from finance leases",
                         "Non-current trade payables", "Long-term provision for employee benefits",
                         "Deferred tax liabilities", "Non-current provision", "Other non-current liabilities",
