@@ -129,8 +129,6 @@ def replace_values(connection, table_name, columns, values):
     command = 'REPLACE INTO {table} {columns} VALUES ({seq}) '.format(table=table_name,
                                                                       columns=tuple(columns),
                                                                       seq=','.join(['?'] * len(columns)))
-    print(command)
-    print(values)
     with connection:
         connection.execute(command, values)
 
@@ -714,6 +712,7 @@ def merge_database(connection, path):
         connection.execute('ATTACH DATABASE ? AS to_import', (path,))
 
         connection.execute('''INSERT INTO main.EKDClass(ID, Value) SELECT ID, Value FROM to_import.EKDClass;''')
+        connection.commit()
         connection.execute('''INSERT INTO main.EKDSection(ID, Value) SELECT ID, Value FROM to_import.EKDSection;''')
         connection.commit()
 
@@ -723,9 +722,9 @@ def merge_database(connection, path):
 
         connection.execute('''INSERT INTO main.StockQuotes(ID, CompanyID, Date, Stock, Change, Open,
                         High, Low, Volume, Turnover, Interval)
-                        SELECT ID, CompanyID, "Period end", Stock, Change, Open,
+                        SELECT ID, CompanyID, Date, Stock, Change, Open,
                         High, Low, Volume, Turnover, Interval FROM to_import.StockQuotes;''')
-
+        connection.commit()
         connection.execute('''INSERT INTO main.Assets(ID, CompanyID, Date, "Property, plant and equipment", 
                         "Exploration for and evaluation of mineral resources", "Intangible assets", Goodwill,
                         "Investment property", "Investment in affiliates", "Non-current financial assets", 
@@ -744,13 +743,13 @@ def merge_database(connection, path):
                         "Trade receivables", "Loans and other receivables",
                         "Financial assets", "Cash and cash equivalents", Accruals, "Assets from current tax",
                         "Derivative instruments", "Other assets" FROM to_import.Assets;''')
-
+        connection.commit()
         connection.execute('''INSERT INTO main.AssetsCategories(ID, CompanyID, "Non-current assets", "Current assets",
                         "Assets held for sale and discontinuing operations", "Called up capital", "Own shares")
                         SELECT ID, CompanyID, "Non-current assets", "Current assets",
                         "Assets held for sale and discontinuing operations", "Called up capital", "Own shares"
                          FROM to_import.AssetsCategories;''')
-
+        connection.commit()
         connection.execute('''INSERT INTO main.DuPontIndicators(ID, CompanyID, "Period start", "Period end",
                         "Return on equity (ROE)", "Return on assets (ROA)", "Leverage (EM)", "Net profit margin",
                         "Asset utilization (AU)", "Load gross profit", "Load operating profit",
@@ -759,7 +758,7 @@ def merge_database(connection, path):
                         "Return on equity (ROE)", "Return on assets (ROA)", "Leverage (EM)", "Net profit margin",
                         "Asset utilization (AU)", "Load gross profit", "Load operating profit",
                         "Operating profit margin", "EBITDA margin" FROM to_import.DuPontIndicators;''')
-
+        connection.commit()
         connection.execute('''INSERT INTO main.EquityLiabilities(ID, CompanyID, Date, "Share capital",
                         "Called up share capital", "Treasury shares", "Supplementary capital",
                         "Valuation and exchange differences", "Retained earnings / accumulated losses",
@@ -783,7 +782,7 @@ def merge_database(connection, path):
                         "Liabilities from finance leases", "Trade payables", "Employee benefits",
                         "Current tax liabilities", Provisions, "Other liabilities", "Accruals (liability)"
                         FROM to_import.EquityLiabilities;''')
-
+        connection.commit()
         connection.execute('''INSERT INTO main.EquityLiabilitiesCategories(ID, CompanyID, Date, 
                         "Equity shareholders of the parent", "Non-controlling interests", "Non-current liabilities",
                         "Current liabilities",
@@ -793,7 +792,7 @@ def merge_database(connection, path):
                         "Current liabilities",
                         "Liabilities related to assets held for sale and discontinued operations"
                         FROM to_import.EquityLiabilitiesCategories;''')
-
+        connection.commit()
         connection.execute('''INSERT INTO main.FinancialRatios(ID, CompanyID, "Period start", "Period end",
                         "Gross profit margin on sales", "Operating profit margin","Gross profit margin",
                         "Net profit margin", "Return on equity (ROE)", "Return on assets (ROA)",
@@ -808,7 +807,7 @@ def merge_database(connection, path):
                         "Receivables turnover", "Inventory turnover", "The operating cycle", "Rotation commitments",
                         "Cash conversion cycle", "Rotation assets", "Rotation of assets", "Assets ratio",
                         "Debt ratio", "Debt service ratio", "Rate debt security" FROM to_import.FinancialRatios;''')
-
+        connection.commit()
         connection.execute('''INSERT INTO main.MarketValues(ID, CompanyID, "Period end", "Market value")
                         SELECT ID, CompanyID, "Period end", "Market value" FROM to_import.MarketValues;''')
         connection.commit()
