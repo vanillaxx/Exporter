@@ -482,6 +482,7 @@ class CompanyMergeView(SuccessMessageMixin, BSModalFormView):
 
         if overlapping_assets or overlapping_assets_categories or overlapping_equity_liabilities \
                 or overlapping_equity_liabilities_categories or overlapping_stock_quotes:
+
             if overlapping_assets:
                 assets_values = Assets.objects.filter(company_id=chosen_to,
                                                       date__in=overlapping_assets.values("date")).values_list(flat=True)
@@ -560,7 +561,9 @@ class CompanyMergeView(SuccessMessageMixin, BSModalFormView):
                            "error_bs": error_bs,
                            "overlap_bs": overlap_bs})
         else:
-            pass
+            delete_company(chosen_from)
+            messages.success(self.request, self.success_message)
+            return HttpResponseRedirect(self.get_success_url())
 
 
 def merge_data(request):
