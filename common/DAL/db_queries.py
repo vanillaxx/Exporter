@@ -745,9 +745,9 @@ def merge_database(connection, path):
                         "Financial assets", "Cash and cash equivalents", Accruals, "Assets from current tax",
                         "Derivative instruments", "Other assets" FROM to_import.Assets;''')
 
-        connection.execute('''INSERT INTO main.AssetsCategories(ID, CompanyID, "Non-current assets", "Current assets"
+        connection.execute('''INSERT INTO main.AssetsCategories(ID, CompanyID, "Non-current assets", "Current assets",
                         "Assets held for sale and discontinuing operations", "Called up capital", "Own shares")
-                        SELECT ID, CompanyID, "Non-current assets", "Current assets"
+                        SELECT ID, CompanyID, "Non-current assets", "Current assets",
                         "Assets held for sale and discontinuing operations", "Called up capital", "Own shares"
                          FROM to_import.AssetsCategories;''')
 
