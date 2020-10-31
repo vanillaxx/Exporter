@@ -186,16 +186,14 @@ def insert_ekd_class(ekd_class):
 
 
 @with_connection
-def insert_company(connection, company_name=None, company_ticker=None, company_isin=None, company_bloomberg=None,
-                   ekd_section=None, ekd_class=None):
-    if ekd_section is not None and ekd_class is not None:
-        ekd_section = get_ekd_section_id_from_value(ekd_section=ekd_section)
-        ekd_class = get_ekd_class_id_from_value(ekd_class=ekd_class)
+def insert_company(connection, company: Company):
+    if company.ekd_section is not None and company.ekd_class is not None:
+        company.ekd_section = get_ekd_section_id_from_value(ekd_section=company.ekd_section)
+        company.ekd_class = get_ekd_class_id_from_value(ekd_class=company.ekd_class)
 
-    company = Company(name=company_name, ticker=company_ticker, bloomberg=company_bloomberg, isin=company_isin)
     company.standardise()
 
-    values = company.name, company.ticker, company.isin, company.bloomberg, ekd_section, ekd_class
+    values = company.name, company.ticker, company.isin, company.bloomberg, company.ekd_section, company.ekd_class
     command = '''INSERT INTO Company(Name, Ticker, ISIN, Bloomberg, EKDSectionID, EKDClassID) 
                  VALUES (?, ?, ?, ?, ?, ?)'''
 
@@ -207,12 +205,17 @@ def insert_company(connection, company_name=None, company_ticker=None, company_i
     return company_id
 
 
-def get_company(company_name=None, company_ticker=None, company_isin=None, company_bloomberg=None):
-    company = Company(name=company_name, ticker=company_ticker, bloomberg=company_bloomberg, isin=company_isin)
+def get_company(company: Company):
     company.standardise()
 
-    return get_company_id(company.name, company.ticker, company.isin) or \
-        get_possible_company_id(company)
+    company_id = get_company_id(company.name, company.ticker, company.isin)
+    possible_companies = []
+
+    if company_id is None:
+        companies = get_all_companies_info()
+        possible_companies = company.get_possible_matches(companies)
+
+    return company_id, possible_companies
 
 
 @with_connection
@@ -229,13 +232,6 @@ def get_company_id(connection, company_name, company_ticker, company_isin):
     return company[0]
 
 
-def get_possible_company_id(company):
-    companies = get_all_companies_info()
-    possible_companies = [company_id for (company_id, name, ticker, bloomberg) in companies
-                          if company.is_similar(Company(name=name, ticker=ticker, bloomberg=bloomberg))]
-    return None
-
-
 @with_connection
 def get_all_companies_info(connection):
     c = connection.cursor()
@@ -246,21 +242,21 @@ def get_all_companies_info(connection):
 @with_connection
 def get_ekd_section_id_from_value(connection, ekd_section):
     c = connection.cursor()
-    c.execute("SELECT ID FROM EKDSection WHERE Value Like (?)", (int(ekd_section),))
+    c.execute("SELECT ID FROM EKDSection WHERE Value = (?)", (int(ekd_section),))
     return c.fetchone()[0]
 
 
 @with_connection
 def get_ekd_class_id_from_value(connection, ekd_class):
     c = connection.cursor()
-    c.execute("SELECT ID FROM EKDClass WHERE Value Like (?)", (int(ekd_class),))
+    c.execute("SELECT ID FROM EKDClass WHERE Value = (?)", (int(ekd_class),))
     return c.fetchone()[0]
 
 
 @with_connection
 def get_interval_id_from_shortcut(connection, shortcut):
     c = connection.cursor()
-    c.execute("SELECT ID FROM Interval WHERE Shortcut Like ?", (shortcut,))
+    c.execute("SELECT ID FROM Interval WHERE Shortcut = ?", (shortcut,))
     interval = c.fetchone()
     if not interval:
         return None

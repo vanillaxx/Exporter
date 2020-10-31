@@ -8,6 +8,9 @@ from common.DAL.db_queries import insert_company, insert_stock_quotes, get_compa
 import re
 from datetime import date
 from common.Utils.Errors import *
+from common.Utils.company_unification import Company
+from common.Utils.parsing_result import ParsingResult
+from common.Utils.unification_info import StooqUnificationInfo
 
 
 class StooqParser:
@@ -102,14 +105,16 @@ class StooqParser:
         except ValueError:
             raise ParseError(url, 'Wrong data in Volume/Turnover column')
 
+        unification_info = []
         for index, row in result.iterrows():
             parsed_data = date(year, month, day)
             ticker = row['Symbol'].upper()
-            company_id = get_company(company_ticker=ticker)
-            if company_id is None:
+            company = Company(name=row['Name'], ticker=ticker)
+            company_id, possible_companies = get_company(company)
+            if company_id is None and not possible_companies:
                 error = CompanyNotFoundError(ticker)
                 print(error)
-                company_id = insert_company(company_name=row['Name'], company_ticker=ticker, company_isin=None)
+                company_id = insert_company(company)
 
             if row['Last'] is None:
                 continue
@@ -118,17 +123,24 @@ class StooqParser:
                             row['Change.1'], row['Open'], row['High'], row['Low'], row['Volume'],
                             row['Turnover'], interval_id]
 
-            try:
-                insert_stock_quotes((company_id, parsed_data, row['Last'],
-                                     row['Change.1'], row['Open'], row['High'], row['Low'], row['Volume'],
-                                     row['Turnover'], interval_id))
-            except IntegrityError:
-                if not overlapping_stock:
-                    self._init_overlapping_info(overlapping_stock)
-                overlapping_stock["values"].append(stock_quotes)
+            if possible_companies:
+                unification_info.append(StooqUnificationInfo(company=company, possible_matches=possible_companies,
+                                                             data=[stock_quotes]))
+
+            else:
+                try:
+                    insert_stock_quotes((company_id, parsed_data, row['Last'],
+                                         row['Change.1'], row['Open'], row['High'], row['Low'], row['Volume'],
+                                         row['Turnover'], interval_id))
+                except IntegrityError:
+                    if not overlapping_stock:
+                        self._init_overlapping_info(overlapping_stock)
+                    overlapping_stock["values"].append(stock_quotes)
 
         if overlapping_stock:
             raise UniqueError(overlapping_stock)
+        if unification_info:
+            return ParsingResult(unification_info=unification_info)
 
     def download_company(self, company, start_date, end_date, interval='d'):  # no turnover
         start_day, start_month, start_year = start_date.day, start_date.month, start_date.year
@@ -137,24 +149,27 @@ class StooqParser:
         frames = []
         found = False
         interval_id = get_interval_id_from_shortcut(interval)
-        company = company.upper()
+        ticker = company.upper()
         overlapping_stock = {}
 
-        company_id = get_company(company_ticker=company)
-        if company_id is None:
+        url = self._company_url_base.format(number=1, company=ticker,
+                                            day1=start_day, month1=start_month, year1=start_year,
+                                            day2=end_day, month2=end_month, year2=end_year,
+                                            interval=interval)
+        site_html = requests.get(url).content.decode("utf-8")
+        company_name = re.search('Historical data:  (.*) \(', str(site_html)).group(1)
+
+        company = Company(name=company_name, ticker=company)
+        company_id, possible_companies = get_company(company)
+        if company_id is None and not possible_companies:
             error = CompanyNotFoundError(isin=company)
             print(error)
-            url = self._company_url_base.format(number=1, company=company,
-                                                day1=start_day, month1=start_month, year1=start_year,
-                                                day2=end_day, month2=end_month, year2=end_year,
-                                                interval=interval)
-            site_html = requests.get(url).content.decode("utf-8")
-            company_name = re.search('Historical data:  (.*) \(', str(site_html)).group(1)
+            company_id = insert_company(company)
 
-            company_id = insert_company(company_name=company_name, company_ticker=company, company_isin=None)
+        unification_info = StooqUnificationInfo(company=company, possible_matches=possible_companies, data=[])
 
         while True:
-            url = self._company_url_base.format(number=i, company=company,
+            url = self._company_url_base.format(number=i, company=ticker,
                                                 day1=start_day, month1=start_month, year1=start_year,
                                                 day2=end_day, month2=end_month, year2=end_year,
                                                 interval=interval)
@@ -205,17 +220,22 @@ class StooqParser:
             stock_quotes = [company_id, str(parsed_date), row['Close'], row['Change.1'], row['Open'], row['High'],
                             row['Low'], row['Volume'], None, interval_id]
 
-            try:
-                insert_stock_quotes((company_id, parsed_date, row['Close'],
-                                     row['Change.1'], row['Open'], row['High'], row['Low'], row['Volume'], None,
-                                     interval_id))
-            except IntegrityError:
-                if not overlapping_stock:
-                    self._init_overlapping_info(overlapping_stock)
-                overlapping_stock["values"].append(stock_quotes)
+            if possible_companies:
+                unification_info.add_data(stock_quotes)
+            else:
+                try:
+                    insert_stock_quotes((company_id, parsed_date, row['Close'],
+                                         row['Change.1'], row['Open'], row['High'], row['Low'], row['Volume'], None,
+                                         interval_id))
+                except IntegrityError:
+                    if not overlapping_stock:
+                        self._init_overlapping_info(overlapping_stock)
+                    overlapping_stock["values"].append(stock_quotes)
 
         if overlapping_stock:
             raise UniqueError(overlapping_stock)
+        if unification_info.data:
+            return ParsingResult(unification_info=[unification_info])
 
     def _init_overlapping_info(self, overlapping_info):
         overlapping_info["table_name"] = self._table_name

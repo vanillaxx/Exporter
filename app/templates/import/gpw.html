@@ -9,4 +9,10 @@
         <button type="submit">Import</button>
     </form>
 
+    <div id="unification-modal" class="modal fade" role="dialog">
+        {% if unification_form %}
+            {% include "import/company_unification_details.html" %}
+        {% endif %}
+    </div>
+
 {% endblock %}

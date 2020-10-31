@@ -1,9 +1,11 @@
 from django.contrib.messages.views import SuccessMessageMixin
 from django.shortcuts import render
-from django.urls import reverse_lazy, reverse
-from django.http import HttpResponse, HttpResponseRedirect
+from django.urls import reverse_lazy
+from django.http import HttpResponse
 from django.views import generic
 from common.Utils.export_status import ExportStatus
+from common.Utils.parsing_result import ParsingResult
+from common.Utils.unification_info import UnificationInfo
 from .forms import *
 from common.Parsers import excel_parser, pdf_gpw_parser, stooq_parser, pdf_yearbook_parser, excel_yearbook_parser, \
     excel_gpw_parser
@@ -19,6 +21,7 @@ from bootstrap_modal_forms.generic import BSModalCreateView, BSModalUpdateView, 
 from common.DAL.db_queries import merge_assets, merge_assets_categories, merge_dupont_indicators, \
     merge_equity_liabilities_categories, merge_equity_liabilities, merge_financial_ratios, delete_from_assets, \
     delete_from_assets_categories, delete_from_dupont_indicators, delete_from_equity_liabilities, \
+    delete_from_equity_liabilities_categories, delete_from_financial_ratios, delete_company, insert_company
     delete_from_equity_liabilities_categories, delete_from_financial_ratios, delete_company, merge_database, \
     merge_stock_quotes, delete_from_stock_quotes
 from shutil import copyfile
@@ -32,13 +35,13 @@ def import_notoria(request):
     def render_overlapping_data_popup(chosen_sheet, sheet_shortcut, get_existing_data_func):
         for sheet in chosen_sheet:
             try:
-                excel_parser.functions[sheet_shortcut](file_path, sheet)
+                res = excel_parser.functions[sheet_shortcut](file_path, sheet)
             except UniqueError as e:
                 for data in e.overlapping_data:
                     existing = get_existing_data_func(data)
                     data["exists"] = list(map(lambda x: list(x), existing))
-                return e
-            return []
+                return e, None
+            return [], res
 
     if request.method == 'POST':
         form = NotoriaImportForm(request.POST)
@@ -53,21 +56,24 @@ def import_notoria(request):
             overlap_bs = []
             overlap_fr = []
             overlap_dp = []
+            result_bs = None
+            result_fr = None
+            result_dp = None
             if chosen_sheets_bs:
-                error_bs = render_overlapping_data_popup(chosen_sheets_bs, 'bs',
-                                                         get_existing_data_balance_sheet)
+                error_bs, result_bs = render_overlapping_data_popup(chosen_sheets_bs, 'bs',
+                                                                    get_existing_data_balance_sheet)
                 if error_bs:
                     overlap_bs = error_bs.overlapping_data
 
             if chosen_sheets_fr:
-                error_fr = render_overlapping_data_popup(chosen_sheets_fr, 'fr',
-                                                         get_existing_data_ratios)
+                error_fr, result_fr = render_overlapping_data_popup(chosen_sheets_fr, 'fr',
+                                                                    get_existing_data_ratios)
                 if error_fr:
                     overlap_fr = error_fr.overlapping_data
 
             if chosen_sheets_dp:
-                error_dp = render_overlapping_data_popup(chosen_sheets_dp, 'dp',
-                                                         get_existing_data_ratios)
+                error_dp, result_dp = render_overlapping_data_popup(chosen_sheets_dp, 'dp',
+                                                                    get_existing_data_ratios)
                 if error_dp:
                     overlap_dp = error_dp.overlapping_data
 
@@ -81,6 +87,13 @@ def import_notoria(request):
                                "overlap_fr": json.dumps(overlap_fr),
                                "overlap_dp": json.dumps(overlap_dp)})
 
+            result = ParsingResult.combine_notoria_results(result_bs, result_dp, result_fr)
+            if result is not None:
+                return render(request, 'import/notoria.html', {'form': NotoriaImportForm(),
+                                                               'unification_form':
+                                                                   UnificationForm(unification=result.unification_info),
+                                                               'unification': result.to_json()})
+
             return render(request, 'manage/home.html', {'message': "Parsed notoria succsessfully"})
     else:
         form = NotoriaImportForm()
@@ -92,28 +105,28 @@ def import_stooq(request):
     def parse_stooq_one_company(ticker_arg, date_from_arg, date_to_arg, interval_arg):
         SP = stooq_parser.StooqParser()
         try:
-            SP.download_company(ticker_arg, date_from_arg, date_to_arg, interval_arg)
+            res = SP.download_company(ticker_arg, date_from_arg, date_to_arg, interval_arg)
         except UniqueError as e:
             for data in e.overlapping_data:
                 existing = get_existing_data_stock_quotes(data)
                 data["exists"] = list(map(lambda x: list(x), existing))
-            return e
+            return e, None
         except ParseError as pe:
             raise pe
-        return None
+        return None, res
 
     def parse_stooq_all_companies(date_arg):
         SP = stooq_parser.StooqParser()
         try:
-            SP.download_all_companies(date_arg)
+            res = SP.download_all_companies(date_arg)
         except UniqueError as e:
             for data in e.overlapping_data:
                 existing = get_existing_data_stock_quotes(data)
                 data["exists"] = list(map(lambda x: list(x), existing))
-            return e
+            return e, None
         except ParseError as pe:
             raise pe
-        return None
+        return None, res
 
     if request.method == 'POST':
         form = StooqImportForm(request.POST)
@@ -146,7 +159,7 @@ def import_stooq(request):
 
                 if ticker and date_from and date_to:
                     try:
-                        error = parse_stooq_one_company(ticker, date_from, date_to, interval)
+                        error, result = parse_stooq_one_company(ticker, date_from, date_to, interval)
                         if error:
                             overlap = error.overlapping_data
                     except ParseError as e:
@@ -162,7 +175,7 @@ def import_stooq(request):
                     return render(request, 'manage/home.html', {'message': "Wrong form"})
 
                 try:
-                    error = parse_stooq_all_companies(date)
+                    error, result = parse_stooq_all_companies(date)
                     if error:
                         overlap = error.overlapping_data
                 except ParseError as e:
@@ -174,6 +187,11 @@ def import_stooq(request):
                               {'form': StooqImportForm(),
                                "error": error,
                                "overlap": json.dumps(overlap)})
+            if result is not None:
+                return render(request, 'import/stooq.html', {'form': StooqImportForm(),
+                                                             'unification_form':
+                                                                 UnificationForm(unification=result.unification_info),
+                                                             'unification': result.to_json()})
 
             return render(request, 'manage/home.html', {'message': "Parsed stooq.com data successfully"})
         else:
@@ -198,7 +216,13 @@ def import_gpw(request):
             path = form.cleaned_data['path']
             file_type = form.cleaned_data['file_type']
             parser = parsers[file_type]()
-            parser.parse(path)
+            result = parser.parse(path)
+
+            if result is not None:
+                return render(request, 'import/gpw.html', {'form': GpwImportForm(),
+                                                           'unification_form':
+                                                               UnificationForm(unification=result.unification_info),
+                                                           'unification': result.to_json()})
             return render(request, 'manage/home.html', {'message': "Parsed GPW file successfully"})
     else:
         form = GpwImportForm()
@@ -393,6 +417,32 @@ def _delete_all_info_from_database():
 
 
 # endregion
+
+def insert_data(request):
+    if request.method == 'POST':
+        data_json = request.POST.get('unification')
+        data = json.loads(data_json)
+        data_type = None
+
+        for ind, data_to_insert in enumerate(data):
+            company_id = request.POST.get(f'company_choices_{ind}', None)
+            ui = UnificationInfo.from_json(data_to_insert)
+
+            if company_id is None:
+                company_id = insert_company(ui.company)
+            else:
+                company_id = json.loads(company_id)
+
+            ui.insert_data_to_db(company_id)
+
+            if data_type is not None:
+                data_type = ui.get_data_type()
+
+        return render(request, 'manage/home.html',
+                      {'message': f'Parsed {data_type} successfully. Chosen companies unified'})
+
+    return render(request, 'base.html')
+
 
 # region grid_edition_views
 

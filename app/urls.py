@@ -8,6 +8,7 @@ urlpatterns = [
     path('import/stooq/', views.import_stooq, name='import_stooq'),
     path('import/gpw/', views.import_gpw, name='import_gpw'),
     path('import/replace_data', views.replace_data, name='replace_data'),
+    path('import/insert_data', views.insert_data, name='insert_data'),
     path('export', views.export, name='export'),
     path('manage/home', views.manage, name='manage_home'),
     path('manage/merge_data', views.merge_data, name='merge_data'),

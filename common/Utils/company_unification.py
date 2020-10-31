@@ -6,11 +6,13 @@ from cleanco import prepare_terms, basename
 
 
 class Company:
-    def __init__(self, name, ticker, bloomberg, isin=None):
+    def __init__(self, name, ticker=None, bloomberg=None, isin=None, ekd_class=None, ekd_section=None, *args, **kwargs):
         self.name = name
         self.ticker = ticker
         self.isin = isin
         self.bloomberg = bloomberg
+        self.ekd_class = ekd_class
+        self.ekd_section = ekd_section
 
     def standardise(self):
         if self.name is not None:
@@ -21,6 +23,10 @@ class Company:
             self.isin = self.isin.upper()
         if self.bloomberg is not None:
             self.bloomberg = self.bloomberg.upper()
+
+    def get_possible_matches(self, companies):
+        return [(id, name) for (id, name, ticker, bloomberg) in companies
+                if self.is_similar(Company(name=name, ticker=ticker, bloomberg=bloomberg))]
 
     def is_similar(self, company):
         tuples_to_compare = [(self.name, company.name),
@@ -34,7 +40,7 @@ class Company:
 def compare_names(names_tuple):
     name1 = names_tuple[0]
     name2 = names_tuple[1]
-    if name1 is None or name2 is None:
+    if not name1 or not name2:
         return False
 
     similarity_threshold = 85
@@ -76,9 +82,10 @@ def strip_legal_terms(name: str):
     additional_terms.extend(list(map(strip_punctuation_marks, additional_terms)))
     additional_terms = set(additional_terms)
 
-    name = basename(name, terms, prefix=True, middle=True, suffix=True)
+    name = basename(name, terms)
     for term in additional_terms:
         name = name.replace(term, '')
+    name = name.strip()
 
     return name
 
