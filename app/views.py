@@ -1,7 +1,7 @@
 from django.contrib.messages.views import SuccessMessageMixin
 from django.shortcuts import render
 from django.urls import reverse_lazy
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.views import generic
 from common.Utils.export_status import ExportStatus
 from common.Utils.parsing_result import ParsingResult
@@ -21,7 +21,7 @@ from bootstrap_modal_forms.generic import BSModalCreateView, BSModalUpdateView, 
 from common.DAL.db_queries import merge_assets, merge_assets_categories, merge_dupont_indicators, \
     merge_equity_liabilities_categories, merge_equity_liabilities, merge_financial_ratios, delete_from_assets, \
     delete_from_assets_categories, delete_from_dupont_indicators, delete_from_equity_liabilities, \
-    delete_from_equity_liabilities_categories, delete_from_financial_ratios, delete_company, insert_company
+    delete_from_equity_liabilities_categories, delete_from_financial_ratios, delete_company, insert_company, \
     delete_from_equity_liabilities_categories, delete_from_financial_ratios, delete_company, merge_database, \
     merge_stock_quotes, delete_from_stock_quotes
 from shutil import copyfile
