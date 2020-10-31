@@ -1,0 +1,19 @@
+{% extends './entitiesViewBase.html' %}
+{% block entity %}
+{% load static %}
+
+<h3>Import database</h3>
+
+<form method="post">{% csrf_token %}
+    <h4>{{form.file_sheet}}</h4>
+    {{form.file}}
+<button type="submit">Import</button>
+</form>
+
+<div id="pop-up-databaseImport" class="modal fade" role="dialog">
+    {% if path %}
+        {% include "manage/database_is_not_empty_error.html" with path=path sheet='databaseImport' %}
+    {% endif %}
+</div>
+
+{% endblock %}

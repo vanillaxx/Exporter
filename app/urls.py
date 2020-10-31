@@ -7,11 +7,14 @@ urlpatterns = [
     path('import/notoria/', views.import_notoria, name='import_notoria'),
     path('import/stooq/', views.import_stooq, name='import_stooq'),
     path('import/gpw/', views.import_gpw, name='import_gpw'),
+    path('import/replace_data', views.replace_data, name='replace_data'),
     path('export', views.export, name='export'),
     path('manage/home', views.manage, name='manage_home'),
-    path('import/replace_data', views.replace_data, name='replace_data'),
     path('manage/merge_data', views.merge_data, name='merge_data'),
     path('manage/delete_data', views.delete_data, name='delete_data'),
+    path('manage/databaseExport', views.export_database, name='export_database'),
+    path('manage/databaseImport', views.import_database, name='import_database'),
+    path('manage/replace_database', views.replace_database, name='replace_database'),
 
     path('manage/companies', views.CompanyView.as_view(), name='companies'),
     path('manage/companies/create', views.CompanyCreateView.as_view(), name='create_company'),
@@ -58,5 +61,4 @@ urlpatterns = [
     path('manage/stock/create', views.StockQuoteCreateView.as_view(), name='create_stock'),
     path('manage/stock/update/<int:pk>', views.StockQuoteUpdateView.as_view(), name='update_stock'),
     path('manage/stock/delete/<int:pk>', views.StockQuoteDeleteView.as_view(), name='delete_stock'),
-
 ]

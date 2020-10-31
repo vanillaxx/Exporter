@@ -26,6 +26,8 @@
 </button>
 <button onclick="showManageOptions()" id="manageDataButton" class="buttons">Manage data</button>
 <ul id="manage-options" class="menu-options" style="display: none">
+    <li><a href="{% url 'export_database' %}" id="database-export">Export database</a></li>
+    <li><a href="{% url 'import_database' %}" id="database-import">Import database</a></li>
     <li><a href="{% url 'companies' %}" id="show-companies">Show companies</a></li>
     <li><a href="{% url 'assets' %}" id="show-assets">Show assets</a></li>
     <li><a href="{% url 'assets_categories' %}" id="show-assets-categories">Show assets categories</a></li>

@@ -1,0 +1,45 @@
+<div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content" style="width: 1500px">
+        <div class="modal-header">
+            <h3>Your local database is not empty</h3>
+            <button type="button" class="close" data-dismiss="modal">
+                <span aria-hidden="true">&times;</span><span class="sr-only">Close</span>
+            </button>
+        </div>
+        <div id="{{ sheet | escapejs }}" class="container text-center">
+            <div class="modal-body">
+                <button id="{{ sheet | escapejs }}-replace-button" type="button" class="btn btn-primary">
+                    Replace database
+                </button>
+                <button id="{{ sheet | escapejs }}-ignore-button" type="button" class="btn btn-secondary" data-dismiss="modal">
+                    Leave local database
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript" src="/static/js/bootstrap.js"></script>
+<script>
+    $(document).ready(function () {
+        $(document).on('hidden.bs.modal', '.modal', function () {
+            $('.modal:visible').length && $(document.body).addClass('modal-open');
+        });
+        const sheet = '{{ sheet | escapejs }}'
+        const csrf_token = "{{ csrf_token | escapejs }}"
+        const path = '{{path|safe}}'
+        $('.modal-dialog').draggable({
+            handle: ".modal-header"
+        });
+        $('#pop-up-' + sheet).modal('show');
+
+        $("#" + sheet + "-replace-button").click(function () {
+            $.post('./replace_database', {
+                    path: path,
+                    'csrfmiddlewaretoken': csrf_token
+                },
+                function () {
+                    $('#' + sheet).html("Database replaced");
+                });
+        })
+    })
+</script>
