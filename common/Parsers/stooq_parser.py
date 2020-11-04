@@ -159,10 +159,10 @@ class StooqParser:
         site_html = requests.get(url).content.decode("utf-8")
         company_name = re.search('Historical data:  (.*) \(', str(site_html)).group(1)
 
-        company = Company(name=company_name, ticker=company)
+        company = Company(name=company_name, ticker=ticker)
         company_id, possible_companies = get_company(company)
         if company_id is None and not possible_companies:
-            error = CompanyNotFoundError(isin=company)
+            error = CompanyNotFoundError(ticker=ticker)
             print(error)
             company_id = insert_company(company)
 
