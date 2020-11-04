@@ -1,6 +1,8 @@
 from bootstrap_modal_forms.generic import BSModalFormView
 from django import forms
 from django.core.exceptions import ValidationError
+from django.http import QueryDict
+import json
 
 from .models import *
 from bootstrap_datepicker_plus import DatePickerInput
@@ -234,3 +236,17 @@ class GpwImportForm(forms.Form):
 
     file_type = forms.ChoiceField(label='Type of file', choices=choices, widget=forms.RadioSelect)
     path = forms.CharField(label='Path to file')
+
+
+class UnificationForm(BSModalForm):
+    def __init__(self, *args, **kwargs):
+        data = kwargs.pop('unification', None)
+        super(UnificationForm, self).__init__(*args, **kwargs)
+        if data is not None:
+            for ind, info in enumerate(data):
+                label = f"Possible matches for {info.company.name}"
+                choices = info.possible_matches
+                self.fields[f'company_choices_{ind}'] = forms.ChoiceField(label=label,
+                                                                          choices=choices,
+                                                                          widget=forms.RadioSelect,
+                                                                          required=False)

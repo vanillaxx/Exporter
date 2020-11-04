@@ -1,5 +1,6 @@
 from common.DAL.db_utils import with_connection
 from common.Utils.Errors import CompanyNotFoundError, DatabaseImportError
+from common.Utils.company_unification import Company
 
 
 @with_connection
@@ -168,16 +169,12 @@ def insert_stock_quotes(connection, values):
 
 
 @with_connection
-def insert_market_value(connection, market_value, end_date, company_name, company_isin=None):
+def insert_market_value(connection, company_id, market_value, end_date):
     # TODO updating information about company
-    company_id = get_company_id_from_isin(company_isin) or get_company_id_from_name(company_name)
     data = (company_id, end_date, market_value)
-    if company_id:
-        command = '''INSERT INTO MarketValues(CompanyID, "Period end", "Market value") VALUES (?, ?, ?)'''
-        with connection:
-            connection.execute(command, data)
-    else:
-        raise CompanyNotFoundError(name=company_name, isin=company_isin)
+    command = '''INSERT INTO MarketValues(CompanyID, "Period end", "Market value") VALUES (?, ?, ?)'''
+    with connection:
+        connection.execute(command, data)
 
 
 def insert_ekd_section(ekd_section):
@@ -188,41 +185,46 @@ def insert_ekd_class(ekd_class):
     insert_value(table_name='EKDClass', column='Value', value=ekd_class)
 
 
-def insert_full_company(company_name, isin, company_ticker, company_bloomberg, ekd_section, ekd_class):
-    section_id = get_ekd_section_id_from_value(ekd_section=ekd_section)
-    class_id = get_ekd_class_id_from_value(ekd_class=ekd_class)
-    insert_values(table_name='Company',
-                  columns=['Name', 'ISIN', 'Ticker', 'Bloomberg', 'EKDSectionID', 'EKDClassID'],
-                  values=[company_name, isin, company_ticker, company_bloomberg, section_id, class_id])
-
-
 @with_connection
-def insert_company(connection, company_name=None, company_ticker=None, company_isin=None):
-    values = company_name, company_ticker, company_isin
-    command = '''INSERT INTO Company(Name, Ticker, ISIN) VALUES (?, ?, ?)'''
+def insert_company(connection, company: Company):
+    if company.ekd_section is not None and company.ekd_class is not None:
+        company.ekd_section = get_ekd_section_id_from_value(ekd_section=company.ekd_section)
+        company.ekd_class = get_ekd_class_id_from_value(ekd_class=company.ekd_class)
+
+    company.standardise()
+
+    values = company.name, company.ticker, company.isin, company.bloomberg, company.ekd_section, company.ekd_class
+    command = '''INSERT INTO Company(Name, Ticker, ISIN, Bloomberg, EKDSectionID, EKDClassID) 
+                 VALUES (?, ?, ?, ?, ?, ?)'''
+
     with connection:
-        connection.execute(command, values)
+        cursor = connection.cursor()
+        cursor.execute(command, values)
+        company_id = cursor.lastrowid
+
+    return company_id
 
 
-@with_connection
-def get_company_id_from_name(connection, company_name):
-    company_name = company_name.upper()
-    c = connection.cursor()
-    c.execute("SELECT ID FROM Company WHERE Name Like ?", (company_name,))
-    company = c.fetchone()
-    if not company:
-        return None
-    return company[0]
+def get_company(company: Company):
+    company.standardise()
+
+    company_id = get_company_id(company.name, company.ticker, company.isin)
+    possible_companies = []
+
+    if company_id is None:
+        companies = get_all_companies_info()
+        possible_companies = company.get_possible_matches(companies)
+
+    return company_id, possible_companies
 
 
 @with_connection
 def get_company_id(connection, company_name, company_ticker, company_isin):
-    company_name = company_name.upper()
     c = connection.cursor()
     query = '''SELECT ID FROM Company
-              WHERE Name Like ?
-              OR Ticker Like ?
-              OR ISIN Like ?'''
+              WHERE Name = ?
+              OR Ticker = ?
+              OR ISIN = ?'''
     c.execute(query, (company_name, company_ticker, company_isin))
     company = c.fetchone()
     if not company:
@@ -231,47 +233,30 @@ def get_company_id(connection, company_name, company_ticker, company_isin):
 
 
 @with_connection
-def get_company_id_from_ticker(connection, ticker):
-    company_ticker = ticker.upper()
+def get_all_companies_info(connection):
     c = connection.cursor()
-    c.execute("SELECT ID FROM Company WHERE Ticker Like ?", (company_ticker,))
-    company = c.fetchone()
-    if not company:
-        return None
-    return company[0]
-
-
-@with_connection
-def get_company_id_from_isin(connection, company_isin):
-    c = connection.cursor()
-    c.execute('''SELECT C.ID
-                FROM Company C
-                WHERE ISIN = ? ''', (company_isin,))
-    result = c.fetchone()
-    if result:
-        return result[0]
-    else:
-        return result
+    c.execute("SELECT ID, Name, Ticker, Bloomberg FROM Company ")
+    return c.fetchall()
 
 
 @with_connection
 def get_ekd_section_id_from_value(connection, ekd_section):
     c = connection.cursor()
-    c.execute("SELECT ID FROM EKDSection WHERE Value Like (?)", (int(ekd_section),))
+    c.execute("SELECT ID FROM EKDSection WHERE Value = (?)", (int(ekd_section),))
     return c.fetchone()[0]
 
 
 @with_connection
 def get_ekd_class_id_from_value(connection, ekd_class):
     c = connection.cursor()
-    c.execute("SELECT ID FROM EKDClass WHERE Value Like (?)", (int(ekd_class),))
+    c.execute("SELECT ID FROM EKDClass WHERE Value = (?)", (int(ekd_class),))
     return c.fetchone()[0]
 
 
 @with_connection
 def get_interval_id_from_shortcut(connection, shortcut):
     c = connection.cursor()
-    c.execute("SELECT ID FROM Interval WHERE Shortcut Like ?", (shortcut,))
+    c.execute("SELECT ID FROM Interval WHERE Shortcut = ?", (shortcut,))
     interval = c.fetchone()
     if not interval:
         return None
@@ -701,7 +686,7 @@ def get_existing_data_ratios(connection, overlapping_data):
                                                                                            end=values[values_length - 1][2])
     query = '''SELECT * FROM {table}  
               WHERE{date_condition}'''.format(table=overlapping_data["table_name"],
-                                               date_condition=date_condition_template)
+                                              date_condition=date_condition_template)
     c.execute(query)
     return c.fetchall()
 

@@ -48,6 +48,11 @@
                 {% include "import/overlapping_stooq_details.html" with error=error sheet='stooq' overlap=overlap %}
                 {% endif %}
 </div>
+<div id="unification-modal" class="modal fade" role="dialog">
+    {% if unification_form %}
+        {% include "import/company_unification_details.html" %}
+    {% endif %}
+</div>
 
 {{ form.errors }}
 {{ form.non_field_errors }}

@@ -1,20 +1,25 @@
 import xlrd
 import re
 from datetime import date
-from common.DAL.db_queries import insert_market_value, insert_company
-from common.Utils.Errors import CompanyNotFoundError, ParseError
+from common.Utils.gpw_db import save_value_to_database
+from common.Utils.parsing_result import ParsingResult
 
 
 class ExcelYearbookParser:
     def __init__(self):
         self.workbook = None
         self.date = None
+        self.unification_info = []
 
     def parse(self, pdf_path, year=None):
         self.workbook = xlrd.open_workbook(pdf_path)
         self.date, sheet_names = self.get_date_and_sheet_names(year)
         data = [self.parse_sheet(sheet_name) for sheet_name in sheet_names]
-        return data
+        if not data:
+            raise ValueError('No data found')
+
+        if self.unification_info:
+            return ParsingResult(unification_info=self.unification_info)
 
     def get_date_and_sheet_names(self, year):
         sheet = self.workbook.sheet_by_index(0)
@@ -63,7 +68,7 @@ class ExcelYearbookParser:
 
             if name and market_value:
                 market_value = market_value * multiplier
-                self.save_value_to_database(name, isin, market_value)
+                save_value_to_database(name, isin, market_value, self.date, self.unification_info)
                 data.append([name, isin, market_value])
         return data
 
@@ -89,12 +94,3 @@ class ExcelYearbookParser:
             raise ValueError('Columns not found')
 
         return company_column, isin_column, market_value_column
-
-    def save_value_to_database(self, company_name, company_isin, market_value):
-        try:
-            insert_market_value(market_value, self.date, company_name, company_isin)
-        except CompanyNotFoundError:
-            print(f'Company {company_name} not found')
-            insert_company(company_name=company_name, company_isin=company_isin)
-            self.save_value_to_database(company_name, company_isin, market_value)
-

@@ -130,8 +130,9 @@ class Company(models.Model):
             return self.name
         if self.ticker:
             return "Ticker: " + self.ticker
-
-        return "ISIN: " + self.isin
+        if self.isin:
+            return "ISIN: " + self.isin
+        return ''
 
     class Meta:
         managed = True
