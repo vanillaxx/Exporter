@@ -231,7 +231,7 @@ class ExcelParser():
         if overlapping_assets or overlapping_assets_categories or overlapping_equity_liabilities or overlapping_equity_liabilities_categories:
             raise UniqueError(overlapping_assets, overlapping_assets_categories, overlapping_equity_liabilities,
                               overlapping_equity_liabilities_categories)
-        if unification_info.data:
+        if unification_info is not None and unification_info.data:
             return ParsingResult([unification_info])
 
     def parse_financial_ratios(self, path, sheet_name):
@@ -296,7 +296,7 @@ class ExcelParser():
             curr_row += 1
         if overlapping_ratios:
             raise UniqueError(overlapping_ratios)
-        if unification_info.data:
+        if unification_info is not None and unification_info.data:
             return ParsingResult([unification_info])
 
     def get_company_id_balance_sheet(self, path):
