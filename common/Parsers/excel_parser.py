@@ -1,5 +1,6 @@
 import xlrd
-import common.DAL.db_queries
+import common.DAL.db_queries_insert
+import common.DAL.db_queries_get
 import sys
 import datetime
 from calendar import monthrange
@@ -29,8 +30,8 @@ def get_sheet(path, sheet_name):
 
 
 def insert_ekd_data(ekd_section, ekd_class):
-    common.DAL.db_queries.insert_ekd_section(ekd_section)
-    common.DAL.db_queries.insert_ekd_class(ekd_class)
+    common.DAL.db_queries_insert.insert_ekd_section(ekd_section)
+    common.DAL.db_queries_insert.insert_ekd_class(ekd_class)
 
 
 def insert_float_value(where, value):
@@ -177,9 +178,9 @@ class ExcelParser():
 
                     else:
                         try:
-                            common.DAL.db_queries.insert_values_without_ignore(table_name="Assets",
-                                                                               columns=assets_attributes,
-                                                                               values=assets)
+                            common.DAL.db_queries_insert.insert_values_without_ignore(table_name="Assets",
+                                                                                      columns=assets_attributes,
+                                                                                      values=assets)
                         except IntegrityError:
                             if not exactly_same_assets(assets_attributes, assets):
                                 if not overlapping_assets:
@@ -187,9 +188,9 @@ class ExcelParser():
                                 overlapping_assets["values"].append(assets)
 
                         try:
-                            common.DAL.db_queries.insert_values_without_ignore(table_name="EquityLiabilities",
-                                                                               columns=equity_liabilities_attributes,
-                                                                               values=equity_liabilities)
+                            common.DAL.db_queries_insert.insert_values_without_ignore(table_name="EquityLiabilities",
+                                                                                      columns=equity_liabilities_attributes,
+                                                                                      values=equity_liabilities)
                         except IntegrityError:
                             if not exactly_same_equity_liabilities(equity_liabilities_attributes, equity_liabilities):
                                 if not overlapping_equity_liabilities:
@@ -199,9 +200,9 @@ class ExcelParser():
                                 overlapping_equity_liabilities["values"].append(equity_liabilities)
 
                         try:
-                            common.DAL.db_queries.insert_values_without_ignore(table_name="AssetsCategories",
-                                                                               columns=assets_categories_attributes,
-                                                                               values=assets_categories)
+                            common.DAL.db_queries_insert.insert_values_without_ignore(table_name="AssetsCategories",
+                                                                                      columns=assets_categories_attributes,
+                                                                                      values=assets_categories)
                         except IntegrityError:
                             if not exactly_same_assets_categories(assets_categories_attributes, assets_categories):
                                 if not overlapping_assets_categories:
@@ -211,9 +212,9 @@ class ExcelParser():
                                 overlapping_assets_categories["values"].append(assets_categories)
 
                         try:
-                            common.DAL.db_queries.insert_values_without_ignore(table_name="EquityLiabilitiesCategories",
-                                                                               columns=equity_liabilities_categories_attributes,
-                                                                               values=equity_liabilities_categories)
+                            common.DAL.db_queries_insert.insert_values_without_ignore(table_name="EquityLiabilitiesCategories",
+                                                                                      columns=equity_liabilities_categories_attributes,
+                                                                                      values=equity_liabilities_categories)
                         except IntegrityError:
                             if not exactly_same_equity_liabilities_categories(equity_liabilities_categories_attributes,
                                                                               equity_liabilities_categories):
@@ -296,9 +297,9 @@ class ExcelParser():
 
                     else:
                         try:
-                            common.DAL.db_queries.insert_values_without_ignore(table_name=table_name,
-                                                                               columns=attributes,
-                                                                               values=ratios)
+                            common.DAL.db_queries_insert.insert_values_without_ignore(table_name=table_name,
+                                                                                      columns=attributes,
+                                                                                      values=ratios)
                         except IntegrityError:
                             if not function_mapping[table_name](attributes, ratios):
                                 if not overlapping_ratios:
@@ -321,10 +322,10 @@ class ExcelParser():
     def get_company_id_balance_sheet(self, path):
         company = self.parse_company(path)
 
-        company_id, possible_companies = common.DAL.db_queries.get_company(company)
+        company_id, possible_companies = common.DAL.db_queries_get.get_company(company)
 
         if company_id is None and not possible_companies:
-            company_id = common.DAL.db_queries.insert_company(company)
+            company_id = common.DAL.db_queries_insert.insert_company(company)
             return company_id, None
 
         elif possible_companies:

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from common.DAL.db_queries import insert_market_value, insert_stock_quotes, insert_values
+from common.DAL.db_queries_insert import insert_market_value, insert_stock_quotes, insert_values
 from common.Utils.company_unification import Company
 import json
 

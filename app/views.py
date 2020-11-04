@@ -1,16 +1,11 @@
 from collections import deque
 from datetime import datetime
-
 from django.contrib.messages.views import SuccessMessageMixin
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views import generic
-
 import common.Export.export as export_methods
-from common.DAL.db_queries import replace_values, get_existing_data_balance_sheet, get_existing_data_ratios, \
-    get_existing_data_stock_quotes, get_existing_data_financial_ratios, \
-    get_existing_data_dupont_indicators
 from common.Parsers import excel_parser, pdf_gpw_parser, stooq_parser, pdf_yearbook_parser, excel_yearbook_parser, \
     excel_gpw_parser
 from common.Utils.Errors import UniqueError, ParseError, DatabaseImportError
@@ -19,17 +14,21 @@ from common.Utils.parsing_result import ParsingResult
 from common.Utils.unification_info import UnificationInfo
 from .forms import *
 from .models import *
-
-get_existing_data_stock_quotes
+from common.DAL.db_queries_get import get_existing_data_balance_sheet, get_existing_data_ratios, \
+    get_existing_data_stock_quotes, get_existing_data_financial_ratios, get_existing_data_dupont_indicators
 import json
 import os.path
 from django.contrib import messages
 from bootstrap_modal_forms.generic import BSModalCreateView, BSModalUpdateView, BSModalDeleteView, BSModalFormView
-from common.DAL.db_queries import merge_assets, merge_assets_categories, merge_dupont_indicators, \
-    merge_equity_liabilities_categories, merge_equity_liabilities, merge_financial_ratios, delete_from_assets, \
-    delete_from_assets_categories, delete_from_dupont_indicators, delete_from_equity_liabilities, \
-    insert_company,  delete_from_equity_liabilities_categories, delete_from_financial_ratios, \
-    delete_company, merge_database, merge_stock_quotes, delete_from_stock_quotes
+from common.DAL.db_queries_get import get_existing_data_balance_sheet, get_existing_data_ratios, \
+    get_existing_data_stock_quotes, get_existing_data_financial_ratios, get_existing_data_dupont_indicators
+from common.DAL.db_queries_merge import merge_assets, merge_assets_categories, merge_dupont_indicators, \
+    merge_equity_liabilities_categories, merge_equity_liabilities, merge_financial_ratios
+from common.DAL.db_queries_delete import delete_from_assets, delete_from_assets_categories,\
+    delete_from_dupont_indicators, delete_from_equity_liabilities, delete_from_equity_liabilities_categories,\
+    delete_from_financial_ratios, delete_company, delete_from_stock_quotes
+from common.DAL.db_queries_insert import insert_company, replace_values
+from common.DAL.db_queries_merge import merge_database, merge_stock_quotes
 from shutil import copyfile
 
 

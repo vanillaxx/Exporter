@@ -4,7 +4,8 @@ import lxml
 import numbers
 import requests
 import pandas as pd
-from common.DAL.db_queries import insert_company, insert_stock_quotes, get_company, get_interval_id_from_shortcut
+from common.DAL.db_queries_insert import insert_company, insert_stock_quotes
+from common.DAL.db_queries_get import get_company, get_interval_id_from_shortcut
 import re
 from datetime import date
 from common.Utils.Errors import *

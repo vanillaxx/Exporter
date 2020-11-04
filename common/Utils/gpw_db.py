@@ -1,4 +1,5 @@
-from common.DAL.db_queries import insert_market_value, insert_company, get_company
+from common.DAL.db_queries_insert import insert_market_value, insert_company
+from common.DAL.db_queries_get import get_company
 from common.Utils.company_unification import Company
 from common.Utils.unification_info import GPWUnificationInfo
 
