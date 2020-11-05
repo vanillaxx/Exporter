@@ -563,9 +563,9 @@ def export_stock_quotes(connection, company_ids, start_date, end_date, interval)
                 FROM StockQuotes SQ 
                 JOIN Company C ON C.ID = SQ.CompanyID
                 WHERE C.ID IN ({seq}) 
-                AND SQ."Period end" BETWEEN ? AND ?
+                AND SQ.Date BETWEEN ? AND ?
                 AND Interval = ?
-                ORDER BY C.Name, SQ."Period end" '''.format(seq=','.join(['?'] * len(company_ids)))
+                ORDER BY C.Name, SQ.Date '''.format(seq=','.join(['?'] * len(company_ids)))
     company_ids.extend([start_date, end_date, interval_id])
     c.execute(query, tuple(company_ids))
     return c.fetchall(), list(map(lambda x: x[0], c.description))
