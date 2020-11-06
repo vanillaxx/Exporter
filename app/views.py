@@ -21,14 +21,17 @@ from bootstrap_modal_forms.generic import BSModalCreateView, BSModalUpdateView, 
 from common.DAL.db_queries import merge_assets, merge_assets_categories, merge_dupont_indicators, \
     merge_equity_liabilities_categories, merge_equity_liabilities, merge_financial_ratios, delete_from_assets, \
     delete_from_assets_categories, delete_from_dupont_indicators, delete_from_equity_liabilities, \
-    delete_from_equity_liabilities_categories, delete_from_financial_ratios, delete_company, insert_company, \
-    delete_from_equity_liabilities_categories, delete_from_financial_ratios, delete_company, merge_database, \
-    merge_stock_quotes, delete_from_stock_quotes
+    insert_company,  delete_from_equity_liabilities_categories, delete_from_financial_ratios, \
+    delete_company, merge_database, merge_stock_quotes, delete_from_stock_quotes
 from shutil import copyfile
 
 
 def index(request):
     return render(request, 'index.html')
+
+
+def error(request):
+    return render(request, 'error.html')
 
 
 def import_notoria(request):
@@ -43,62 +46,65 @@ def import_notoria(request):
                 return e, None
             return [], res
 
-    if request.method == 'POST':
-        form = NotoriaImportForm(request.POST)
-        if form.is_valid():
-            file_path = request.POST.get('file_path', None)
-            chosen_sheets_bs = form.cleaned_data.get('chosen_sheets_bs')
-            chosen_sheets_fr = form.cleaned_data.get('chosen_sheets_fr')
-            chosen_sheets_dp = form.cleaned_data.get('chosen_sheets_dp')
-            error_bs = []
-            error_fr = []
-            error_dp = []
-            overlap_bs = []
-            overlap_fr = []
-            overlap_dp = []
-            result_bs = None
-            result_fr = None
-            result_dp = None
-            if chosen_sheets_bs:
-                error_bs, result_bs = render_overlapping_data_popup(chosen_sheets_bs, 'bs',
-                                                                    get_existing_data_balance_sheet)
-                if error_bs:
-                    overlap_bs = error_bs.overlapping_data
+    try:
+        if request.method == 'POST':
+            form = NotoriaImportForm(request.POST)
+            if form.is_valid():
+                file_path = request.POST.get('file_path', None)
+                chosen_sheets_bs = form.cleaned_data.get('chosen_sheets_bs')
+                chosen_sheets_fr = form.cleaned_data.get('chosen_sheets_fr')
+                chosen_sheets_dp = form.cleaned_data.get('chosen_sheets_dp')
+                error_bs = []
+                error_fr = []
+                error_dp = []
+                overlap_bs = []
+                overlap_fr = []
+                overlap_dp = []
+                result_bs = None
+                result_fr = None
+                result_dp = None
+                if chosen_sheets_bs:
+                    error_bs, result_bs = render_overlapping_data_popup(chosen_sheets_bs, 'bs',
+                                                                        get_existing_data_balance_sheet)
+                    if error_bs:
+                        overlap_bs = error_bs.overlapping_data
 
-            if chosen_sheets_fr:
-                error_fr, result_fr = render_overlapping_data_popup(chosen_sheets_fr, 'fr',
-                                                                    get_existing_data_ratios)
-                if error_fr:
-                    overlap_fr = error_fr.overlapping_data
+                if chosen_sheets_fr:
+                    error_fr, result_fr = render_overlapping_data_popup(chosen_sheets_fr, 'fr',
+                                                                        get_existing_data_ratios)
+                    if error_fr:
+                        overlap_fr = error_fr.overlapping_data
 
-            if chosen_sheets_dp:
-                error_dp, result_dp = render_overlapping_data_popup(chosen_sheets_dp, 'dp',
-                                                                    get_existing_data_ratios)
-                if error_dp:
-                    overlap_dp = error_dp.overlapping_data
+                if chosen_sheets_dp:
+                    error_dp, result_dp = render_overlapping_data_popup(chosen_sheets_dp, 'dp',
+                                                                        get_existing_data_ratios)
+                    if error_dp:
+                        overlap_dp = error_dp.overlapping_data
 
-            if error_bs or error_fr or error_dp:
-                return render(request, 'import/notoria.html',
-                              {'form': form,
-                               "error_bs": error_bs,
-                               "error_fr": error_fr,
-                               "error_dp": error_dp,
-                               "overlap_bs": json.dumps(overlap_bs),
-                               "overlap_fr": json.dumps(overlap_fr),
-                               "overlap_dp": json.dumps(overlap_dp)})
+                if error_bs or error_fr or error_dp:
+                    return render(request, 'import/notoria.html',
+                                  {'form': form,
+                                   "error_bs": error_bs,
+                                   "error_fr": error_fr,
+                                   "error_dp": error_dp,
+                                   "overlap_bs": json.dumps(overlap_bs),
+                                   "overlap_fr": json.dumps(overlap_fr),
+                                   "overlap_dp": json.dumps(overlap_dp)})
 
-            result = ParsingResult.combine_notoria_results(result_bs, result_dp, result_fr)
-            if result is not None:
-                return render(request, 'import/notoria.html', {'form': NotoriaImportForm(),
-                                                               'unification_form':
-                                                                   UnificationForm(unification=result.unification_info),
-                                                               'unification': result.to_json()})
+                result = ParsingResult.combine_notoria_results(result_bs, result_dp, result_fr)
+                if result is not None:
+                    return render(request, 'import/notoria.html', {'form': NotoriaImportForm(),
+                                                                   'unification_form':
+                                                                       UnificationForm(unification=result.unification_info),
+                                                                   'unification': result.to_json()})
 
-            return render(request, 'manage/home.html', {'message': "Parsed notoria succsessfully"})
-    else:
-        form = NotoriaImportForm()
+                return render(request, 'manage/home.html', {'message': "Parsed notoria succsessfully"})
+        else:
+            form = NotoriaImportForm()
 
-    return render(request, 'import/notoria.html', {'form': form})
+        return render(request, 'import/notoria.html', {'form': form})
+    except:
+        return render(request, 'error.html')
 
 
 def import_stooq(request):
@@ -128,78 +134,81 @@ def import_stooq(request):
             raise pe
         return None, res
 
-    if request.method == 'POST':
-        form = StooqImportForm(request.POST)
-        if form.is_valid():
-            error = []
-            overlap = []
+    try:
+        if request.method == 'POST':
+            form = StooqImportForm(request.POST)
+            if form.is_valid():
+                error = []
+                overlap = []
 
-            import_type = request.POST.get('import_type')
+                import_type = request.POST.get('import_type')
 
-            if import_type == 'one':
-                ticker = form.cleaned_data.get('ticker', None)
-                company = form.cleaned_data.get('company')
+                if import_type == 'one':
+                    ticker = form.cleaned_data.get('ticker', None)
+                    company = form.cleaned_data.get('company')
 
-                date_from = form.cleaned_data.get('date_from', None)
-                date_to = form.cleaned_data.get('date_to', None)
+                    date_from = form.cleaned_data.get('date_from', None)
+                    date_to = form.cleaned_data.get('date_to', None)
 
-                interval = form.cleaned_data.get('interval', None)
+                    interval = form.cleaned_data.get('interval', None)
 
-                if not company and not ticker:
-                    return render(request, 'manage/home.html', {'message': "Wrong form"})
+                    if not company and not ticker:
+                        return render(request, 'manage/home.html', {'message': "Wrong form"})
 
-                if (company or ticker) and (not date_from or not date_to):
-                    return render(request, 'manage/home.html', {'message': "Wrong form"})
+                    if (company or ticker) and (not date_from or not date_to):
+                        return render(request, 'manage/home.html', {'message': "Wrong form"})
 
-                if date_to and date_from and date_to < date_from and (company or ticker):
-                    return render(request, 'manage/home.html', {'message': "Wrong form"})
+                    if date_to and date_from and date_to < date_from and (company or ticker):
+                        return render(request, 'manage/home.html', {'message': "Wrong form"})
 
-                if company:
-                    ticker = company.ticker
+                    if company:
+                        ticker = company.ticker
 
-                if ticker and date_from and date_to:
+                    if ticker and date_from and date_to:
+                        try:
+                            error, result = parse_stooq_one_company(ticker, date_from, date_to, interval)
+                            if error:
+                                overlap = error.overlapping_data
+                        except ParseError as e:
+                            message = "Parse error: " + e.details
+                            return render(request, 'manage/home.html', {'message': message})
+                    else:
+                        return render(request, 'manage/home.html', {'message': "Wrong form"})
+
+                else:
+                    date = form.cleaned_data.get('date', None)
+
+                    if not date:
+                        return render(request, 'manage/home.html', {'message': "Wrong form"})
+
                     try:
-                        error, result = parse_stooq_one_company(ticker, date_from, date_to, interval)
+                        error, result = parse_stooq_all_companies(date)
                         if error:
                             overlap = error.overlapping_data
                     except ParseError as e:
                         message = "Parse error: " + e.details
                         return render(request, 'manage/home.html', {'message': message})
-                else:
-                    return render(request, 'manage/home.html', {'message': "Wrong form"})
 
+                if error:
+                    return render(request, 'import/stooq.html',
+                                  {'form': StooqImportForm(),
+                                   "error": error,
+                                   "overlap": json.dumps(overlap)})
+                if result is not None:
+                    return render(request, 'import/stooq.html', {'form': StooqImportForm(),
+                                                                 'unification_form':
+                                                                     UnificationForm(unification=result.unification_info),
+                                                                 'unification': result.to_json()})
+
+                return render(request, 'manage/home.html', {'message': "Parsed stooq.com data successfully"})
             else:
-                date = form.cleaned_data.get('date', None)
-
-                if not date:
-                    return render(request, 'manage/home.html', {'message': "Wrong form"})
-
-                try:
-                    error, result = parse_stooq_all_companies(date)
-                    if error:
-                        overlap = error.overlapping_data
-                except ParseError as e:
-                    message = "Parse error: " + e.details
-                    return render(request, 'manage/home.html', {'message': message})
-
-            if error:
-                return render(request, 'import/stooq.html',
-                              {'form': StooqImportForm(),
-                               "error": error,
-                               "overlap": json.dumps(overlap)})
-            if result is not None:
-                return render(request, 'import/stooq.html', {'form': StooqImportForm(),
-                                                             'unification_form':
-                                                                 UnificationForm(unification=result.unification_info),
-                                                             'unification': result.to_json()})
-
-            return render(request, 'manage/home.html', {'message': "Parsed stooq.com data successfully"})
+                return render(request, 'manage/home.html', {'message': "Wrong form"})
         else:
-            return render(request, 'manage/home.html', {'message': "Wrong form"})
-    else:
-        form = StooqImportForm()
+            form = StooqImportForm()
 
-    return render(request, 'import/stooq.html', {'form': form})
+        return render(request, 'import/stooq.html', {'form': form})
+    except:
+        return render(request, 'error.html')
 
 
 def import_gpw(request):
@@ -210,80 +219,82 @@ def import_gpw(request):
         'statistics_pdf': pdf_gpw_parser.PdfGPWParser
     }
 
-    if request.method == 'POST':
-        form = GpwImportForm(request.POST)
-        if form.is_valid():
-            path = form.cleaned_data['path']
-            file_type = form.cleaned_data['file_type']
-            parser = parsers[file_type]()
-            result = parser.parse(path)
+    try:
+        if request.method == 'POST':
+            form = GpwImportForm(request.POST)
+            if form.is_valid():
+                path = form.cleaned_data['path']
+                file_type = form.cleaned_data['file_type']
+                parser = parsers[file_type]()
+                result = parser.parse(path)
 
-            if result is not None:
-                return render(request, 'import/gpw.html', {'form': GpwImportForm(),
-                                                           'unification_form':
-                                                               UnificationForm(unification=result.unification_info),
-                                                           'unification': result.to_json()})
-            return render(request, 'manage/home.html', {'message': "Parsed GPW file successfully"})
-    else:
-        form = GpwImportForm()
+                if result is not None:
+                    return render(request, 'import/gpw.html', {'form': GpwImportForm(),
+                                                               'unification_form':
+                                                                   UnificationForm(unification=result.unification_info),
+                                                               'unification': result.to_json()})
+                return render(request, 'manage/home.html', {'message': "Parsed GPW file successfully"})
+        else:
+            form = GpwImportForm()
 
-    return render(request, 'import/gpw.html', {'form': form})
+        return render(request, 'import/gpw.html', {'form': form})
+    except:
+        return render(request, 'error.html')
 
 
 def export(request):
-    if request.method == 'POST':
-        form = ExportForm(request.POST, count=request.POST.get('date_ranges_count'))
-        if form.is_valid():
-            file_name = request.POST.get('file_name', None)
-            if not file_name.endswith(".csv"):
-                file_name += ".csv"
-            if os.path.isfile(file_name):
-                form.add_error('file_name', 'File with that name already exists.')
-                return render(request, 'export/export.html', {'form': form})
+    try:
+        if request.method == 'POST':
+            form = ExportForm(request.POST, count=request.POST.get('date_ranges_count'))
+            if form.is_valid():
+                file_name = request.POST.get('file_name', None)
+                if not file_name.endswith(".csv"):
+                    file_name += ".csv"
+                if os.path.isfile(file_name):
+                    form.add_error('file_name', 'File with that name already exists.')
+                    return render(request, 'export/export.html', {'form': form})
 
-            chosen_data = request.POST.get('chosen_data', None)
-            chosen_companies = list(form.cleaned_data.get('chosen_companies').values_list('id', flat=True))
-            intervals = {
-                '-f': form.cleaned_data.get('chosen_interval_ratios', None),
-                '-d': form.cleaned_data.get('chosen_interval_ratios', None),
-                '-s': form.cleaned_data.get('chosen_interval_stooq', None),
-                '-mv': form.cleaned_data.get('chosen_interval_gpw', None)
-            }
-            balance_sheet_intervals = ['-da', '-ca', '-fa', '-de', '-ce', '-fe']
-            for i in balance_sheet_intervals:
-                intervals[i] = form.cleaned_data.get('chosen_interval_balance', None)
+                chosen_data = request.POST.get('chosen_data', None)
+                chosen_companies = list(form.cleaned_data.get('chosen_companies').values_list('id', flat=True))
+                intervals = {
+                    '-f': form.cleaned_data.get('chosen_interval_ratios', None),
+                    '-d': form.cleaned_data.get('chosen_interval_ratios', None),
+                    '-s': form.cleaned_data.get('chosen_interval_stooq', None),
+                    '-mv': form.cleaned_data.get('chosen_interval_gpw', None)
+                }
+                balance_sheet_intervals = ['-da', '-ca', '-fa', '-de', '-ce', '-fe']
+                for i in balance_sheet_intervals:
+                    intervals[i] = form.cleaned_data.get('chosen_interval_balance', None)
 
-            date_ranges_count = request.POST.get('date_ranges_count', None)
+                date_ranges_count = request.POST.get('date_ranges_count', None)
 
-            statuses = []
-            for index in range(int(date_ranges_count) + 1):
-                start_date = form.cleaned_data.get('start_date_{index}'.format(index=index))
-                end_date = form.cleaned_data.get('end_date_{index}'.format(index=index))
+                statuses = []
+                for index in range(int(date_ranges_count) + 1):
+                    start_date = form.cleaned_data.get('start_date_{index}'.format(index=index))
+                    end_date = form.cleaned_data.get('end_date_{index}'.format(index=index))
 
-                if index == 0:
-                    add_description = True
+                    if index == 0:
+                        add_description = True
+                    else:
+                        add_description = False
+
+                    chosen_interval = intervals[chosen_data]
+                    statuses.append(export_methods.functions[chosen_data](chosen_companies, start_date, end_date,
+                                                                          file_name, chosen_interval, add_description))
+
+                success = [status for status in statuses if status is ExportStatus.SUCCESS]
+                if len(success) >= 1:
+                    status = ExportStatus.SUCCESS
+                    return render(request, 'manage/home.html', {'message': status.get_message(file_name)})
                 else:
-                    add_description = False
+                    return render(request, 'manage/home.html', {'message': ExportStatus.FAILURE.get_message()})
 
-                chosen_interval = intervals[chosen_data]
-                statuses.append(export_methods.functions[chosen_data](chosen_companies, start_date, end_date,
-                                                                      file_name, chosen_interval, add_description))
+        else:
+            form = ExportForm()
 
-            success = [status for status in statuses if status is ExportStatus.SUCCESS]
-            if len(success) >= 1:
-                status = ExportStatus.SUCCESS
-                return render(request, 'manage/home.html', {'message': status.get_message(file_name)})
-            else:
-                return render(request, 'manage/home.html', {'message': ExportStatus.FAILURE.get_message()})
-
-    else:
-        form = ExportForm()
-
-    return render(request, 'export/export.html', {'form': form})
-
-
-def manage(request):
-    return render(request, 'manage/home.html')
+        return render(request, 'export/export.html', {'form': form})
+    except:
+        return render(request, 'error.html')
 
 
 def export_database(request):
@@ -295,24 +306,27 @@ def export_database(request):
         copyfile('exporter.db', destination)
         return True
 
-    if request.method == 'POST':
-        form = ExportDatabaseForm(request.POST)
-        if form.is_valid():
-            folder = form.cleaned_data['folder']
-            delete = form.cleaned_data['delete']
+    try:
+        if request.method == 'POST':
+            form = ExportDatabaseForm(request.POST)
+            if form.is_valid():
+                folder = form.cleaned_data['folder']
+                delete = form.cleaned_data['delete']
 
-            copied_properly = copy_database_to_folder(folder)
-            if delete:
-                _delete_all_info_from_database()
+                copied_properly = copy_database_to_folder(folder)
+                if delete:
+                    _delete_all_info_from_database()
 
-            if not copied_properly:
-                messages.error(request, 'Cannot export database')
-                return render(request, 'manage/databaseExport.html', {'form': form})
-            else:
-                messages.success(request, 'Database exported successfully')
-                return render(request, 'manage/databaseExport.html', {'form': ExportDatabaseForm()})
+                if not copied_properly:
+                    messages.error(request, 'Cannot export database')
+                    return render(request, 'manage/databaseExport.html', {'form': form})
+                else:
+                    messages.success(request, 'Database exported successfully')
+                    return render(request, 'manage/databaseExport.html', {'form': ExportDatabaseForm()})
 
-    return render(request, 'manage/databaseExport.html', {'form': ExportDatabaseForm()})
+        return render(request, 'manage/databaseExport.html', {'form': ExportDatabaseForm()})
+    except:
+        return render(request, 'error.html')
 
 
 def import_database(request):
@@ -331,26 +345,33 @@ def import_database(request):
     def is_properly_database(path):
         return is_sqlite3(path)
 
-    if request.method == 'POST':
-        form = ImportDatabaseForm(request.POST)
-        if form.is_valid():
-            file = form.cleaned_data['file']
+    try:
+        if request.method == 'POST':
+            form = ImportDatabaseForm(request.POST)
+            if form.is_valid():
+                file = form.cleaned_data['file']
 
-            if not is_properly_database(file):
-                messages.error(request, 'Chosen file is not of properly SQLite3 file type')
-                return render(request, 'manage/databaseExport.html', {'form': form})
+                if not is_properly_database(file):
+                    messages.error(request, 'Chosen file is not of properly SQLite3 file type')
+                    return render(request, 'manage/databaseExport.html', {'form': form})
 
-            if not _is_database_empty():
-                return render(request, 'manage/databaseImport.html',
-                              {'form': ImportDatabaseForm(),
-                               'path': file.replace('\\', '\\\\')})
+                if not _is_database_empty():
+                    return render(request, 'manage/databaseImport.html',
+                                  {'form': ImportDatabaseForm(),
+                                   'path': file.replace('\\', '\\\\')})
 
-            merge_database(file)
+                merge_database(file)
 
-            messages.success(request, 'Database imported successfully')
-            return render(request, 'manage/databaseImport.html', {'form': ImportDatabaseForm()})
+                messages.success(request, 'Database imported successfully')
+                return render(request, 'manage/databaseImport.html', {'form': ImportDatabaseForm()})
 
-    return render(request, 'manage/databaseImport.html', {'form': ImportDatabaseForm()})
+        return render(request, 'manage/databaseImport.html', {'form': ImportDatabaseForm()})
+    except:
+        return render(request, 'error.html')
+
+
+def manage(request):
+    return render(request, 'manage/home.html')
 
 
 def replace_data(request):
@@ -381,43 +402,6 @@ def replace_database(request):
     return HttpResponse({'message': "Database replaced successfully"})
 
 
-# region database_private_methods
-
-
-def _is_database_empty():
-    return Company.objects.all().count() == 0 and \
-           EkdClass.objects.all().count() == 0 and \
-           EkdSection.objects.all().count() == 0 and \
-           Assets.objects.all().count() == 0 and \
-           AssetsCategories.objects.all().count() == 0 and \
-           DuPontIndicators.objects.all().count() == 0 and \
-           EkdClass.objects.all().count() == 0 and \
-           EkdSection.objects.all().count() == 0 and \
-           EquityLiabilities.objects.all().count() == 0 and \
-           EquityLiabilitiesCategories.objects.all().count() == 0 and \
-           FinancialRatios.objects.all().count() == 0 and \
-           MarketValues.objects.all().count() == 0 and \
-           StockQuotes.objects.all().count() == 0
-
-
-def _delete_all_info_from_database():
-    Company.objects.all().delete()
-    EkdClass.objects.all().delete()
-    EkdSection.objects.all().delete()
-    Assets.objects.all().delete()
-    AssetsCategories.objects.all().delete()
-    DuPontIndicators.objects.all().delete()
-    EkdClass.objects.all().delete()
-    EkdSection.objects.all().delete()
-    EquityLiabilities.objects.all().delete()
-    EquityLiabilitiesCategories.objects.all().delete()
-    FinancialRatios.objects.all().delete()
-    MarketValues.objects.all().delete()
-    StockQuotes.objects.all().delete()
-
-
-# endregion
-
 def insert_data(request):
     if request.method == 'POST':
         data_json = request.POST.get('unification')
@@ -442,37 +426,6 @@ def insert_data(request):
                       {'message': f'Parsed {data_type} successfully. Chosen companies unified'})
 
     return render(request, 'base.html')
-
-
-# region grid_edition_views
-
-
-class CompanyView(generic.ListView):
-    model = Company
-    context_object_name = 'companies'
-    template_name = 'manage/companies.html'
-
-
-class CompanyCreateView(BSModalCreateView):
-    template_name = 'manage/companies/create.html'
-    form_class = CompanyModelForm
-    success_message = 'Success: Company was created.'
-    success_url = reverse_lazy('companies')
-
-
-class CompanyUpdateView(BSModalUpdateView):
-    model = Company
-    template_name = 'manage/companies/update.html'
-    form_class = CompanyModelForm
-    success_message = 'Success: Company was updated.'
-    success_url = reverse_lazy('companies')
-
-
-class CompanyDeleteView(BSModalDeleteView):
-    model = Company
-    template_name = 'manage/companies/delete.html'
-    success_message = 'Success: Company was deleted.'
-    success_url = reverse_lazy('companies')
 
 
 class CompanyMergeView(SuccessMessageMixin, BSModalFormView):
@@ -655,6 +608,74 @@ def delete_data(request):
     delete_from_stock_quotes(company_to_delete_id)
     delete_company(company_to_delete_id)
     return HttpResponse({'message': "Data replaced successfully"})
+
+
+# region database_private_methods
+
+
+def _is_database_empty():
+    return Company.objects.all().count() == 0 and \
+           EkdClass.objects.all().count() == 0 and \
+           EkdSection.objects.all().count() == 0 and \
+           Assets.objects.all().count() == 0 and \
+           AssetsCategories.objects.all().count() == 0 and \
+           DuPontIndicators.objects.all().count() == 0 and \
+           EkdClass.objects.all().count() == 0 and \
+           EkdSection.objects.all().count() == 0 and \
+           EquityLiabilities.objects.all().count() == 0 and \
+           EquityLiabilitiesCategories.objects.all().count() == 0 and \
+           FinancialRatios.objects.all().count() == 0 and \
+           MarketValues.objects.all().count() == 0 and \
+           StockQuotes.objects.all().count() == 0
+
+
+def _delete_all_info_from_database():
+    Company.objects.all().delete()
+    EkdClass.objects.all().delete()
+    EkdSection.objects.all().delete()
+    Assets.objects.all().delete()
+    AssetsCategories.objects.all().delete()
+    DuPontIndicators.objects.all().delete()
+    EkdClass.objects.all().delete()
+    EkdSection.objects.all().delete()
+    EquityLiabilities.objects.all().delete()
+    EquityLiabilitiesCategories.objects.all().delete()
+    FinancialRatios.objects.all().delete()
+    MarketValues.objects.all().delete()
+    StockQuotes.objects.all().delete()
+
+
+# endregion
+
+# region grid_edition_views
+
+
+class CompanyView(generic.ListView):
+    model = Company
+    context_object_name = 'companies'
+    template_name = 'manage/companies.html'
+
+
+class CompanyCreateView(BSModalCreateView):
+    template_name = 'manage/companies/create.html'
+    form_class = CompanyModelForm
+    success_message = 'Success: Company was created.'
+    success_url = reverse_lazy('companies')
+
+
+class CompanyUpdateView(BSModalUpdateView):
+    model = Company
+    template_name = 'manage/companies/update.html'
+    form_class = CompanyModelForm
+    success_message = 'Success: Company was updated.'
+    success_url = reverse_lazy('companies')
+
+
+class CompanyDeleteView(BSModalDeleteView):
+    model = Company
+    template_name = 'manage/companies/delete.html'
+    success_message = 'Success: Company was deleted.'
+    success_url = reverse_lazy('companies')
 
 
 class AssetsView(generic.ListView):
