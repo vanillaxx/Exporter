@@ -1,0 +1,16 @@
+{% extends './entitiesViewBase.html' %}
+{% block entity %}
+{% load static %}
+
+<h3>Export database</h3>
+
+<form method="post">{% csrf_token %}
+    <h4>{{form.folder_sheet}}</h4>
+    {{form.folder}}
+<br>
+    {{form.delete}}  {{form.delete_sheet}}
+<br>
+<button type="submit">Export</button>
+</form>
+
+{% endblock %}

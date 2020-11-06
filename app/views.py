@@ -1,30 +1,37 @@
 from collections import deque
 
 from django.contrib.messages.views import SuccessMessageMixin
-from django.db.models import Q
-from django.shortcuts import render
-from django.urls import reverse_lazy, reverse
 from django.http import HttpResponse, HttpResponseRedirect
+from django.shortcuts import render
+from django.urls import reverse_lazy
 from django.views import generic
-from common.Utils.export_status import ExportStatus
-from .forms import *
+
+import common.Export.export as export_methods
+from common.DAL.db_queries import replace_values, get_existing_data_balance_sheet, get_existing_data_ratios, \
+    get_existing_data_stock_quotes, get_existing_data_financial_ratios, \
+    get_existing_data_dupont_indicators
 from common.Parsers import excel_parser, pdf_gpw_parser, stooq_parser, pdf_yearbook_parser, excel_yearbook_parser, \
     excel_gpw_parser
-import common.Export.export as export_methods
-from common.Utils.Errors import UniqueError, ParseError
+from common.Utils.Errors import UniqueError, ParseError, DatabaseImportError
+from common.Utils.export_status import ExportStatus
+from common.Utils.parsing_result import ParsingResult
+from common.Utils.unification_info import UnificationInfo
+from .forms import *
 from .models import *
-from common.DAL.db_queries import replace_values, get_existing_data_balance_sheet, get_existing_data_ratios, \
-    merge_assets_categories, get_existing_data_stock_quotes, get_existing_data_financial_ratios, \
-    get_existing_data_dupont_indicators
+
+get_existing_data_stock_quotes
 import json
 import os.path
-import uuid
+from django.contrib import messages
 from bootstrap_modal_forms.generic import BSModalCreateView, BSModalUpdateView, BSModalDeleteView, BSModalFormView
 from common.DAL.db_queries import merge_assets, merge_assets_categories, merge_dupont_indicators, \
     merge_equity_liabilities_categories, merge_equity_liabilities, merge_financial_ratios, delete_from_assets, \
     delete_from_assets_categories, delete_from_dupont_indicators, delete_from_equity_liabilities, \
-    delete_from_equity_liabilities_categories, delete_from_financial_ratios, delete_company
-from django.contrib import messages
+    insert_company, \
+    delete_from_equity_liabilities_categories, delete_from_financial_ratios, delete_company, merge_database, \
+    merge_stock_quotes, delete_from_stock_quotes
+from shutil import copyfile
+
 
 
 def index(request):
@@ -35,13 +42,13 @@ def import_notoria(request):
     def render_overlapping_data_popup(chosen_sheet, sheet_shortcut, get_existing_data_func):
         for sheet in chosen_sheet:
             try:
-                excel_parser.functions[sheet_shortcut](file_path, sheet)
+                res = excel_parser.functions[sheet_shortcut](file_path, sheet)
             except UniqueError as e:
                 for data in e.overlapping_data:
                     existing = get_existing_data_func(data)
                     data["exists"] = list(map(lambda x: list(x), existing))
-                return e
-            return []
+                return e, None
+            return [], res
 
     if request.method == 'POST':
         form = NotoriaImportForm(request.POST)
@@ -56,21 +63,24 @@ def import_notoria(request):
             overlap_bs = []
             overlap_fr = []
             overlap_dp = []
+            result_bs = None
+            result_fr = None
+            result_dp = None
             if chosen_sheets_bs:
-                error_bs = render_overlapping_data_popup(chosen_sheets_bs, 'bs',
-                                                         get_existing_data_balance_sheet)
+                error_bs, result_bs = render_overlapping_data_popup(chosen_sheets_bs, 'bs',
+                                                                    get_existing_data_balance_sheet)
                 if error_bs:
                     overlap_bs = error_bs.overlapping_data
 
             if chosen_sheets_fr:
-                error_fr = render_overlapping_data_popup(chosen_sheets_fr, 'fr',
-                                                         get_existing_data_ratios)
+                error_fr, result_fr = render_overlapping_data_popup(chosen_sheets_fr, 'fr',
+                                                                    get_existing_data_ratios)
                 if error_fr:
                     overlap_fr = error_fr.overlapping_data
 
             if chosen_sheets_dp:
-                error_dp = render_overlapping_data_popup(chosen_sheets_dp, 'dp',
-                                                         get_existing_data_ratios)
+                error_dp, result_dp = render_overlapping_data_popup(chosen_sheets_dp, 'dp',
+                                                                    get_existing_data_ratios)
                 if error_dp:
                     overlap_dp = error_dp.overlapping_data
 
@@ -84,6 +94,13 @@ def import_notoria(request):
                                "overlap_fr": json.dumps(overlap_fr),
                                "overlap_dp": json.dumps(overlap_dp)})
 
+            result = ParsingResult.combine_notoria_results(result_bs, result_dp, result_fr)
+            if result is not None:
+                return render(request, 'import/notoria.html', {'form': NotoriaImportForm(),
+                                                               'unification_form':
+                                                                   UnificationForm(unification=result.unification_info),
+                                                               'unification': result.to_json()})
+
             return render(request, 'manage/home.html', {'message': "Parsed notoria succsessfully"})
     else:
         form = NotoriaImportForm()
@@ -95,28 +112,28 @@ def import_stooq(request):
     def parse_stooq_one_company(ticker_arg, date_from_arg, date_to_arg, interval_arg):
         SP = stooq_parser.StooqParser()
         try:
-            SP.download_company(ticker_arg, date_from_arg, date_to_arg, interval_arg)
+            res = SP.download_company(ticker_arg, date_from_arg, date_to_arg, interval_arg)
         except UniqueError as e:
             for data in e.overlapping_data:
                 existing = get_existing_data_stock_quotes(data)
                 data["exists"] = list(map(lambda x: list(x), existing))
-            return e
+            return e, None
         except ParseError as pe:
             raise pe
-        return None
+        return None, res
 
     def parse_stooq_all_companies(date_arg):
         SP = stooq_parser.StooqParser()
         try:
-            SP.download_all_companies(date_arg)
+            res = SP.download_all_companies(date_arg)
         except UniqueError as e:
             for data in e.overlapping_data:
                 existing = get_existing_data_stock_quotes(data)
                 data["exists"] = list(map(lambda x: list(x), existing))
-            return e
+            return e, None
         except ParseError as pe:
             raise pe
-        return None
+        return None, res
 
     if request.method == 'POST':
         form = StooqImportForm(request.POST)
@@ -144,12 +161,12 @@ def import_stooq(request):
                 if date_to and date_from and date_to < date_from and (company or ticker):
                     return render(request, 'manage/home.html', {'message': "Wrong form"})
 
-                if company and not ticker:
+                if company:
                     ticker = company.ticker
 
                 if ticker and date_from and date_to:
                     try:
-                        error = parse_stooq_one_company(ticker, date_from, date_to, interval)
+                        error, result = parse_stooq_one_company(ticker, date_from, date_to, interval)
                         if error:
                             overlap = error.overlapping_data
                     except ParseError as e:
@@ -165,7 +182,7 @@ def import_stooq(request):
                     return render(request, 'manage/home.html', {'message': "Wrong form"})
 
                 try:
-                    error = parse_stooq_all_companies(date)
+                    error, result = parse_stooq_all_companies(date)
                     if error:
                         overlap = error.overlapping_data
                 except ParseError as e:
@@ -177,6 +194,11 @@ def import_stooq(request):
                               {'form': StooqImportForm(),
                                "error": error,
                                "overlap": json.dumps(overlap)})
+            if result is not None:
+                return render(request, 'import/stooq.html', {'form': StooqImportForm(),
+                                                             'unification_form':
+                                                                 UnificationForm(unification=result.unification_info),
+                                                             'unification': result.to_json()})
 
             return render(request, 'manage/home.html', {'message': "Parsed stooq.com data successfully"})
         else:
@@ -201,7 +223,13 @@ def import_gpw(request):
             path = form.cleaned_data['path']
             file_type = form.cleaned_data['file_type']
             parser = parsers[file_type]()
-            parser.parse(path)
+            result = parser.parse(path)
+
+            if result is not None:
+                return render(request, 'import/gpw.html', {'form': GpwImportForm(),
+                                                           'unification_form':
+                                                               UnificationForm(unification=result.unification_info),
+                                                           'unification': result.to_json()})
             return render(request, 'manage/home.html', {'message': "Parsed GPW file successfully"})
     else:
         form = GpwImportForm()
@@ -265,6 +293,73 @@ def manage(request):
     return render(request, 'manage/home.html')
 
 
+def export_database(request):
+    def copy_database_to_folder(path):
+        if not os.path.isdir(path):
+            return False
+
+        destination = os.path.join(path, 'exporter.db')
+        copyfile('exporter.db', destination)
+        return True
+
+    if request.method == 'POST':
+        form = ExportDatabaseForm(request.POST)
+        if form.is_valid():
+            folder = form.cleaned_data['folder']
+            delete = form.cleaned_data['delete']
+
+            copied_properly = copy_database_to_folder(folder)
+            if delete:
+                _delete_all_info_from_database()
+
+            if not copied_properly:
+                messages.error(request, 'Cannot export database')
+                return render(request, 'manage/databaseExport.html', {'form': form})
+            else:
+                messages.success(request, 'Database exported successfully')
+                return render(request, 'manage/databaseExport.html', {'form': ExportDatabaseForm()})
+
+    return render(request, 'manage/databaseExport.html', {'form': ExportDatabaseForm()})
+
+
+def import_database(request):
+    def is_sqlite3(filename):
+        from os.path import isfile, getsize
+
+        if not isfile(filename):
+            return False
+        if getsize(filename) < 100:
+            return False
+
+        with open(filename, 'rb') as fd:
+            header = fd.read(100)
+        return header[:16] == b'SQLite format 3\x00' or header[:16] == 'SQLite format 3\x00'
+
+    def is_properly_database(path):
+        return is_sqlite3(path)
+
+    if request.method == 'POST':
+        form = ImportDatabaseForm(request.POST)
+        if form.is_valid():
+            file = form.cleaned_data['file']
+
+            if not is_properly_database(file):
+                messages.error(request, 'Chosen file is not of properly SQLite3 file type')
+                return render(request, 'manage/databaseExport.html', {'form': form})
+
+            if not _is_database_empty():
+                return render(request, 'manage/databaseImport.html',
+                              {'form': ImportDatabaseForm(),
+                               'path': file.replace('\\', '\\\\')})
+
+            merge_database(file)
+
+            messages.success(request, 'Database imported successfully')
+            return render(request, 'manage/databaseImport.html', {'form': ImportDatabaseForm()})
+
+    return render(request, 'manage/databaseImport.html', {'form': ImportDatabaseForm()})
+
+
 def replace_data(request):
     data = request.POST.get('data', '')
     json_data = json.loads(data)
@@ -280,7 +375,84 @@ def replace_data(request):
     return HttpResponse({'message': "Data replaced successfully"})
 
 
+def replace_database(request):
+    path = request.POST.get('path')
+    _delete_all_info_from_database()
+    try:
+        merge_database(path)
+    except DatabaseImportError as e:
+        error = 'Cannot export database: {}'.format(e)
+        messages.error(request, 'Cannot export database')
+        return HttpResponse({'message': str(e)})
+
+    return HttpResponse({'message': "Database replaced successfully"})
+
+
+# region database_private_methods
+
+
+def _is_database_empty():
+    return Company.objects.all().count() == 0 and \
+           EkdClass.objects.all().count() == 0 and \
+           EkdSection.objects.all().count() == 0 and \
+           Assets.objects.all().count() == 0 and \
+           AssetsCategories.objects.all().count() == 0 and \
+           DuPontIndicators.objects.all().count() == 0 and \
+           EkdClass.objects.all().count() == 0 and \
+           EkdSection.objects.all().count() == 0 and \
+           EquityLiabilities.objects.all().count() == 0 and \
+           EquityLiabilitiesCategories.objects.all().count() == 0 and \
+           FinancialRatios.objects.all().count() == 0 and \
+           MarketValues.objects.all().count() == 0 and \
+           StockQuotes.objects.all().count() == 0
+
+
+def _delete_all_info_from_database():
+    Company.objects.all().delete()
+    EkdClass.objects.all().delete()
+    EkdSection.objects.all().delete()
+    Assets.objects.all().delete()
+    AssetsCategories.objects.all().delete()
+    DuPontIndicators.objects.all().delete()
+    EkdClass.objects.all().delete()
+    EkdSection.objects.all().delete()
+    EquityLiabilities.objects.all().delete()
+    EquityLiabilitiesCategories.objects.all().delete()
+    FinancialRatios.objects.all().delete()
+    MarketValues.objects.all().delete()
+    StockQuotes.objects.all().delete()
+
+
+# endregion
+
+def insert_data(request):
+    if request.method == 'POST':
+        data_json = request.POST.get('unification')
+        data = json.loads(data_json)
+        data_type = None
+
+        for ind, data_to_insert in enumerate(data):
+            company_id = request.POST.get(f'company_choices_{ind}', None)
+            ui = UnificationInfo.from_json(data_to_insert)
+
+            if company_id is None:
+                company_id = insert_company(ui.company)
+            else:
+                company_id = json.loads(company_id)
+
+            ui.insert_data_to_db(company_id)
+
+            if data_type is not None:
+                data_type = ui.get_data_type()
+
+        return render(request, 'manage/home.html',
+                      {'message': f'Parsed {data_type} successfully. Chosen companies unified'})
+
+    return render(request, 'base.html')
+
+
 # region grid_edition_views
+
 
 class CompanyView(generic.ListView):
     model = Company
@@ -330,6 +502,7 @@ class CompanyMergeView(SuccessMessageMixin, BSModalFormView):
         merge_equity_liabilities_categories(chosen_from, chosen_to)
         merge_financial_ratios(chosen_from, chosen_to)
         merge_dupont_indicators(chosen_from, chosen_to)
+        merge_stock_quotes(chosen_from, chosen_to)
 
         overlapping_assets = Assets.objects.filter(company_id=chosen_from).order_by('date')
         overlapping_assets_categories = AssetsCategories.objects.filter(company_id=chosen_from).order_by('date')
@@ -338,6 +511,11 @@ class CompanyMergeView(SuccessMessageMixin, BSModalFormView):
             company_id=chosen_from).order_by('date')
         overlapping_financial_ratios = FinancialRatios.objects.filter(company_id=chosen_from).order_by('period_start')
         overlapping_dupont_indicators = DuPontIndicators.objects.filter(company_id=chosen_from).order_by('period_start')
+        try:
+            overlapping_stock_quotes = StockQuotes.objects.filter(
+                company_id=chosen_from).order_by('date', 'interval')
+        except StockQuotes.DoesNotExist:
+            overlapping_stock_quotes = None
 
         overlapping_balance_data = []
         overlapping_financial_ratios_data = []
@@ -396,6 +574,22 @@ class CompanyMergeView(SuccessMessageMixin, BSModalFormView):
             overlapping_dupont_indicators_data = get_overlapping_data(DuPontIndicators, overlapping_dupont_indicators,
                                                                       overlapping_dupont_indicators_data)
 
+        if overlapping_stock_quotes:
+            stock_quotes_values = StockQuotes.objects.filter(company_id=chosen_to,
+                                                             date__in=overlapping_stock_quotes.values("date"),
+                                                             interval__in=overlapping_stock_quotes
+                                                             .values("interval")).values_list(flat=True)
+
+            values = list(map(lambda x: list(x.values())[1:], overlapping_stock_quotes.values_list(flat=True)
+                              .values()))
+            exists = list(map(lambda x: list(x.values())[1:], stock_quotes_values.values()))
+            stock_quotes_dict = {"table_name": StockQuotes.objects.model._meta.db_table,
+                                 "columns": [f.get_attname_column()[1] for f in
+                                             StockQuotes._meta.get_fields() if f.name != 'id'],
+                                 "values": values,
+                                 "exists": exists}
+            overlapping_balance_data.append(stock_quotes_dict)
+
         if overlapping_balance_data or overlapping_financial_ratios_data or overlapping_dupont_indicators_data:
             error_bs = UniqueError(*overlapping_balance_data)
             overlap_bs = json.dumps(error_bs.overlapping_data, default=str)
@@ -421,6 +615,9 @@ def merge_data(request):
     data = request.POST.get('data', '')
     json_data = json.loads(data)
     for data_to_replace in json_data:
+        if not data_to_replace:
+            continue
+
         table_name = data_to_replace['table_name']
         columns = data_to_replace['columns']
         values = data_to_replace['values']
@@ -430,12 +627,14 @@ def merge_data(request):
             listed_value = list(value)
             listed_value[0] = existing_company_id
             replace_values(table_name, columns, listed_value)
+
     delete_from_assets(company_to_delete_id)
     delete_from_assets_categories(company_to_delete_id)
     delete_from_equity_liabilities(company_to_delete_id)
     delete_from_equity_liabilities_categories(company_to_delete_id)
     delete_from_financial_ratios(company_to_delete_id)
     delete_from_dupont_indicators(company_to_delete_id)
+    delete_from_stock_quotes(company_to_delete_id)
     delete_company(company_to_delete_id)
     return HttpResponse({'message': "Data replaced successfully"})
 
@@ -448,6 +647,7 @@ def delete_data(request):
     delete_from_equity_liabilities_categories(company_to_delete_id)
     delete_from_financial_ratios(company_to_delete_id)
     delete_from_dupont_indicators(company_to_delete_id)
+    delete_from_stock_quotes(company_to_delete_id)
     delete_company(company_to_delete_id)
     return HttpResponse({'message': "Data replaced successfully"})
 

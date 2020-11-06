@@ -3,9 +3,9 @@ import fitz
 import collections
 import pandas as pd
 import numpy as np
-from common.DAL.db_queries import insert_market_value, insert_company
-from common.Utils.Errors import CompanyNotFoundError
-from common.Parsers.Common.dates import *
+from common.Utils.gpw_db import save_value_to_database
+from common.Utils.dates import *
+from common.Utils.parsing_result import ParsingResult
 
 
 class PdfGPWParser:
@@ -32,6 +32,7 @@ class PdfGPWParser:
         self.doc = None
         self.pdf_path = None
         self.date = None
+        self.unification_info = []
 
     def parse(self, pdf_path, data_date=None):
         self.pdf_path = pdf_path
@@ -42,10 +43,11 @@ class PdfGPWParser:
 
         dataframes = [self.process_page(page, page_num) for page_num, page in enumerate(self.doc.pages())]
         dataframes = [dataframe for dataframe in dataframes if dataframe is not None]
-        if dataframes:
-           return pd.concat(dataframes, ignore_index=True)
-        else:
-           raise ValueError('No data found')
+        if not dataframes:
+            raise ValueError('No data found')
+
+        if self.unification_info:
+            return ParsingResult(unification_info=self.unification_info)
 
     # TODO errors
     def find_data_date(self):
@@ -199,10 +201,4 @@ class PdfGPWParser:
         company_isin = row.get(self.isin_code_column)
         market_value = row[self.capitalisation_value_column]
 
-        try:
-            insert_market_value(market_value, self.date, company_name, company_isin)
-        except CompanyNotFoundError:
-            print(f'Company {company_name} not found')
-            insert_company(company_name=company_name, company_isin=company_isin)
-            self.save_value_to_database(row)
-
+        save_value_to_database(company_name, company_isin, market_value, self.date, self.unification_info)

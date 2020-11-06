@@ -1,6 +1,8 @@
 from bootstrap_modal_forms.generic import BSModalFormView
 from django import forms
 from django.core.exceptions import ValidationError
+from django.http import QueryDict
+import json
 
 from .models import *
 from bootstrap_datepicker_plus import DatePickerInput
@@ -110,7 +112,7 @@ class MarketValuesModelForm(BSModalModelForm):
 class StockQuotesModelForm(BSModalModelForm):
     class Meta:
         model = StockQuotes
-        fields = ['company_id', 'period_end', 'stock', 'change', 'open', 'high', 'low', 'volume', 'turnover',
+        fields = ['company_id', 'date', 'stock', 'change', 'open', 'high', 'low', 'volume', 'turnover',
                   'interval']
 
 
@@ -155,6 +157,20 @@ class ExportForm(forms.Form):
                                                                                   ))
 
 
+class ExportDatabaseForm(forms.Form):
+    folder = forms.CharField(label='Folder name:', max_length=100, required=True)
+    delete = forms.BooleanField(required=False)
+
+    folder_sheet = 'Folder where database file will be saved'
+    delete_sheet = 'Delete all data from database after export'
+
+
+class ImportDatabaseForm(forms.Form):
+    file = forms.CharField(label='File name:', max_length=100, required=True)
+
+    file_sheet = 'File with database to be imported'
+
+
 class NotoriaImportForm(forms.Form):
     file_path = forms.CharField(label='Path to files:', max_length=100)
     choices_bs = [('YS', 'Yearly'),
@@ -178,7 +194,7 @@ class NotoriaImportForm(forms.Form):
 
 class StooqImportForm(forms.Form):
     ticker = forms.CharField(label='Ticker of the company', max_length=20, required=False)
-    company_choices = Company.objects.all()
+    company_choices = Company.objects.filter(ticker__isnull=False)
     company = forms.ModelChoiceField(queryset=company_choices, required=False)
     date_from = forms.DateTimeField(required=False, widget=DatePickerInput(format='%d.%m.%Y',
                                                                             attrs={'type': 'date',
@@ -220,3 +236,17 @@ class GpwImportForm(forms.Form):
 
     file_type = forms.ChoiceField(label='Type of file', choices=choices, widget=forms.RadioSelect)
     path = forms.CharField(label='Path to file')
+
+
+class UnificationForm(BSModalForm):
+    def __init__(self, *args, **kwargs):
+        data = kwargs.pop('unification', None)
+        super(UnificationForm, self).__init__(*args, **kwargs)
+        if data is not None:
+            for ind, info in enumerate(data):
+                label = f"Possible matches for {info.company.name}"
+                choices = info.possible_matches
+                self.fields[f'company_choices_{ind}'] = forms.ChoiceField(label=label,
+                                                                          choices=choices,
+                                                                          widget=forms.RadioSelect,
+                                                                          required=False)

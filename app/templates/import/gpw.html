@@ -1,11 +1,18 @@
 {% extends '../base.html' %}
 
 {% block content %}
+{% load static %}
 
     <form method="post">{% csrf_token %}
         <br>
         {{ form }}
         <button type="submit">Import</button>
     </form>
+
+    <div id="unification-modal" class="modal fade" role="dialog">
+        {% if unification_form %}
+            {% include "import/company_unification_details.html" %}
+        {% endif %}
+    </div>
 
 {% endblock %}

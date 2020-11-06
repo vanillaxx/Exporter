@@ -1,7 +1,10 @@
 import common.DAL.db_queries
 from common.Utils.Errors import CompanyNotFoundError, ParseError
-from common.Parsers.Common.dates import *
+from common.Utils.dates import *
+from common.Utils.gpw_db import save_value_to_database
 import xlrd
+
+from common.Utils.parsing_result import ParsingResult
 
 
 class ExcelGPWParser:
@@ -21,6 +24,7 @@ class ExcelGPWParser:
         capitalization_column = 4
         values = []
         milion = 1e6
+        unification_info = []
 
         end_date = self.get_date(end_date)
 
@@ -30,13 +34,11 @@ class ExcelGPWParser:
                 isin = excel_sheet.cell(curr_row, isin_column).value
                 name = excel_sheet.cell(curr_row, name_column).value
                 value = excel_sheet.cell(curr_row, capitalization_column).value * milion
-                try:
-                    common.DAL.db_queries.insert_market_value(value, end_date, name, isin)
-                except CompanyNotFoundError as err:
-                    print(err)
-                    common.DAL.db_queries.insert_company(company_name=name, company_isin=isin)
-                    common.DAL.db_queries.insert_market_value(value, end_date, name, isin)
+
+                save_value_to_database(name, isin, value, end_date, unification_info)
+
                 curr_row = curr_row + 1
+
         elif "nazwa" in excel_sheet.cell(headers_check_row,
                                          isin_column).value.lower():  # case where name is in place of isin
             name_column = 1
@@ -44,16 +46,17 @@ class ExcelGPWParser:
             while curr_row < excel_sheet.nrows:
                 name = excel_sheet.cell(curr_row, name_column).value
                 value = excel_sheet.cell(curr_row, capitalization_column).value * milion
-                try:
-                    common.DAL.db_queries.insert_market_value(value, end_date, name)
-                except CompanyNotFoundError as err:
-                    print(err)
-                    common.DAL.db_queries.insert_company(company_name=name)
-                    common.DAL.db_queries.insert_market_value(value, end_date, name)
+                isin = None
+
+                save_value_to_database(name, isin, value, end_date, unification_info)
+
                 curr_row = curr_row + 1
         else:
             raise ParseError(path, '1: "ISIN" should be in B5 cell and "Nazwa" should be in C5 cell or 2: "Nazwa" '
                                    'should be in B5 cell')
+
+        if unification_info:
+            return ParsingResult(unification_info=unification_info)
 
     def get_date(self, end_date):
         if end_date is not None:

@@ -1,5 +1,5 @@
-{% extends '../base.html' %}
-{% block content %}
+{% extends './entitiesViewBase.html' %}
+{% block entity %}
 {% load static %}
 
 <div class="modal fade" id="create-modal" tabindex="-1" role="dialog" aria-hidden="true">
@@ -21,7 +21,7 @@
     <thead>
     <tr>
         <th scope="col">Company</th>
-        <th scope="col">Period end</th>
+        <th scope="col">Date</th>
         <th scope="col">Stock</th>
         <th scope="col">Change</th>
         <th scope="col">Open</th>
@@ -37,7 +37,7 @@
     {% for sq in stock %}
     <tr>
         <td>{{ sq.company_id }}</td>
-        <td>{{ sq.period_end|date:"Y-m-d" }}</td>
+        <td>{{ sq.date|date:"Y-m-d" }}</td>
         <td>{{ sq.stock }}</td>
         <td>{{ sq.change }}</td>
         <td>{{ sq.open }}</td>

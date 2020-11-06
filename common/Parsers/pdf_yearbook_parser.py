@@ -4,8 +4,8 @@ import re
 import collections
 import pandas as pd
 from datetime import date
-from common.DAL.db_queries import insert_market_value, insert_company
-from common.Utils.Errors import CompanyNotFoundError
+from common.Utils.gpw_db import save_value_to_database
+from common.Utils.parsing_result import ParsingResult
 
 
 class PdfYearbookParser:
@@ -37,6 +37,7 @@ class PdfYearbookParser:
         self.doc = None
         self.pdf_path = None
         self.date = None
+        self.unification_info = []
 
     # TODO errore
     def parse(self, pdf_path, year=None):
@@ -51,10 +52,11 @@ class PdfYearbookParser:
 
         dataframes = [self.process_page(page, page_num) for page_num, page in enumerate(self.doc.pages())]
         dataframes = [dataframe for dataframe in dataframes if dataframe is not None]
-        if dataframes:
-            return pd.concat(dataframes, ignore_index=True)
-        else:
+        if not dataframes:
             raise ValueError('No data found')
+
+        if self.unification_info:
+            return ParsingResult(unification_info=self.unification_info)
 
     def find_data_date(self):
         for page in self.doc.pages():
@@ -178,10 +180,6 @@ class PdfYearbookParser:
     def save_value_to_database(self, row):
         company_name = row[self.company_column]
         market_value = row[self.market_value_column]
+        company_isin = None
 
-        try:
-            insert_market_value(market_value, self.date, company_name)
-        except CompanyNotFoundError:
-            print(f'Company {company_name} not found')
-            insert_company(company_name)
-            self.save_value_to_database(row)
+        save_value_to_database(company_name, company_isin, market_value, self.date, self.unification_info)

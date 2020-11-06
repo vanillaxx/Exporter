@@ -219,7 +219,7 @@ def set_up_stock_quotes_table(connection):
     connection.execute('''CREATE TABLE IF NOT EXISTS StockQuotes
     (ID INTEGER PRIMARY KEY AUTOINCREMENT,
         CompanyID INTEGER NOT NULL,
-        'Period end' DATE NOT NULL,
+        Date DATE NOT NULL,
         Stock REAL NOT NULL,
         Change REAL,
         Open REAL,
@@ -250,13 +250,12 @@ def set_up_interval_table(connection):
         pass
 
 
-# TODO conflicts
 def set_up_market_values_table(connection):
     connection.execute('''CREATE TABLE IF NOT EXISTS MarketValues
         (ID INTEGER PRIMARY KEY AUTOINCREMENT,
         CompanyID INTEGER NOT NULL,
         'Period end' DATE,
-        MarketValue REAL NOT NULL,
+        'Market value' REAL NOT NULL,
         UNIQUE(CompanyID, 'Period end') ON CONFLICT IGNORE, 
         FOREIGN KEY(CompanyID) REFERENCES Company(ID)
         );''')

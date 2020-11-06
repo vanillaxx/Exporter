@@ -1,0 +1,17 @@
+{% extends '../base.html' %}
+{% block content %}
+{% load static %}
+<br>
+{% if messages %}
+<div class="alert alert-success">
+    {% for m in messages %}
+    <li
+    {% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ m }}</li>
+    {% endfor %}
+</div>
+{% endif %}
+<br>
+{% block entity %}
+{% endblock %}
+
+{% endblock %}

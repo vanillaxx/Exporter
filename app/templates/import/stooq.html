@@ -1,7 +1,9 @@
 {% extends '../base.html' %}
 
 {% block content %}
-    <br>
+{% load static %}
+
+<br>
 <h3>Import</h3>
 <h2>Stooq</h2>
 <div class="siteDescription">
@@ -20,7 +22,7 @@
     <h4>{{form.ticker_sheet}}</h4>
     {{form.ticker}}
 
-    <h4>{{form.company_sheet}}</h4>
+    <h4>{{form.company_sheet}}</h4><div class="annotation"> (this field will override ticker if selected)</div>
     {{form.company}}
 
     <h4>{{form.date_from_sheet}}</h4>
@@ -45,6 +47,11 @@
                 {% if error %}
                 {% include "import/overlapping_stooq_details.html" with error=error sheet='stooq' overlap=overlap %}
                 {% endif %}
+</div>
+<div id="unification-modal" class="modal fade" role="dialog">
+    {% if unification_form %}
+        {% include "import/company_unification_details.html" %}
+    {% endif %}
 </div>
 
 {{ form.errors }}

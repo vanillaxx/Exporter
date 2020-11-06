@@ -1,14 +1,6 @@
-{% extends '../base.html' %}
-{% block content %}
+{% extends './entitiesViewBase.html' %}
+{% block entity %}
 {% load static %}
-{% if messages %}
-<div class="alert alert-success">
-    {% for m in messages %}
-    <li
-    {% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ m }}</li>
-    {% endfor %}
-</div>
-{% endif %}
 <!-- Modal 1 with id="create-company"-->
 <div class="modal fade" id="create-modal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog">
@@ -58,8 +50,8 @@
         <td>{{ company.isin }}</td>
         <td>{{ company.ticker }}</td>
         <td>{{ company.bloomberg }}</td>
-        <td>{{ company.ekd_sectionid }}</td>
-        <td>{{ company.ekd_classid }}</td>
+        <td>{{ company.ekd_section_id }}</td>
+        <td>{{ company.ekd_class_id }}</td>
         <td>
             <!-- Update buttons -->
             <button type="button" id="update-company" class="bs-modal btn btn-sm btn-primary"
