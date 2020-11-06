@@ -8,5 +8,14 @@
     {% include "manage/overlapping_notoria_details.html" with error=error_bs sheet='bs' overlap=overlap_bs %}
     {% endif %}
 </div>
-
+<div id="pop-up-fr" class="modal fade" role="dialog">
+    {% if error_fr %}
+    {% include "manage/overlapping_notoria_details.html" with error=error_fr sheet='fr' overlap=overlap_fr %}
+    {% endif %}
+</div>
+<div id="pop-up-dp" class="modal fade" role="dialog">
+    {% if error_dp %}
+    {% include "manage/overlapping_notoria_details.html" with error=error_dp sheet='dp' overlap=overlap_dp %}
+    {% endif %}
+</div>
 {% endblock %}

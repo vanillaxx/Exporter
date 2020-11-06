@@ -1,4 +1,7 @@
+from collections import deque
+
 from django.contrib.messages.views import SuccessMessageMixin
+from django.db.models import Q
 from django.shortcuts import render
 from django.urls import reverse_lazy, reverse
 from django.http import HttpResponse, HttpResponseRedirect
@@ -11,7 +14,8 @@ import common.Export.export as export_methods
 from common.Utils.Errors import UniqueError, ParseError
 from .models import *
 from common.DAL.db_queries import replace_values, get_existing_data_balance_sheet, get_existing_data_ratios, \
-    merge_assets_categories, get_existing_data_stock_quotes
+    merge_assets_categories, get_existing_data_stock_quotes, get_existing_data_financial_ratios, \
+    get_existing_data_dupont_indicators
 import json
 import os.path
 import uuid
@@ -21,6 +25,7 @@ from common.DAL.db_queries import merge_assets, merge_assets_categories, merge_d
     delete_from_assets_categories, delete_from_dupont_indicators, delete_from_equity_liabilities, \
     delete_from_equity_liabilities_categories, delete_from_financial_ratios, delete_company
 from django.contrib import messages
+
 
 def index(request):
     return render(request, 'index.html')
@@ -326,85 +331,86 @@ class CompanyMergeView(SuccessMessageMixin, BSModalFormView):
         merge_financial_ratios(chosen_from, chosen_to)
         merge_dupont_indicators(chosen_from, chosen_to)
 
-        try:
-            overlapping_assets = Assets.objects.filter(company_id=chosen_from).order_by('date')
-        except Assets.DoesNotExist:
-            overlapping_assets = None
-        try:
-            overlapping_assets_categories = AssetsCategories.objects.filter(company_id=chosen_from).order_by('date')
-        except AssetsCategories.DoesNotExist:
-            overlapping_assets_categories = None
-        try:
-            overlapping_equity_liabilities = EquityLiabilities.objects.filter(company_id=chosen_from).order_by('date')
-        except EquityLiabilities.DoesNotExist:
-            overlapping_equity_liabilities = None
-        try:
-            overlapping_equity_liabilities_categories = EquityLiabilitiesCategories.objects.filter(
-                company_id=chosen_from).order_by('date')
-        except EquityLiabilitiesCategories.DoesNotExist:
-            overlapping_equity_liabilities_categories = None
-        if overlapping_assets or overlapping_assets_categories or overlapping_equity_liabilities or overlapping_equity_liabilities_categories:
-            if overlapping_assets:
-                assets_values = Assets.objects.filter(company_id=chosen_to,
-                                                      date__in=overlapping_assets.values("date")).values_list(flat=True)
+        overlapping_assets = Assets.objects.filter(company_id=chosen_from).order_by('date')
+        overlapping_assets_categories = AssetsCategories.objects.filter(company_id=chosen_from).order_by('date')
+        overlapping_equity_liabilities = EquityLiabilities.objects.filter(company_id=chosen_from).order_by('date')
+        overlapping_equity_liabilities_categories = EquityLiabilitiesCategories.objects.filter(
+            company_id=chosen_from).order_by('date')
+        overlapping_financial_ratios = FinancialRatios.objects.filter(company_id=chosen_from).order_by('period_start')
+        overlapping_dupont_indicators = DuPontIndicators.objects.filter(company_id=chosen_from).order_by('period_start')
 
-                values = list(map(lambda x: list(x.values())[1:], overlapping_assets.values_list(flat=True).values()))
-                exists = list(map(lambda x: list(x.values())[1:], assets_values.values()))
-                assets_dict = {"table_name": Assets.objects.model._meta.db_table,
-                               "columns": [f.get_attname_column()[1] for f in Assets._meta.get_fields() if
-                                           f.name != 'id'],
-                               "values": values,
-                               "exists": exists}
-            if overlapping_assets_categories:
-                assets_categories_values = AssetsCategories.objects.filter(company_id=chosen_to,
-                                                                           date__in=overlapping_assets_categories.values(
-                                                                               "date")).values_list(flat=True)
+        overlapping_balance_data = []
+        overlapping_financial_ratios_data = []
+        overlapping_dupont_indicators_data = []
 
-                values = list(
-                    map(lambda x: list(x.values())[1:], overlapping_assets_categories.values_list(flat=True).values()))
-                exists = list(map(lambda x: list(x.values())[1:], assets_categories_values.values()))
-                assets_categories_dict = {"table_name": AssetsCategories.objects.model._meta.db_table,
-                                          "columns": [f.get_attname_column()[1] for f in
-                                                      AssetsCategories._meta.get_fields() if f.name != 'id'],
-                                          "values": values,
-                                          "exists": exists}
-            if overlapping_equity_liabilities:
-                equity_liabilities_values = EquityLiabilities.objects.filter(company_id=chosen_to,
-                                                                             date__in=overlapping_equity_liabilities.values(
-                                                                                 "date")).values_list(flat=True)
+        def get_overlapping_data(model, overlapping_values, overlapping_data):
+            if model is FinancialRatios or model is DuPontIndicators:
+                overlapping_dates = overlapping_values.values_list("period_start", "period_end")
+                if model is FinancialRatios:
+                    merge_to_values = get_existing_data_financial_ratios(chosen_to, overlapping_dates)
+                elif model is DuPontIndicators:
+                    merge_to_values = get_existing_data_dupont_indicators(chosen_to, overlapping_dates)
+                merge_to_values = list(merge_to_values)
+            else:
+                merge_to = model.objects.filter(company_id=chosen_to,
+                                                date__in=overlapping_values.values("date")
+                                                ).order_by('date').values_list(flat=True)
+                merge_to_values = list(map(lambda x: list(x.values())[1:], merge_to.values()))
+            merge_from_values = list(
+                map(lambda x: list(x.values())[1:], overlapping_values.values_list(flat=True).values()))
+            index = 0
+            indexes = deque()
+            for f, t in zip(merge_from_values, merge_to_values):
+                if f[1:] == t[1:]:
+                    indexes.appendleft(index)
+                index += 1
 
-                values = list(
-                    map(lambda x: list(x.values())[1:], overlapping_equity_liabilities.values_list(flat=True).values()))
-                exists = list(map(lambda x: list(x.values())[1:], equity_liabilities_values.values()))
-                equity_liabilities_dict = {"table_name": EquityLiabilities.objects.model._meta.db_table,
-                                           "columns": [f.get_attname_column()[1] for f in
-                                                       EquityLiabilities._meta.get_fields() if f.name != 'id'],
-                                           "values": values,
-                                           "exists": exists}
-            if overlapping_equity_liabilities_categories:
-                equity_liabilities_categories_values = EquityLiabilitiesCategories.objects.filter(company_id=chosen_to,
-                                                                                                  date__in=overlapping_equity_liabilities_categories.values(
-                                                                                                      "date")).values_list(
-                    flat=True)
+            for i in indexes:
+                del merge_from_values[i]
+                del merge_to_values[i]
 
-                values = list(
-                    map(lambda x: list(x.values())[1:],
-                        overlapping_equity_liabilities_categories.values_list(flat=True).values()))
-                exists = list(map(lambda x: list(x.values())[1:], equity_liabilities_categories_values.values()))
-                equity_liabilities_categories_dict = {
-                    "table_name": EquityLiabilitiesCategories.objects.model._meta.db_table,
-                    "columns": [f.get_attname_column()[1] for f in EquityLiabilitiesCategories._meta.get_fields() if
-                                f.name != 'id'],
-                    "values": values,
-                    "exists": exists}
+            if merge_from_values:
+                result = {"table_name": model.objects.model._meta.db_table,
+                          "columns": [f.get_attname_column()[1] for f in model._meta.get_fields() if f.name != 'id'],
+                          "values": merge_from_values,
+                          "exists": merge_to_values}
+                overlapping_data.append(result)
+            return overlapping_data
 
-            error_bs = UniqueError(assets_dict, assets_categories_dict, equity_liabilities_dict,
-                                   equity_liabilities_categories_dict)
+        if overlapping_assets:
+            overlapping_balance_data = get_overlapping_data(Assets, overlapping_assets, overlapping_balance_data)
+        if overlapping_assets_categories:
+            overlapping_balance_data = get_overlapping_data(AssetsCategories, overlapping_assets_categories,
+                                                            overlapping_balance_data)
+        if overlapping_equity_liabilities:
+            overlapping_balance_data = get_overlapping_data(EquityLiabilities, overlapping_equity_liabilities,
+                                                            overlapping_balance_data)
+        if overlapping_equity_liabilities_categories:
+            overlapping_balance_data = get_overlapping_data(EquityLiabilitiesCategories,
+                                                            overlapping_equity_liabilities_categories,
+                                                            overlapping_balance_data)
+        if overlapping_financial_ratios:
+            overlapping_financial_ratios_data = get_overlapping_data(FinancialRatios, overlapping_financial_ratios,
+                                                                     overlapping_financial_ratios_data)
+        if overlapping_dupont_indicators:
+            overlapping_dupont_indicators_data = get_overlapping_data(DuPontIndicators, overlapping_dupont_indicators,
+                                                                      overlapping_dupont_indicators_data)
+
+        if overlapping_balance_data or overlapping_financial_ratios_data or overlapping_dupont_indicators_data:
+            error_bs = UniqueError(*overlapping_balance_data)
             overlap_bs = json.dumps(error_bs.overlapping_data, default=str)
+            error_fr = UniqueError(*overlapping_financial_ratios_data)
+            overlap_fr = json.dumps(error_fr.overlapping_data, default=str)
+            error_dp = UniqueError(*overlapping_dupont_indicators_data)
+            overlap_dp = json.dumps(error_dp.overlapping_data, default=str)
             return render(self.request, 'manage/home.html',
                           {"company_to_delete_id": chosen_from,
                            "error_bs": error_bs,
-                           "overlap_bs": overlap_bs})
+                           "overlap_bs": overlap_bs,
+                           "error_fr": error_fr,
+                           "overlap_fr": overlap_fr,
+                           "error_dp": error_dp,
+                           "overlap_dp": overlap_dp})
         else:
             delete_company(chosen_from)
             messages.success(self.request, self.success_message)
