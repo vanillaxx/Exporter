@@ -28,7 +28,7 @@ def put_percentage_data_to_csv(data, description, file_name, add_description=Tru
         csv_list = get_data_with_percentage_values(data, description, add_description)
         save_to_csv(csv_list, file_name)
     status = get_status(data)
-    print(status.get_message(file_name))
+    # print(status.get_message(file_name))
     return status
 
 
@@ -42,7 +42,7 @@ def put_data_to_csv(data, description, file_name, add_description=True):
             csv_list.append(row)
         save_to_csv(csv_list, file_name)
     status = get_status(data)
-    print(status.get_message(file_name))
+    # print(status.get_message(file_name))
     return status
 
 
@@ -165,23 +165,3 @@ functions = {'-da': export_detailed_assets,
              '-s': export_stock_quotes,
              '-mv': export_market_values
              }
-
-if __name__ == "__main__":
-
-    help = '''[option] [company]
-    options
-    -da - export detailed assets
-    -ca - export assets categories
-    -fa - export full assets
-    -de - export detailed equities
-    -ce - export equities categories
-    -fe - export full equities
-    -f - export financial ratio
-    -d - export Du Pont indicators
-    -v - export company values
-    -s - export stock quotes'''
-
-    if len(sys.argv) == 3 and sys.argv[1] in functions:
-        functions[sys.argv[1]](sys.argv[2], 'default.csv')
-    else:
-        print(help)

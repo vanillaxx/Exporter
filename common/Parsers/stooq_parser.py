@@ -20,7 +20,8 @@ class StooqParser:
         self._company_url_base = 'https://stooq.com/q/d/?s={company}&c=0&i={interval}&d1={year1:04d}{month1:02d}{day1:02d}&d2={year2:04d}{month2:02d}{day2:02d}&l={number}'
         self._tables_filter = re.compile(r'.*:.*')
         self._table_name = 'StockQuotes'
-        self._stock_attributes = ['CompanyID', 'Period end', 'Stock', 'Change', 'Open', 'High', 'Low', 'Volume', 'Turnover', 'Interval']
+        self._stock_attributes = ['CompanyID', 'Period end', 'Stock', 'Change', 'Open', 'High', 'Low', 'Volume',
+                                  'Turnover', 'Interval']
 
     # daily StockQuotes for given date for all available companies (contains turnover)
     def download_all_companies(self, user_date):
@@ -129,9 +130,10 @@ class StooqParser:
 
             else:
                 try:
-                    insert_stock_quotes((company_id, parsed_data, row['Last'],
-                                         row['Change.1'], row['Open'], row['High'], row['Low'], row['Volume'],
-                                         row['Turnover'], interval_id))
+                    insert_stock_quotes((company_id, parsed_data, float_or_none(row['Last']),
+                                         float_or_none(row['Change.1']), float_or_none(row['Open']),
+                                         float_or_none(row['High']), float_or_none(row['Low']),
+                                         float_or_none(row['Volume']), float_or_none(row['Turnover']), interval_id))
                 except IntegrityError:
                     if not overlapping_stock:
                         self._init_overlapping_info(overlapping_stock)
@@ -224,9 +226,10 @@ class StooqParser:
                 unification_info.add_data(stock_quotes)
             else:
                 try:
-                    insert_stock_quotes((company_id, parsed_date, row['Close'],
-                                         row['Change.1'], row['Open'], row['High'], row['Low'], row['Volume'], None,
-                                         interval_id))
+                    insert_stock_quotes((company_id, parsed_date, float_or_none(row['Close']),
+                                         float_or_none(row['Change.1']), float_or_none(row['Open']),
+                                         float_or_none(row['High']), float_or_none(row['Low']),
+                                         float_or_none(row['Volume']), None, interval_id))
                 except IntegrityError:
                     if not overlapping_stock:
                         self._init_overlapping_info(overlapping_stock)
@@ -284,3 +287,9 @@ def _convert_kmb(val):
         return int(lookup[unit] * number)
 
     return int(val)
+
+
+def float_or_none(val):
+    if val is None:
+        return None
+    return float(val)
