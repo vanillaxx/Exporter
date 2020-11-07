@@ -3,7 +3,9 @@ import fitz
 import collections
 import pandas as pd
 import numpy as np
-from common.Utils.gpw_db import save_value_to_database
+
+from common.Utils.Errors import UniqueError
+from common.Utils.gpw_utils import save_value_to_database
 from common.Utils.dates import *
 from common.Utils.parsing_result import ParsingResult
 
@@ -32,6 +34,7 @@ class PdfGPWParser:
         self.doc = None
         self.pdf_path = None
         self.date = None
+        self.overlapping_info = {}
         self.unification_info = []
 
     def parse(self, pdf_path, data_date=None):
@@ -45,6 +48,9 @@ class PdfGPWParser:
         dataframes = [dataframe for dataframe in dataframes if dataframe is not None]
         if not dataframes:
             raise ValueError('No data found')
+
+        if self.overlapping_info and self.overlapping_info['values']:
+            raise UniqueError(self.overlapping_info)
 
         if self.unification_info:
             return ParsingResult(unification_info=self.unification_info)
@@ -201,4 +207,5 @@ class PdfGPWParser:
         company_isin = row.get(self.isin_code_column)
         market_value = row[self.capitalisation_value_column]
 
-        save_value_to_database(company_name, company_isin, market_value, self.date, self.unification_info)
+        save_value_to_database(company_name, company_isin, market_value, self.date,
+                               self.overlapping_info, self.unification_info)

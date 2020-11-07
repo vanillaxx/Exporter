@@ -14,8 +14,6 @@ from common.Utils.parsing_result import ParsingResult
 from common.Utils.unification_info import UnificationInfo
 from .forms import *
 from .models import *
-from common.DAL.db_queries_get import get_existing_data_balance_sheet, get_existing_data_ratios, \
-    get_existing_data_stock_quotes, get_existing_data_financial_ratios, get_existing_data_dupont_indicators
 import json
 import os.path
 from django.contrib import messages
@@ -232,7 +230,25 @@ def import_gpw(request):
                 path = form.cleaned_data['path']
                 file_type = form.cleaned_data['file_type']
                 parser = parsers[file_type]()
-                result = parser.parse(path)
+                try:
+                    result = parser.parse(path)
+                except UniqueError as e:
+                    def remove_name(l):
+                        new_l = l.copy()
+                        new_l.pop(1)
+                        return new_l
+
+                    overlapping = e.overlapping_data[0].copy()
+                    overlapping['columns'] = overlapping['columns'].copy()
+                    overlapping['values'] = overlapping['values'].copy()
+
+                    overlapping['columns'].pop(1)
+                    overlapping['values'] = list(map(remove_name, overlapping['values']))
+
+                    return render(request, 'import/gpw.html',
+                                  {'form': GpwImportForm(),
+                                   'overlapping': e.overlapping_data[0],
+                                   'data': json.dumps([overlapping])})
 
                 if result is not None:
                     return render(request, 'import/gpw.html', {'form': GpwImportForm(),
@@ -395,6 +411,18 @@ def replace_data(request):
     return HttpResponse({'message': "Data replaced successfully"})
 
 
+def replace_data_multiple(request):
+    data = request.POST.get('data')
+    json_data = json.loads(data)
+    for data_to_replace in json_data:
+        table_name = data_to_replace['table_name']
+        columns = data_to_replace['columns']
+        values = data_to_replace['values']
+        for value in values:
+            replace_values(table_name, columns, value)
+    return HttpResponse({'message': "Data replaced successfully"})
+
+
 def replace_database(request):
     path = request.POST.get('path')
     _delete_all_info_from_database()
@@ -425,7 +453,7 @@ def insert_data(request):
 
             ui.insert_data_to_db(company_id)
 
-            if data_type is not None:
+            if data_type is None:
                 data_type = ui.get_data_type()
 
         return render(request, 'manage/home.html',

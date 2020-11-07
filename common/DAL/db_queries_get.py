@@ -1,6 +1,7 @@
 from common.DAL.db_utils import with_connection
 from common.Utils.company_unification import Company
 
+
 @with_connection
 def exactly_same_dupont_indicators(connection, columns, values):
     c = connection.cursor()
@@ -18,6 +19,7 @@ def exactly_same_dupont_indicators(connection, columns, values):
     c.execute(query)
     return c.fetchall()
 
+
 @with_connection
 def exactly_same_financial_ratios(connection, columns, values):
     c = connection.cursor()
@@ -34,6 +36,7 @@ def exactly_same_financial_ratios(connection, columns, values):
                                          condition=condition)
     c.execute(query)
     return c.fetchall()
+
 
 @with_connection
 def exactly_same_equity_liabilities_categories(connection, columns, values):
@@ -622,3 +625,18 @@ def get_existing_data_dupont_indicators(connection, company_id, overlapping_date
                ORDER BY DP."Period start", DP."Period end"'''.format(company_id=company_id, dates_condition=dates_condition)
     c.execute(query)
     return c.fetchall()
+
+
+@with_connection
+def get_existing_data_for_market_values(connection, company_id, date, market_value):
+    c = connection.cursor()
+    query = '''SELECT CompanyID, C.Name, "Period end", "Market value"
+               FROM MarketValues MV
+               JOIN Company C ON C.ID = MV.CompanyID
+               WHERE C.ID = ?
+               AND MV."Period end" = ?
+               AND MV."Market value" != ?'''
+
+    values = tuple([company_id, date, market_value])
+    c.execute(query, values)
+    return c.fetchone()

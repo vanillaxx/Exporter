@@ -21,7 +21,7 @@ class StooqParser:
         self._company_url_base = 'https://stooq.com/q/d/?s={company}&c=0&i={interval}&d1={year1:04d}{month1:02d}{day1:02d}&d2={year2:04d}{month2:02d}{day2:02d}&l={number}'
         self._tables_filter = re.compile(r'.*:.*')
         self._table_name = 'StockQuotes'
-        self._stock_attributes = ['CompanyID', 'Period end', 'Stock', 'Change', 'Open', 'High', 'Low', 'Volume',
+        self._stock_attributes = ['CompanyID', 'Date', 'Stock', 'Change', 'Open', 'High', 'Low', 'Volume',
                                   'Turnover', 'Interval']
 
     # daily StockQuotes for given date for all available companies (contains turnover)

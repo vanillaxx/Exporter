@@ -14,5 +14,10 @@
             {% include "import/company_unification_details.html" %}
         {% endif %}
     </div>
+    <div id="overlapping-modal" class="modal fade" role="dialog">
+        {% if overlapping %}
+            {% include "import/overlapping_gpw_details.html" %}
+        {% endif %}
+    </div>
 
 {% endblock %}
