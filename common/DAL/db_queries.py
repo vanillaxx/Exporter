@@ -914,8 +914,7 @@ def get_existing_data_financial_ratios(connection, company_id, overlapping_dates
                 JOIN Company C on FR.CompanyID = C.ID
                 WHERE FR.CompanyID = {company_id}
                 AND ( {dates_condition} )
-                ORDER BY FR."Period start"'''.format(company_id=company_id, dates_condition=dates_condition)
-    print(query)
+                ORDER BY FR."Period start", FR."Period end"'''.format(company_id=company_id, dates_condition=dates_condition)
     c.execute(query)
     return c.fetchall()
 
@@ -927,13 +926,13 @@ def get_existing_data_dupont_indicators(connection, company_id, overlapping_date
     overlapping_dates = [date for row in overlapping_dates for date in row]
     dates_condition = dates_condition % tuple(overlapping_dates)
 
-    query = '''SELECT C.ID, "Period start", "Period end", "Return on equity (ROE)", "Return on assets (ROA)",
+    query = '''SELECT C.ID, "Period start" timestamp, "Period end" timestamp, "Return on equity (ROE)", "Return on assets (ROA)",
                "Leverage (EM)", "Net profit margin", "Asset utilization (AU)", "Load gross profit",
                "Load operating profit", "Operating profit margin", "EBITDA margin"
                FROM DuPontIndicators DP  
                JOIN Company C ON C.ID = DP.CompanyID
                WHERE DP.CompanyID = {company_id}
-               AND ( {dates_condition} )'''.format(company_id=company_id, dates_condition=dates_condition)
-    print(query)
+               AND ( {dates_condition} )
+               ORDER BY DP."Period start", DP."Period end"'''.format(company_id=company_id, dates_condition=dates_condition)
     c.execute(query)
     return c.fetchall()

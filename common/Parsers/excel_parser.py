@@ -181,14 +181,6 @@ class ExcelParser():
                                                                                columns=assets_attributes,
                                                                                values=assets)
                         except IntegrityError:
-                            if not overlapping_assets:
-                                init_overlapping_info(overlapping_assets, "Assets", assets_attributes)
-                            overlapping_assets["values"].append(assets)
-                        try:
-                            common.DAL.db_queries.insert_values_without_ignore(table_name="Assets",
-                                                                           columns=assets_attributes,
-                                                                           values=assets)
-                        except IntegrityError:
                             if not exactly_same_assets(assets_attributes, assets):
                                 if not overlapping_assets:
                                     init_overlapping_info(overlapping_assets, "Assets", assets_attributes)
@@ -196,70 +188,41 @@ class ExcelParser():
 
                         try:
                             common.DAL.db_queries.insert_values_without_ignore(table_name="EquityLiabilities",
-                                                                           columns=equity_liabilities_attributes,
-                                                                           values=equity_liabilities)
+                                                                               columns=equity_liabilities_attributes,
+                                                                               values=equity_liabilities)
                         except IntegrityError:
                             if not exactly_same_equity_liabilities(equity_liabilities_attributes, equity_liabilities):
                                 if not overlapping_equity_liabilities:
                                     init_overlapping_info(overlapping_equity_liabilities,
-                                                      "EquityLiabilities",
-                                                      equity_liabilities_attributes)
-                            overlapping_equity_liabilities["values"].append(equity_liabilities)
-                        try:
-                            common.DAL.db_queries.insert_values_without_ignore(table_name="EquityLiabilities",
-                                                                               columns=equity_liabilities_attributes,
-                                                                               values=equity_liabilities)
-                        except IntegrityError:
-                            if not overlapping_equity_liabilities:
-                                init_overlapping_info(overlapping_equity_liabilities,
-                                                      "EquityLiabilities",
-                                                      equity_liabilities_attributes)
-                            overlapping_equity_liabilities["values"].append(equity_liabilities)
+                                                          "EquityLiabilities",
+                                                          equity_liabilities_attributes)
+                                overlapping_equity_liabilities["values"].append(equity_liabilities)
 
                         try:
                             common.DAL.db_queries.insert_values_without_ignore(table_name="AssetsCategories",
                                                                                columns=assets_categories_attributes,
                                                                                values=assets_categories)
                         except IntegrityError:
-                            if not overlapping_assets_categories:
-                                init_overlapping_info(overlapping_assets_categories,
-                                                      "AssetsCategories",
-                                                      assets_categories_attributes)
-                            overlapping_assets_categories["values"].append(assets_categories)
-                    try:
-                        common.DAL.db_queries.insert_values_without_ignore(table_name="AssetsCategories",
-                                                                           columns=assets_categories_attributes,
-                                                                           values=assets_categories)
-                    except IntegrityError:
-                        if not exactly_same_assets_categories(assets_categories_attributes, assets_categories):
-                            if not overlapping_assets_categories:
-                                init_overlapping_info(overlapping_assets_categories,
-                                                      "AssetsCategories",
-                                                      assets_categories_attributes)
-                            overlapping_assets_categories["values"].append(assets_categories)
+                            if not exactly_same_assets_categories(assets_categories_attributes, assets_categories):
+                                if not overlapping_assets_categories:
+                                    init_overlapping_info(overlapping_assets_categories,
+                                                          "AssetsCategories",
+                                                          assets_categories_attributes)
+                                overlapping_assets_categories["values"].append(assets_categories)
 
-                    try:
-                        common.DAL.db_queries.insert_values_without_ignore(table_name="EquityLiabilitiesCategories",
-                                                                           columns=equity_liabilities_categories_attributes,
-                                                                           values=equity_liabilities_categories)
-                    except IntegrityError:
-                        if not exactly_same_equity_liabilities_categories(equity_liabilities_categories_attributes,
-                                                                          equity_liabilities_categories):
-                            if not overlapping_equity_liabilities_categories:
-                                init_overlapping_info(overlapping_equity_liabilities_categories,
-                                                      "EquityLiabilitiesCategories",
-                                                      equity_liabilities_categories_attributes)
-                            overlapping_equity_liabilities_categories["values"].append(equity_liabilities_categories)
                         try:
                             common.DAL.db_queries.insert_values_without_ignore(table_name="EquityLiabilitiesCategories",
                                                                                columns=equity_liabilities_categories_attributes,
                                                                                values=equity_liabilities_categories)
                         except IntegrityError:
-                            if not overlapping_equity_liabilities_categories:
-                                init_overlapping_info(overlapping_equity_liabilities_categories,
-                                                      "EquityLiabilitiesCategories",
-                                                      equity_liabilities_categories_attributes)
-                            overlapping_equity_liabilities_categories["values"].append(equity_liabilities_categories)
+                            if not exactly_same_equity_liabilities_categories(equity_liabilities_categories_attributes,
+                                                                              equity_liabilities_categories):
+                                if not overlapping_equity_liabilities_categories:
+                                    init_overlapping_info(overlapping_equity_liabilities_categories,
+                                                          "EquityLiabilitiesCategories",
+                                                          equity_liabilities_categories_attributes)
+                                overlapping_equity_liabilities_categories["values"].append(
+                                    equity_liabilities_categories)
 
                     assets_attributes = ['CompanyID', 'Date']
                     assets_categories_attributes = ['CompanyID', 'Date']
@@ -340,8 +303,8 @@ class ExcelParser():
                             if not function_mapping[table_name](attributes, ratios):
                                 if not overlapping_ratios:
                                     init_overlapping_info(overlapping_ratios,
-                                                      table_name,
-                                                      attributes)
+                                                          table_name,
+                                                          attributes)
                                 overlapping_ratios["values"].append(ratios)
 
                     attributes = ['CompanyID', 'Period start', 'Period end']
@@ -354,7 +317,6 @@ class ExcelParser():
             raise UniqueError(overlapping_ratios)
         if unification_info is not None and unification_info.data:
             return ParsingResult([unification_info])
-
 
     def get_company_id_balance_sheet(self, path):
         company = self.parse_company(path)
