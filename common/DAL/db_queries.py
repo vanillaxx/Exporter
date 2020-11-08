@@ -2,6 +2,103 @@ from common.DAL.db_utils import with_connection
 from common.Utils.Errors import CompanyNotFoundError, DatabaseImportError
 from common.Utils.company_unification import Company
 
+@with_connection
+def exactly_same_dupont_indicators(connection, columns, values):
+    c = connection.cursor()
+    conditions = [j for i in zip(columns, values) for j in i]
+    condition = ' AND '.join([''' "{}" = {} '''] * (len(values) - 3))
+    condition = condition.format(*conditions[6:])
+    query = '''SELECT 1 FROM DuPontIndicators
+               WHERE CompanyID = {company_id}
+               AND "Period start" = '{start}'
+               AND "Period end" = '{end}'
+               AND {condition}'''.format(company_id=values[0],
+                                         start=values[1],
+                                         end=values[2],
+                                         condition=condition)
+    c.execute(query)
+    return c.fetchall()
+
+@with_connection
+def exactly_same_financial_ratios(connection, columns, values):
+    c = connection.cursor()
+    conditions = [j for i in zip(columns, values) for j in i]
+    condition = ' AND '.join([''' "{}" = {} '''] * (len(values) - 3))
+    condition = condition.format(*conditions[6:])
+    query = '''SELECT 1 FROM FinancialRatios
+               WHERE CompanyID = {company_id}
+               AND "Period start" = '{start}'
+               AND "Period end" = '{end}'
+               AND {condition}'''.format(company_id=values[0],
+                                         start=values[1],
+                                         end=values[2],
+                                         condition=condition)
+    c.execute(query)
+    return c.fetchall()
+
+@with_connection
+def exactly_same_equity_liabilities_categories(connection, columns, values):
+    c = connection.cursor()
+    conditions = [j for i in zip(columns, values) for j in i]
+    condition = ' AND '.join([''' "{}" = {} '''] * (len(values) - 2))
+    condition = condition.format(*conditions[4:])
+    query = '''SELECT 1 FROM EquityLiabilitiesCategories
+               WHERE CompanyID = {company_id}
+               AND Date = '{date}'
+               AND {condition}'''.format(company_id=values[0],
+                                         date=values[1],
+                                         condition=condition)
+    c.execute(query)
+    return c.fetchall()
+
+
+@with_connection
+def exactly_same_equity_liabilities(connection, columns, values):
+    c = connection.cursor()
+    conditions = [j for i in zip(columns, values) for j in i]
+    condition = ' AND '.join([''' "{}" = {} '''] * (len(values) - 2))
+    condition = condition.format(*conditions[4:])
+    query = '''SELECT 1 FROM EquityLiabilities
+               WHERE CompanyID = {company_id}
+               AND Date = '{date}'
+               AND {condition}'''.format(company_id=values[0],
+                                         date=values[1],
+                                         condition=condition)
+    c.execute(query)
+    return c.fetchall()
+
+
+@with_connection
+def exactly_same_assets_categories(connection, columns, values):
+    c = connection.cursor()
+    conditions = [j for i in zip(columns, values) for j in i]
+    condition = ' AND '.join([''' "{}" = {} '''] * (len(values) - 2))
+    condition = condition.format(*conditions[4:])
+    query = '''SELECT 1 FROM AssetsCategories
+               WHERE CompanyID = {company_id}
+               AND Date = '{date}'
+               AND {condition}'''.format(company_id=values[0],
+                                         date=values[1],
+                                         condition=condition)
+    c.execute(query)
+    return c.fetchall()
+
+
+@with_connection
+def exactly_same_assets(connection, columns, values):
+    c = connection.cursor()
+    conditions = [j for i in zip(columns, values) for j in i]
+    condition = ' AND '.join([''' "{}" = {} '''] * (len(values) - 2))
+    condition = condition.format(*conditions[4:])
+    query = '''SELECT 1 FROM Assets A
+               WHERE CompanyID = {company_id}
+               AND Date = '{date}'
+               AND {condition}'''.format(company_id=values[0],
+                                         date=values[1],
+                                         condition=condition)
+    c.execute(query)
+    return c.fetchall()
+
 
 @with_connection
 def delete_company(connection, company_id):
@@ -605,7 +702,10 @@ def get_existing_data_balance_sheet(connection, overlapping_data):
     table_name = overlapping_data["table_name"]
     query = ''''''
     values = overlapping_data["values"]
-    dates = tuple(map(lambda x: x[1], values))
+    if len(values) == 1:
+        dates = "('{}')".format(values[0][1])
+    else:
+        dates = tuple(map(lambda x: x[1], values))
     company_id = values[0][0]
     if table_name == "Assets":
         query = '''SELECT CompanyID, "Date",
@@ -620,19 +720,14 @@ def get_existing_data_balance_sheet(connection, overlapping_data):
                 FROM Assets 
                 WHERE CompanyID = {company_id} AND Date IN {dates} '''.format(company_id=company_id, dates=dates)
     elif table_name == "AssetsCategories":
-        query = '''SELECT CompanyID, "Date", "Non-current assets" + "Current assets" +
-                "Assets held for sale and discontinuing operations" +
-                "Called up capital" + "Own shares" AS Sum,
+        query = '''SELECT CompanyID, "Date",
                 "Non-current assets", "Current assets",
                 "Assets held for sale and discontinuing operations",
                 "Called up capital", "Own shares"
                  FROM AssetsCategories
                 WHERE CompanyID = {company_id} AND Date IN {dates} '''.format(company_id=company_id, dates=dates)
     elif table_name == "EquityLiabilitiesCategories":
-        query = '''SELECT CompanyID, "Date", 
-                "Equity shareholders of the parent" + "Non-controlling interests" +
-                "Non-current liabilities" + "Current liabilities" + 
-                "Liabilities related to assets held for sale and discontinued operations" AS Sum,
+        query = '''SELECT CompanyID, "Date",
                 "Equity shareholders of the parent", "Non-controlling interests",
                 "Non-current liabilities", "Current liabilities", 
                 "Liabilities related to assets held for sale and discontinued operations"
@@ -681,9 +776,11 @@ def get_existing_data_ratios(connection, overlapping_data):
     values = overlapping_data["values"]
     values_length = (len(values))
     for i in range(values_length - 1):
-        date_condition_template += ' ( "Period start" = "{start}" AND "Period end" = "{end}" ) OR'.format(start=values[i][1], end=values[i][2])
-    date_condition_template += ' ( "Period start" = "{start}" AND "Period end" = "{end}" )'.format(start=values[values_length - 1][1],
-                                                                                           end=values[values_length - 1][2])
+        date_condition_template += ' ( "Period start" = "{start}" AND "Period end" = "{end}" ) OR'.format(
+            start=values[i][1], end=values[i][2])
+    date_condition_template += ' ( "Period start" = "{start}" AND "Period end" = "{end}" )'.format(
+        start=values[values_length - 1][1],
+        end=values[values_length - 1][2])
     query = '''SELECT * FROM {table}  
               WHERE{date_condition}'''.format(table=overlapping_data["table_name"],
                                               date_condition=date_condition_template)
@@ -798,3 +895,44 @@ def merge_database(connection, path):
         connection.commit()
     except Exception as e:
         raise DatabaseImportError(e)
+
+
+
+@with_connection
+def get_existing_data_financial_ratios(connection, company_id, overlapping_dates):
+    c = connection.cursor()
+    dates_condition = ' OR '.join(['''( "Period start" = '%s' AND "Period end" = '%s' )'''] * len(overlapping_dates))
+    overlapping_dates = [date for row in overlapping_dates for date in row]
+    dates_condition = dates_condition % tuple(overlapping_dates)
+    query = '''SELECT C.ID, "Period start", "Period end", "Gross profit margin on sales", "Operating profit margin",
+                      "Gross profit margin", "Net profit margin", "Return on equity (ROE)", "Return on assets (ROA)",
+                      "Working capital ratio", "Current ratio", "Quick ratio", "Cash ratio", "Receivables turnover",
+                      "Inventory turnover", "The operating cycle", "Rotation commitments", "Cash conversion cycle",
+                      "Rotation assets", "Rotation of assets", "Assets ratio", "Debt ratio", "Debt service ratio",
+                      "Rate debt security" 
+                FROM FinancialRatios FR
+                JOIN Company C on FR.CompanyID = C.ID
+                WHERE FR.CompanyID = {company_id}
+                AND ( {dates_condition} )
+                ORDER BY FR."Period start", FR."Period end"'''.format(company_id=company_id, dates_condition=dates_condition)
+    c.execute(query)
+    return c.fetchall()
+
+
+@with_connection
+def get_existing_data_dupont_indicators(connection, company_id, overlapping_dates):
+    c = connection.cursor()
+    dates_condition = ' OR '.join(['''( "Period start" = '%s' AND "Period end" = '%s' )'''] * len(overlapping_dates))
+    overlapping_dates = [date for row in overlapping_dates for date in row]
+    dates_condition = dates_condition % tuple(overlapping_dates)
+
+    query = '''SELECT C.ID, "Period start" timestamp, "Period end" timestamp, "Return on equity (ROE)", "Return on assets (ROA)",
+               "Leverage (EM)", "Net profit margin", "Asset utilization (AU)", "Load gross profit",
+               "Load operating profit", "Operating profit margin", "EBITDA margin"
+               FROM DuPontIndicators DP  
+               JOIN Company C ON C.ID = DP.CompanyID
+               WHERE DP.CompanyID = {company_id}
+               AND ( {dates_condition} )
+               ORDER BY DP."Period start", DP."Period end"'''.format(company_id=company_id, dates_condition=dates_condition)
+    c.execute(query)
+    return c.fetchall()

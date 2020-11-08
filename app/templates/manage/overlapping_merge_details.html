@@ -90,8 +90,11 @@
         $('#pop-up-' + sheet).modal('show');
 
         $("#" + sheet + "-replace-button").click(function () {
+            errors_amount--;
             $.post('../merge_data', {
                     data: overlap,
+                    errors_amount: errors_amount,
+                    sheet: sheet,
                     'csrfmiddlewaretoken': csrf_token
                 },
                 function () {
@@ -99,10 +102,12 @@
                 });
 
         })
-        console.log(company_to_delete_id)
         $("#" + sheet + "-ignore-button").click(function () {
+            errors_amount--;
             $.post('../delete_data', {
                     company_to_delete_id: company_to_delete_id,
+                    sheet: sheet,
+                    errors_amount: errors_amount,
                     'csrfmiddlewaretoken': csrf_token
                 },
                 function () {

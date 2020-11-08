@@ -5,8 +5,27 @@
 {{ message }}
 <div id="pop-up-bs" class="modal fade" role="dialog">
     {% if error_bs %}
-    {% include "manage/overlapping_merge_details.html" with error=error_bs sheet='bs' overlap=overlap_bs %}
+        <div id="bs_is_overlapping">
+            {% include "manage/overlapping_merge_details.html" with error=error_bs sheet='bs' overlap=overlap_bs %}
+        </div>
     {% endif %}
 </div>
-
+<div id="pop-up-fr" class="modal fade" role="dialog">
+    {% if error_fr %}
+        <div id="fr_is_overlapping">
+            {% include "manage/overlapping_merge_details.html" with error=error_fr sheet='fr' overlap=overlap_fr %}
+        </div>
+    {% endif %}
+</div>
+<div id="pop-up-dp" class="modal fade" role="dialog">
+    {% if error_dp %}
+        <div id="dp_is_overlapping">
+            {% include "manage/overlapping_merge_details.html" with error=error_dp sheet='dp' overlap=overlap_dp %}
+        </div>
+    {% endif %}
+</div>
+<script>
+    var errors_amount = ($("#bs_is_overlapping").length == 0 ? 0 : 1 ) + ($("#fr_is_overlapping").length == 0 ? 0 : 1 ) + ($("#dp_is_overlapping").length == 0 ? 0 : 1 );
+    console.log(errors_amount)
+</script>
 {% endblock %}
