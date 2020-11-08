@@ -97,6 +97,9 @@ class EkdClass(models.Model):
     class Meta:
         managed = True
         db_table = 'EKDClass'
+        constraints = [
+            models.UniqueConstraint(fields=['value'], name='ekd_class_value_unique')
+        ]
 
 
 class EkdSection(models.Model):
@@ -109,6 +112,9 @@ class EkdSection(models.Model):
     class Meta:
         managed = True
         db_table = 'EKDSection'
+        constraints = [
+            models.UniqueConstraint(fields=['value'], name='ekd_section_value_unique')
+        ]
 
 
 class Company(models.Model):
@@ -137,6 +143,9 @@ class Company(models.Model):
     class Meta:
         managed = True
         db_table = 'Company'
+        constraints = [
+            models.UniqueConstraint(fields=['name', 'isin', 'ticker'], name='company_identification_unique')
+        ]
 
 
 class DuPontIndicators(models.Model):
