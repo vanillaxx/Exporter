@@ -4,7 +4,9 @@ import re
 import collections
 import pandas as pd
 from datetime import date
-from common.Utils.gpw_db import save_value_to_database
+
+from common.Utils.Errors import UniqueError
+from common.Utils.gpw_utils import save_value_to_database
 from common.Utils.parsing_result import ParsingResult
 
 
@@ -37,6 +39,7 @@ class PdfYearbookParser:
         self.doc = None
         self.pdf_path = None
         self.date = None
+        self.overlapping_info = {}
         self.unification_info = []
 
     # TODO errore
@@ -54,6 +57,9 @@ class PdfYearbookParser:
         dataframes = [dataframe for dataframe in dataframes if dataframe is not None]
         if not dataframes:
             raise ValueError('No data found')
+
+        if self.overlapping_info and self.overlapping_info['values']:
+            raise UniqueError(self.overlapping_info)
 
         if self.unification_info:
             return ParsingResult(unification_info=self.unification_info)
@@ -182,4 +188,5 @@ class PdfYearbookParser:
         market_value = row[self.market_value_column]
         company_isin = None
 
-        save_value_to_database(company_name, company_isin, market_value, self.date, self.unification_info)
+        save_value_to_database(company_name, company_isin, market_value, self.date,
+                               self.overlapping_info, self.unification_info)

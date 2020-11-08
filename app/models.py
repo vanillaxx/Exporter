@@ -336,6 +336,9 @@ class MarketValues(models.Model):
     class Meta:
         managed = True
         db_table = 'MarketValues'
+        constraints = [
+            models.UniqueConstraint(fields=['company_id', 'period_end'], name='market_values_company_date_unique')
+        ]
 
 
 class Interval(models.Model):

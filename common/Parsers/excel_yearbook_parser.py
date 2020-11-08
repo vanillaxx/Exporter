@@ -1,7 +1,9 @@
 import xlrd
 import re
 from datetime import date
-from common.Utils.gpw_db import save_value_to_database
+
+from common.Utils.Errors import UniqueError
+from common.Utils.gpw_utils import save_value_to_database
 from common.Utils.parsing_result import ParsingResult
 
 
@@ -10,6 +12,7 @@ class ExcelYearbookParser:
         self.workbook = None
         self.date = None
         self.unification_info = []
+        self.overlapping_info = {}
 
     def parse(self, pdf_path, year=None):
         self.workbook = xlrd.open_workbook(pdf_path)
@@ -17,6 +20,9 @@ class ExcelYearbookParser:
         data = [self.parse_sheet(sheet_name) for sheet_name in sheet_names]
         if not data:
             raise ValueError('No data found')
+
+        if self.overlapping_info and self.overlapping_info['values']:
+            raise UniqueError(self.overlapping_info)
 
         if self.unification_info:
             return ParsingResult(unification_info=self.unification_info)
@@ -68,7 +74,7 @@ class ExcelYearbookParser:
 
             if name and market_value:
                 market_value = market_value * multiplier
-                save_value_to_database(name, isin, market_value, self.date, self.unification_info)
+                save_value_to_database(name, isin, market_value, self.date, self.overlapping_info, self.unification_info)
                 data.append([name, isin, market_value])
         return data
 

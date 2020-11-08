@@ -1,7 +1,6 @@
-import common.DAL.db_queries
-from common.Utils.Errors import CompanyNotFoundError, ParseError
+from common.Utils.Errors import CompanyNotFoundError, ParseError, UniqueError
 from common.Utils.dates import *
-from common.Utils.gpw_db import save_value_to_database
+from common.Utils.gpw_utils import save_value_to_database
 import xlrd
 
 from common.Utils.parsing_result import ParsingResult
@@ -25,6 +24,7 @@ class ExcelGPWParser:
         values = []
         milion = 1e6
         unification_info = []
+        overlapping_info = {}
 
         end_date = self.get_date(end_date)
 
@@ -35,7 +35,7 @@ class ExcelGPWParser:
                 name = excel_sheet.cell(curr_row, name_column).value
                 value = excel_sheet.cell(curr_row, capitalization_column).value * milion
 
-                save_value_to_database(name, isin, value, end_date, unification_info)
+                save_value_to_database(name, isin, value, end_date, overlapping_info, unification_info)
 
                 curr_row = curr_row + 1
 
@@ -48,12 +48,15 @@ class ExcelGPWParser:
                 value = excel_sheet.cell(curr_row, capitalization_column).value * milion
                 isin = None
 
-                save_value_to_database(name, isin, value, end_date, unification_info)
+                save_value_to_database(name, isin, value, end_date, overlapping_info, unification_info)
 
                 curr_row = curr_row + 1
         else:
             raise ParseError(path, '1: "ISIN" should be in B5 cell and "Nazwa" should be in C5 cell or 2: "Nazwa" '
                                    'should be in B5 cell')
+
+        if overlapping_info and overlapping_info['values']:
+            raise UniqueError(overlapping_info)
 
         if unification_info:
             return ParsingResult(unification_info=unification_info)

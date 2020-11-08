@@ -256,7 +256,7 @@ def set_up_market_values_table(connection):
         CompanyID INTEGER NOT NULL,
         'Period end' DATE,
         'Market value' REAL NOT NULL,
-        UNIQUE(CompanyID, 'Period end') ON CONFLICT IGNORE, 
+        UNIQUE(CompanyID, 'Period end'), 
         FOREIGN KEY(CompanyID) REFERENCES Company(ID)
         );''')
 
