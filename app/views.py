@@ -340,10 +340,10 @@ def export(request):
                 success = [status for status in statuses if status is ExportStatus.SUCCESS]
                 if len(success) >= 1:
                     messages.success(request, ExportStatus.SUCCESS.get_message(file_name))
-                    return render(request, 'manage/home.html', {'form': ExportForm()})
+                    return render(request, 'export/export.html', {'form': ExportForm()})
                 else:
                     messages.success(request, ExportStatus.FAILURE.get_message(file_name))
-                    return render(request, 'manage/home.html', {'form': ExportForm()})
+                    return render(request, 'export/export.html', {'form': ExportForm()})
 
         else:
             form = ExportForm()
