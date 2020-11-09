@@ -1,6 +1,5 @@
-{% extends '../base.html' %}
-
-{% block content %}
+{% extends '../messagesBase.html' %}
+{% block entity %}
 {% load static %}
 
 <h2>Data import from Notoria</h2>
@@ -46,7 +45,7 @@
 </div>
 <div id="unification-modal" class="modal fade" role="dialog">
     {% if unification_form %}
-    {% include "import/company_unification_details.html" %}
+        {% include "import/company_unification_details.html" %}
     {% endif %}
 </div>
 

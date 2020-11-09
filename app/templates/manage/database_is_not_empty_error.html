@@ -38,7 +38,8 @@
                     'csrfmiddlewaretoken': csrf_token
                 },
                 function () {
-                    $('#' + sheet).html("Database replaced");
+                    $('#pop-up-' + sheet).modal('toggle');
+                    window.location.replace('./databaseImport');
                 });
         })
     })

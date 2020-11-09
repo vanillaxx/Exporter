@@ -1,5 +1,5 @@
 import sys
-import common.DAL.db_queries as db_queries
+import common.DAL.db_queries_get as db_queries
 from common.Export.save import save_to_csv
 from common.Utils.export_status import ExportStatus
 

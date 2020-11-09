@@ -1,14 +1,12 @@
 import xlrd
-import common.DAL.db_queries
-import sys
+import common.DAL.db_queries_insert
+import common.DAL.db_queries_get
 import datetime
 from calendar import monthrange
-import re
 from common.Utils.Errors import UniqueError, ParseError
 from sqlite3 import IntegrityError
-from common.DAL.db_queries import exactly_same_assets, exactly_same_assets_categories, exactly_same_equity_liabilities, \
+from common.DAL.db_queries_get import exactly_same_assets, exactly_same_assets_categories, exactly_same_equity_liabilities, \
     exactly_same_equity_liabilities_categories, exactly_same_financial_ratios, exactly_same_dupont_indicators
-
 from common.Utils.company_unification import Company
 from common.Utils.parsing_result import ParsingResult
 from common.Utils.unification_info import NotoriaUnificationInfo
@@ -29,8 +27,8 @@ def get_sheet(path, sheet_name):
 
 
 def insert_ekd_data(ekd_section, ekd_class):
-    common.DAL.db_queries.insert_ekd_section(ekd_section)
-    common.DAL.db_queries.insert_ekd_class(ekd_class)
+    common.DAL.db_queries_insert.insert_ekd_section(ekd_section)
+    common.DAL.db_queries_insert.insert_ekd_class(ekd_class)
 
 
 def insert_float_value(where, value):
@@ -177,9 +175,9 @@ class ExcelParser():
 
                     else:
                         try:
-                            common.DAL.db_queries.insert_values_without_ignore(table_name="Assets",
-                                                                               columns=assets_attributes,
-                                                                               values=assets)
+                            common.DAL.db_queries_insert.insert_values_without_ignore(table_name="Assets",
+                                                                                      columns=assets_attributes,
+                                                                                      values=assets)
                         except IntegrityError:
                             if not exactly_same_assets(assets_attributes, assets):
                                 if not overlapping_assets:
@@ -187,9 +185,9 @@ class ExcelParser():
                                 overlapping_assets["values"].append(assets)
 
                         try:
-                            common.DAL.db_queries.insert_values_without_ignore(table_name="EquityLiabilities",
-                                                                               columns=equity_liabilities_attributes,
-                                                                               values=equity_liabilities)
+                            common.DAL.db_queries_insert.insert_values_without_ignore(table_name="EquityLiabilities",
+                                                                                      columns=equity_liabilities_attributes,
+                                                                                      values=equity_liabilities)
                         except IntegrityError:
                             if not exactly_same_equity_liabilities(equity_liabilities_attributes, equity_liabilities):
                                 if not overlapping_equity_liabilities:
@@ -199,9 +197,9 @@ class ExcelParser():
                                 overlapping_equity_liabilities["values"].append(equity_liabilities)
 
                         try:
-                            common.DAL.db_queries.insert_values_without_ignore(table_name="AssetsCategories",
-                                                                               columns=assets_categories_attributes,
-                                                                               values=assets_categories)
+                            common.DAL.db_queries_insert.insert_values_without_ignore(table_name="AssetsCategories",
+                                                                                      columns=assets_categories_attributes,
+                                                                                      values=assets_categories)
                         except IntegrityError:
                             if not exactly_same_assets_categories(assets_categories_attributes, assets_categories):
                                 if not overlapping_assets_categories:
@@ -211,9 +209,9 @@ class ExcelParser():
                                 overlapping_assets_categories["values"].append(assets_categories)
 
                         try:
-                            common.DAL.db_queries.insert_values_without_ignore(table_name="EquityLiabilitiesCategories",
-                                                                               columns=equity_liabilities_categories_attributes,
-                                                                               values=equity_liabilities_categories)
+                            common.DAL.db_queries_insert.insert_values_without_ignore(table_name="EquityLiabilitiesCategories",
+                                                                                      columns=equity_liabilities_categories_attributes,
+                                                                                      values=equity_liabilities_categories)
                         except IntegrityError:
                             if not exactly_same_equity_liabilities_categories(equity_liabilities_categories_attributes,
                                                                               equity_liabilities_categories):
@@ -296,9 +294,9 @@ class ExcelParser():
 
                     else:
                         try:
-                            common.DAL.db_queries.insert_values_without_ignore(table_name=table_name,
-                                                                               columns=attributes,
-                                                                               values=ratios)
+                            common.DAL.db_queries_insert.insert_values_without_ignore(table_name=table_name,
+                                                                                      columns=attributes,
+                                                                                      values=ratios)
                         except IntegrityError:
                             if not function_mapping[table_name](attributes, ratios):
                                 if not overlapping_ratios:
@@ -321,10 +319,10 @@ class ExcelParser():
     def get_company_id_balance_sheet(self, path):
         company = self.parse_company(path)
 
-        company_id, possible_companies = common.DAL.db_queries.get_company(company)
+        company_id, possible_companies = common.DAL.db_queries_get.get_company(company)
 
         if company_id is None and not possible_companies:
-            company_id = common.DAL.db_queries.insert_company(company)
+            company_id = common.DAL.db_queries_insert.insert_company(company)
             return company_id, None
 
         elif possible_companies:
@@ -338,31 +336,3 @@ functions = {'bs': ep.parse_balance_sheet,
              'fr': ep.parse_financial_ratios,
              'dp': ep.parse_du_pont_indicators
              }
-
-if __name__ == "__main__":
-    help = '''[path] [option]
-    options
-    -b QS - parse QS of balance sheet
-    -b YS - parse YS of balance sheet
-    -f QS - parse QS of financial ratio
-    -f YS - parse YS of financial ratio
-    -d QS - parse QS of Du Pont indicators
-    -d YS - parse YS of Du Pont indicators'''
-
-    if len(sys.argv) < 3:
-        print(help)
-    elif sys.argv[2] == '-g':
-        excel_file = sys.argv[1]
-        end_date = sys.argv[3]
-        pattern = re.compile("\d\d\d\d-\d\d-\d\d")
-        if pattern.match(end_date):
-            functions[sys.argv[2]](excel_file, end_date)
-        else:
-            print("Pass end date in format YYYY-MM-DD")
-    else:
-        excel_file = sys.argv[1]
-        sheet = sys.argv[3]
-        try:
-            functions[sys.argv[2]](excel_file, sheet)
-        except ValueError as e:
-            print(e)

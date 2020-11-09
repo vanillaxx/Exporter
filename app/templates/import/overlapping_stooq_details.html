@@ -89,7 +89,7 @@
         $('#pop-up-' + sheet).modal('show');
 
         $("#" + sheet + "-replace-button").click(function () {
-            $.post('../replace_data', {
+            $.post('../replace_data_multiple', {
                     data: overlap,
                     'csrfmiddlewaretoken': csrf_token
                 },
@@ -97,6 +97,9 @@
                     $('#' + sheet).html("Data replaced successfully");
                 });
 
+        })
+        $("#" + sheet + "-ignore-button").click(function () {
+            $('#' + sheet).html("Data imported successfully. Data which overlapped ignored.");
         })
     })
 </script>

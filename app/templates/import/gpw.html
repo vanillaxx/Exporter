@@ -1,6 +1,5 @@
-{% extends '../base.html' %}
-
-{% block content %}
+{% extends '../messagesBase.html' %}
+{% block entity %}
 {% load static %}
 
 <h2>Data import from GPW</h2>
@@ -22,10 +21,15 @@
     </div>
 </form>
 
-<div id="unification-modal" class="modal fade" role="dialog">
-    {% if unification_form %}
-    {% include "import/company_unification_details.html" %}
-    {% endif %}
-</div>
+    <div id="unification-modal" class="modal fade" role="dialog">
+        {% if unification_form %}
+            {% include "import/company_unification_details.html" %}
+        {% endif %}
+    </div>
+    <div id="overlapping-modal" class="modal fade" role="dialog">
+        {% if overlapping %}
+            {% include "import/overlapping_gpw_details.html" %}
+        {% endif %}
+    </div>
 
 {% endblock %}
