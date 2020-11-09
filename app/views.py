@@ -19,7 +19,8 @@ import os.path
 from django.contrib import messages
 from bootstrap_modal_forms.generic import BSModalCreateView, BSModalUpdateView, BSModalDeleteView, BSModalFormView
 from common.DAL.db_queries_get import get_existing_data_balance_sheet, get_existing_data_ratios, \
-    get_existing_data_stock_quotes, get_existing_data_financial_ratios, get_existing_data_dupont_indicators
+    get_existing_data_stock_quotes, get_existing_data_financial_ratios, get_existing_data_dupont_indicators, \
+    get_existing_data_stock_quotes_merge
 from common.DAL.db_queries_merge import merge_assets, merge_assets_categories, merge_dupont_indicators, \
     merge_equity_liabilities_categories, merge_equity_liabilities, merge_financial_ratios
 from common.DAL.db_queries_delete import delete_from_assets, delete_from_assets_categories,\
@@ -609,7 +610,7 @@ class CompanyMergeView(SuccessMessageMixin, BSModalFormView):
         def add_overlapping_stock_quotes(model, overlapping_values, overlapping_data):
             overlapping_dates_intervals = overlapping_values.values_list("date", "interval")
             if model is StockQuotes:
-                merge_to_values = get_existing_data_stock_quotes(chosen_to, overlapping_dates_intervals)
+                merge_to_values = get_existing_data_stock_quotes_merge(chosen_to, overlapping_dates_intervals)
             merge_to_values = list(merge_to_values)
 
             merge_from_values = list(
