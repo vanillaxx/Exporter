@@ -91,12 +91,11 @@
         form_count++;
 
         let element = dates.clone();
-        //let element = $('div.input-group.date').slice(-2).clone();
-        element.first().find('input').attr('name', 'start_date_' + form_count);
-        element.first().find('input').attr('id', 'id_start_date_' + form_count);
+        element.children().first().find('input').attr('name', 'start_date_' + form_count);
+        element.children().first().find('input').attr('id', 'id_start_date_' + form_count);
 
-        element.last().find('input').attr('name', 'end_date_' + form_count);
-        element.last().find('input').attr('id', 'id_end_date_' + form_count);
+        element.children().last().find('input').attr('name', 'end_date_' + form_count);
+        element.children().last().find('input').attr('id', 'id_end_date_' + form_count);
 
         element.insertAfter($('div.form-row:last'));
 
