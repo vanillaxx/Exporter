@@ -6,33 +6,63 @@
 <div id="export_notoria_form">
     <form method="post">
         {% csrf_token %}
-        <label for="file_name">Pass file name: </label>
-        <input id="file_name" type="text" name="file_name" value="{{ file_name }}">
-        <select id="id_chosen_data" name="chosen_data" onchange="tableChange()">
-            <option value="-da">Detailed assets</option>
-            <option value="-ca">Assets categories</option>
-            <option value="-fa">Full assets</option>
-            <option value="-de">Detailed equity and liabilities</option>
-            <option value="-ce">Equity and liabilities categories</option>
-            <option value="-fe">Full equity and liabilities</option>
-            <option value="-f">Financial ratios</option>
-            <option value="-d">DuPont Indicators</option>
-            <option value="-s">Stock quotes</option>
-            <option value="-mv">Market values</option>
-        </select>
-        {{form.chosen_companies}}
-        <div id="id_chosen_interval_balance">{{form.chosen_interval_balance}}</div>
-        <div id="id_chosen_interval_ratios">{{form.chosen_interval_ratios}}</div>
-        <div id="id_chosen_interval_stooq">{{form.chosen_interval_stooq}}</div>
-        <div id="id_chosen_interval_gpw">{{form.chosen_interval_gpw}}</div>
-        {{form.date_ranges_count}}
-        <div id="dates">
-                <div>From: </div>{{form.start_date_0}}
-                <div>To: </div>{{form.end_date_0}}
-        </div>
+        <div class="col-sm-5 col-xs-5">
+            <div class="form-group m-3">
+                <label for="file_name">File name</label>
+                <input class="form-control" id="file_name" type="text" name="file_name" value="{{ file_name }}">
+            </div>
 
-        <button type="button" id="add-another">Add another</button>
-        <input type="submit" value="Export">
+            <div class="form-group m-3">
+                <label>Data type</label>
+                <select class="form-control" id="id_chosen_data" name="chosen_data" onchange="tableChange()">
+                    <option value="-da">Detailed assets</option>
+                    <option value="-ca">Assets categories</option>
+                    <option value="-fa">Full assets</option>
+                    <option value="-de">Detailed equity and liabilities</option>
+                    <option value="-ce">Equity and liabilities categories</option>
+                    <option value="-fe">Full equity and liabilities</option>
+                    <option value="-f">Financial ratios</option>
+                    <option value="-d">DuPont Indicators</option>
+                    <option value="-s">Stock quotes</option>
+                    <option value="-mv">Market values</option>
+                </select>
+            </div>
+            <div class="form-group m-3">
+                <label>Companies</label>
+                {{form.chosen_companies}}
+            </div>
+            <fieldset class="border m-3 p-2">
+                <legend class="form-legend">Frequency</legend>
+                <div id="id_chosen_interval_balance">{{form.chosen_interval_balance}}</div>
+                <div id="id_chosen_interval_ratios">{{form.chosen_interval_ratios}}</div>
+                <div id="id_chosen_interval_stooq">{{form.chosen_interval_stooq}}</div>
+                <div id="id_chosen_interval_gpw">{{form.chosen_interval_gpw}}</div>
+            </fieldset>
+            {{form.date_ranges_count}}
+            <fieldset class="border m-3 p-2">
+                <legend class="form-legend">Periods  <i id="add-another" data-toggle="tooltip"
+                   title="Add more periods"
+                   class="fas fa-plus">
+                </i></legend>
+                <div class="form-row">
+                    <div class="">
+                        <label>From:</label>
+                        <div style="width: 12em; margin-right: 4em;">
+                            {{form.start_date_0}}
+                        </div>
+                    </div>
+                    <div class="">
+                        <label>To:</label>
+                        <div style="width: 12em;">
+                            {{form.end_date_0}}
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
+            <div class="form-group float-md-right submit-button">
+                <input type="submit" class="btn-dark" value="Export">
+            </div>
+        </div>
     </form>
 </div>
 {{form.errors}}
@@ -55,20 +85,20 @@
         intervals[v] = balance_interval_elem
     })
 
-    let dates = $("#dates").children();
+    let dates = $(".form-row");
 
     $("#add-another").click(function () {
         form_count++;
 
         let element = dates.clone();
         //let element = $('div.input-group.date').slice(-2).clone();
-        element.first().find('input').attr('name','start_date_'+form_count);
-        element.first().find('input').attr('id','id_start_date_'+form_count);
+        element.first().find('input').attr('name', 'start_date_' + form_count);
+        element.first().find('input').attr('id', 'id_start_date_' + form_count);
 
-        element.last().find('input').attr('name','end_date_'+form_count);
-        element.last().find('input').attr('id','id_end_date_'+form_count);
+        element.last().find('input').attr('name', 'end_date_' + form_count);
+        element.last().find('input').attr('id', 'id_end_date_' + form_count);
 
-        element.insertAfter($('div.input-group.date').last('div'));
+        element.insertAfter($('div.form-row:last'));
 
         $("[name=date_ranges_count]").val(form_count);
     });
@@ -80,13 +110,16 @@
         })
         intervals[selected_value].show();
     }
-    $(document).ready(function(){
+
+    $(document).ready(function () {
         $('#id_chosen_interval_ratios').hide();
         $('#id_chosen_interval_stooq').hide();
         $('#id_chosen_interval_gpw').hide();
     })
-    window.onload = function() {
+    window.onload = function () {
 
     };
+
+    $('[data-toggle="tooltip"]').tooltip()
 </script>
 {% endblock %}
