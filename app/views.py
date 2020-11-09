@@ -93,6 +93,7 @@ def import_notoria(request):
                         overlap_dp = error_dp.overlapping_data
 
                 if error_bs or error_fr or error_dp:
+                    messages.success(request, "Parsed notoria successfully.")
                     return render(request, 'import/notoria.html',
                                   {'form': form,
                                    "error_bs": error_bs,
@@ -104,12 +105,13 @@ def import_notoria(request):
 
                 result = ParsingResult.combine_notoria_results(result_bs, result_dp, result_fr)
                 if result is not None:
+                    messages.success(request, "Parsed notoria successfully")
                     return render(request, 'import/notoria.html', {'form': NotoriaImportForm(),
                                                                    'unification_form':
                                                                        UnificationForm(unification=result.unification_info),
                                                                    'unification': result.to_json()})
 
-                messages.success(request, "Parsed notoria succsessfully")
+                messages.success(request, "Parsed notoria successfully")
                 return render(request, 'import/notoria.html', {'form': NotoriaImportForm()})
 
         return render(request, 'import/notoria.html', {'form': NotoriaImportForm()})
@@ -164,15 +166,15 @@ def import_stooq(request):
 
                     wrong_form = False
                     if not company and not ticker:
-                        messages.warning(request, "Wrong form: no company or ticker is provided")
+                        messages.warning(request, "Wrong form: no company or ticker is provided.")
                         wrong_form = True
 
                     if not date_from or not date_to:
-                        messages.warning(request, "Wrong form: no date from or to is provided")
+                        messages.warning(request, "Wrong form: no date from or to is provided.")
                         wrong_form = True
 
                     if date_from and date_to and date_to < date_from:
-                        messages.warning(request, "Wrong form: date from is larger then date to")
+                        messages.warning(request, "Wrong form: date from is larger then date to.")
                         wrong_form = True
 
                     if wrong_form:
@@ -193,14 +195,14 @@ def import_stooq(request):
                             messages.error(request, "Error occurred while parsing. " + type(e).__name__ + ": "+ str(e))
                             return render(request, 'import/stooq.html', {'form': StooqImportForm()})
                     else:
-                        messages.warning(request, "Wrong form")
+                        messages.warning(request, "Wrong form.")
                         return render(request, 'import/stooq.html', {'form': form})
 
                 else:
                     date = form.cleaned_data.get('date', None)
 
                     if not date:
-                        messages.warning(request, "Wrong form: no date is provided")
+                        messages.warning(request, "Wrong form: no date is provided.")
                         return render(request, 'import/stooq.html', {'form': form})
 
                     try:
@@ -228,7 +230,7 @@ def import_stooq(request):
                 messages.success(request, "Parsed stooq.com data successfully.")
                 return render(request, 'import/stooq.html', {'form': StooqImportForm()})
             else:
-                messages.warning(request, "Wrong form")
+                messages.warning(request, "Wrong form.")
                 return render(request, 'import/stooq.html', {'form': form})
 
         return render(request, 'import/stooq.html', {'form': StooqImportForm()})
@@ -266,6 +268,7 @@ def import_gpw(request):
                     overlapping['columns'].pop(1)
                     overlapping['values'] = list(map(remove_name, overlapping['values']))
 
+                    messages.success(request, 'Parsed GPW file successfully.')
                     return render(request, 'import/gpw.html',
                                   {'form': GpwImportForm(),
                                    'overlapping': e.overlapping_data[0],
@@ -278,6 +281,7 @@ def import_gpw(request):
                     return render(request, 'import/gpw.html', {'form': GpwImportForm()})
 
                 if result is not None:
+                    messages.success(request, 'Parsed GPW file successfully.')
                     return render(request, 'import/gpw.html', {'form': GpwImportForm(),
                                                                'unification_form':
                                                                    UnificationForm(unification=result.unification_info),
@@ -370,10 +374,10 @@ def export_database(request):
                     _delete_all_info_from_database()
 
                 if not copied_properly:
-                    messages.error(request, 'Cannot export database')
+                    messages.error(request, 'Cannot export database.')
                     return render(request, 'manage/databaseExport.html', {'form': form})
                 else:
-                    messages.success(request, 'Database exported successfully')
+                    messages.success(request, 'Database exported successfully.')
                     return render(request, 'manage/databaseExport.html', {'form': ExportDatabaseForm()})
 
         return render(request, 'manage/databaseExport.html', {'form': ExportDatabaseForm()})
@@ -495,7 +499,7 @@ def insert_data(request):
 class CompanyMergeView(SuccessMessageMixin, BSModalFormView):
     template_name = 'manage/companies/merge.html'
     form_class = MergeForm
-    success_message = 'Success: Companies were merged.'
+    success_message = 'Companies were merged.'
     success_url = reverse_lazy('companies')
 
     def form_valid(self, form):
@@ -741,7 +745,7 @@ def delete_data(request):
         delete_from_dupont_indicators(company_to_delete_id)
         delete_company(company_to_delete_id)
 
-    return HttpResponse({'message': "Data replaced successfully"})
+    return HttpResponse({'message': "Data replaced successfully."})
 
 # region database_private_methods
 
