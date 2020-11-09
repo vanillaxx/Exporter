@@ -569,7 +569,7 @@ def get_existing_data_stock_quotes(connection, overlapping_data):
 
 
 @with_connection
-def get_existing_data_stock_quotes(connection, company_id, overlapping_dates_intervals):
+def get_existing_data_stock_quotes_merge(connection, company_id, overlapping_dates_intervals):
     c = connection.cursor()
     dates_intervals_condition = ' OR '.join(['''( "Date" = '%s' AND "Interval" = '%s' )''']
                                                                 * len(overlapping_dates_intervals))
