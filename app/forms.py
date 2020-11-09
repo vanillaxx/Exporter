@@ -119,7 +119,8 @@ class StockQuotesModelForm(BSModalModelForm):
 class ExportForm(forms.Form):
     file_name = forms.CharField(label='File name:', max_length=100)
     company_choices = Company.objects.all().order_by('name')
-    chosen_companies = forms.ModelMultipleChoiceField(queryset=company_choices)
+    chosen_companies = forms.ModelMultipleChoiceField(queryset=company_choices,
+                                                      widget=forms.SelectMultiple(attrs={'class': 'form-control'}))
     date_ranges_count = forms.CharField(widget=forms.HiddenInput())
     choices_i = [('d', 'Daily'),
                  ('w', 'Weekly'),
@@ -131,9 +132,14 @@ class ExportForm(forms.Form):
     choices_i_ratios = choices_i[3:]
     choices_i_balance = choices_i_gpw[1:]
 
-    chosen_interval_balance = forms.ChoiceField(choices=choices_i_balance, initial='q', widget=forms.RadioSelect, required=False)
-    chosen_interval_ratios = forms.ChoiceField(choices=choices_i_ratios, initial='q', widget=forms.RadioSelect, required=False)
-    chosen_interval_stooq = forms.ChoiceField(choices=choices_i, initial='d', widget=forms.RadioSelect, required=False)
+    chosen_interval_balance = forms.ChoiceField(choices=choices_i_balance, initial='q',
+                                                widget=forms.RadioSelect(attrs={'class': 'radio-list'}),
+                                                required=False)
+    chosen_interval_ratios = forms.ChoiceField(choices=choices_i_ratios, initial='q',
+                                               widget=forms.RadioSelect(attrs={'class': 'radio-list'}),
+                                               required=False)
+    chosen_interval_stooq = forms.ChoiceField(choices=choices_i, initial='d',
+                                              widget=forms.RadioSelect(attrs={'class': 'radio-list'}), required=False)
     chosen_interval_gpw = forms.ChoiceField(choices=choices_i_gpw, initial=choices_i_gpw[0], widget=forms.RadioSelect)
 
     def __init__(self, *args, **kwargs):
@@ -147,13 +153,13 @@ class ExportForm(forms.Form):
                                                                                     widget=DatePickerInput(
                                                                                         format='%d/%m/%Y',
                                                                                         attrs={'type': 'date',
-                                                                                               'class': 'datepicker'}
+                                                                                               'class': 'datepicker form-control'}
                                                                                     ))
             self.fields['end_date_{index}'.format(index=index)] = forms.DateField(label='To: ',
                                                                                   widget=DatePickerInput(
                                                                                       format='%d/%m/%Y',
                                                                                       attrs={'type': 'date',
-                                                                                             'class': 'datepicker'}
+                                                                                             'class': 'datepicker form-control'}
                                                                                   ))
 
 
@@ -180,11 +186,14 @@ class NotoriaImportForm(forms.Form):
     choices_dp = [('YS', 'Yearly'),
                   ('QS', 'Quarterly')]
 
-    chosen_sheets_bs = forms.MultipleChoiceField(choices=choices_bs, widget=forms.CheckboxSelectMultiple,
+    chosen_sheets_bs = forms.MultipleChoiceField(choices=choices_bs,
+                                                 widget=forms.CheckboxSelectMultiple(attrs={'class': 'radio-list'}),
                                                  required=False)
-    chosen_sheets_fr = forms.MultipleChoiceField(choices=choices_fr, widget=forms.CheckboxSelectMultiple,
+    chosen_sheets_fr = forms.MultipleChoiceField(choices=choices_fr,
+                                                 widget=forms.CheckboxSelectMultiple(attrs={'class': 'radio-list'}),
                                                  required=False)
-    chosen_sheets_dp = forms.MultipleChoiceField(choices=choices_dp, widget=forms.CheckboxSelectMultiple,
+    chosen_sheets_dp = forms.MultipleChoiceField(choices=choices_dp,
+                                                 widget=forms.CheckboxSelectMultiple(attrs={'class': 'radio-list'}),
                                                  required=False)
 
     bs_sheet = 'Balance sheet'
@@ -193,18 +202,20 @@ class NotoriaImportForm(forms.Form):
 
 
 class StooqImportForm(forms.Form):
-    ticker = forms.CharField(label='Ticker of the company', max_length=20, required=False)
+    ticker = forms.CharField(label='Ticker of the company', max_length=20, required=False,
+                             widget=forms.TextInput(attrs={'class': 'form-control'}))
     company_choices = Company.objects.filter(ticker__isnull=False)
-    company = forms.ModelChoiceField(queryset=company_choices, required=False)
+    company = forms.ModelChoiceField(queryset=company_choices, required=False,
+                                     widget=forms.Select(attrs={'class': 'form-control'}))
     date_from = forms.DateTimeField(required=False, widget=DatePickerInput(format='%d.%m.%Y',
-                                                                            attrs={'type': 'date',
-                                                                                    'class': 'datepicker'}
-                                                                            ))
+                                                                           attrs={'type': 'date',
+                                                                                  'class': 'datepicker form-control'}
+                                                                           ))
     date_to = forms.DateTimeField(required=False, widget=DatePickerInput(
-                                                                        format='%d.%m.%Y',
-                                                                        attrs={'type': 'date',
-                                                                                'class': 'datepicker'}
-                                                                        ))
+        format='%d.%m.%Y',
+        attrs={'type': 'date',
+               'class': 'datepicker form-control'}
+    ))
 
     choices_interval = [('d', 'Daily'),
                         ('w', 'Weekly'),
@@ -212,7 +223,8 @@ class StooqImportForm(forms.Form):
                         ('q', 'Quarterly'),
                         ('y', 'Yearly')]
 
-    interval = forms.ChoiceField(choices=choices_interval, initial='d', widget=forms.RadioSelect, required=True)
+    interval = forms.ChoiceField(choices=choices_interval, initial='d',
+                                 widget=forms.RadioSelect(attrs={'class': "radio-list"}), required=True)
 
     ticker_sheet = 'Ticker'
     company_sheet = 'Company'
@@ -222,10 +234,10 @@ class StooqImportForm(forms.Form):
 
     date_sheet = 'Date'
     date = forms.DateTimeField(required=False, widget=DatePickerInput(
-                                                                    format='%d.%m.%Y',
-                                                                    attrs={'type': 'date',
-                                                                            'class': 'datepicker'}
-                                                                    ))
+        format='%d.%m.%Y',
+        attrs={'type': 'date',
+               'class': 'datepicker form-control'}
+    ))
 
 
 class GpwImportForm(forms.Form):
@@ -234,8 +246,9 @@ class GpwImportForm(forms.Form):
                ('statistics_excel', 'GPW Statistic Bulletin Excel'),
                ('statistics_pdf', 'GPW Statistic Bulletin PDF')]
 
-    file_type = forms.ChoiceField(label='Type of file', choices=choices, widget=forms.RadioSelect)
-    path = forms.CharField(label='Path to file')
+    file_type = forms.ChoiceField(label='Type of file', choices=choices,
+                                  widget=forms.RadioSelect(attrs={'class': 'radio-list'}))
+    path = forms.CharField(label='Path to file', widget=forms.TextInput(attrs={'class': 'form-control'}))
 
 
 class UnificationForm(BSModalForm):

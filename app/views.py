@@ -62,6 +62,7 @@ def import_notoria(request):
             form = NotoriaImportForm(request.POST)
             if form.is_valid():
                 file_path = request.POST.get('file_path', None)
+                print(file_path)
                 chosen_sheets_bs = form.cleaned_data.get('chosen_sheets_bs')
                 chosen_sheets_fr = form.cleaned_data.get('chosen_sheets_fr')
                 chosen_sheets_dp = form.cleaned_data.get('chosen_sheets_dp')

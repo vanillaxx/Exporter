@@ -2,49 +2,80 @@
 {% block entity %}
 {% load static %}
 
-<h3>Import</h3>
-<h2>Stooq</h2>
-<div class="siteDescription">
-    Import stock quotes from <a href="https://stooq.com/">https://stooq.com/</a> website. <br>
-    If "Import data for one company" option is chosen, there is an option to choose any company, any period of time and time interval
-    (if only stooq.com contains such data), but there will be no information about turnover. <br>
-    If "Import data for all companies" option is chosen, only daily stock quotes from a few days back
-    will be available, but it will download information about turnover.
+<div>
+    <h2>Data import from Stooq</h2>
+    <div class="description-font m-4">
+        Import stock quotes from <a href="https://stooq.com/">https://stooq.com/</a> website.
+    </div>
 </div>
 
 <form method="post">{% csrf_token %}
 
-    <input type="radio" id="radio_one" name="import_type" value="one" checked>
-    <label for="one">Import data for one company</label>
+    <div class="wrapper">
+        <div class="left">
+            <input type="radio" id="radio_one" name="import_type" value="one">
+            <label class="description-font" for="radio_one" data-toggle="tooltip"
+                   title="Choose any company, any period of time and time interval
+                    (if only stooq.com contains such data), but there is no information about turnover.">
+                Import data for one company
+            </label>
 
-    <h4>{{form.ticker_sheet}}</h4>
-    {{form.ticker}}
+            <div id="one_content" class="toggle-show form-group" style="display: none">
+                <div class="form-group">
+                    <label>{{form.ticker_sheet}}</label>
+                    {{form.ticker}}
+                </div>
+                <div class="form-group">
+                    <label>{{form.company_sheet}}</label>
+                    <i data-toggle="tooltip"
+                       title="This field will override ticker if selected"
+                       class="far fa-question-circle">
+                    </i>
+                    <div>
+                        {{form.company}}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>{{form.date_from_sheet}}</label>
+                    {{form.date_from}}
+                </div>
+                <div class="form-group">
+                    <label>{{form.date_to_sheet}}</label>
+                    {{form.date_to}}
+                </div>
+                <fieldset class="border p-2" style="margin-bottom: 1em">
+                    <legend class="form-legend">{{form.interval_sheet}}</legend>
+                    {{form.interval}}
+                </fieldset>
+                <div class="form-group float-md-right" style="margin-right: 1em">
+                    <button type="submit" class="btn-dark">Import</button>
+                </div>
+            </div>
+        </div>
 
-    <h4>{{form.company_sheet}}</h4><div class="annotation"> (this field will override ticker if selected)</div>
-    {{form.company}}
+        <div class="right">
+            <input type="radio" id="radio_all" name="import_type" value="all">
+            <label class="description-font" for="radio_all" data-toggle="tooltip" title="Only daily stock quotes from a few days back will be available,
+                    but it will download information about turnover.">Import data for all companies
+            </label>
 
-    <h4>{{form.date_from_sheet}}</h4>
-    {{form.date_from}}
-
-    <h4>{{form.date_to_sheet}}</h4>
-    {{form.date_to}}
-
-    <h4>{{form.interval_sheet}}</h4>
-    {{form.interval}}
-
-    <input type="radio" id="radio_all" name="import_type" value="all">
-    <label for="all">Import data for all companies</label>
-
-    <h4>{{form.date_sheet}}</h4>
-    {{form.date}}
-
-<button type="submit">Import</button>
+            <div id="all_content" class="toggle-show form-group" style="display: none">
+                <div class="form-group m-3">
+                    <label>{{form.date_sheet}}</label>
+                    {{form.date}}
+                </div>
+                <div class="form-group float-md-right" style="margin-right: 2em">
+                    <button type="submit" class="btn-dark">Import</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </form>
 
 <div id="pop-up-stooq" class="modal fade" role="dialog">
-                {% if error %}
-                {% include "import/overlapping_stooq_details.html" with error=error sheet='stooq' overlap=overlap %}
-                {% endif %}
+    {% if error %}
+    {% include "import/overlapping_stooq_details.html" with error=error sheet='stooq' overlap=overlap %}
+    {% endif %}
 </div>
 <div id="unification-modal" class="modal fade" role="dialog">
     {% if unification_form %}
@@ -54,5 +85,11 @@
 
 {{ form.errors }}
 {{ form.non_field_errors }}
-
+<script>
+    $('[data-toggle="tooltip"]').tooltip()
+    $("[name=import_type]").click(function () {
+        $('.toggle-show').hide();
+        $("#" + $(this).val() + "_content").show();
+    });
+</script>
 {% endblock %}

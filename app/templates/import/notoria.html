@@ -2,22 +2,31 @@
 {% block entity %}
 {% load static %}
 
-<h3>Import</h3>
-<h2>Notoria</h2>
+<h2>Data import from Notoria</h2>
 
 <form method="post">
     {% csrf_token %}
-    <h3>{{form.bs_sheet}}</h3>
-    {{form.chosen_sheets_bs}}
-    <h3>{{form.fr_sheet}}</h3>
-    {{form.chosen_sheets_fr}}
-    <h3>{{form.dp_sheet}}</h3>
-    {{form.chosen_sheets_dp}}
-    <br>
-    <label for="file_path">Pass path to file: </label>
-    <input id="file_path" type="text" name="file_path" value="{{ file_path }}">
-
-    <input type="submit" value="Import">
+    <div class="col-sm-4 col-xs-4">
+        <fieldset class="border m-3 p-2">
+            <legend class="form-legend">{{form.bs_sheet}}</legend>
+            {{form.chosen_sheets_bs}}
+        </fieldset>
+        <fieldset class="border m-3 p-2">
+            <legend class="form-legend">{{form.fr_sheet}}</legend>
+            {{form.chosen_sheets_fr}}
+        </fieldset>
+        <fieldset class="border m-3 p-2">
+            <legend class="form-legend">{{form.dp_sheet}}</legend>
+            {{form.chosen_sheets_dp}}
+        </fieldset>
+        <div class="form-group m-3">
+            <label for="file_path">Pass path to file: </label>
+            <input class="form-control" id="file_path" type="text" name="file_path" value="{{ file_path }}">
+        </div>
+        <div class="form-group float-md-right submit-button">
+            <input class="btn btn-dark" type="submit" value="Import">
+        </div>
+    </div>
 </form>
 <div id="pop-up-bs" class="modal fade" role="dialog">
     {% if error_bs %}

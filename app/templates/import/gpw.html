@@ -2,11 +2,24 @@
 {% block entity %}
 {% load static %}
 
-    <form method="post">{% csrf_token %}
-        <br>
-        {{ form }}
-        <button type="submit">Import</button>
-    </form>
+<h2>Data import from GPW</h2>
+
+<form method="post">{% csrf_token %}
+    <div class="col-sm-4 col-xs-4">
+        <fieldset class="border m-3 p-2"
+        ">
+        <legend class="form-legend">{{form.file_type.label}}</legend>
+        {{form.file_type}}
+        </fieldset>
+        <div class="form-group m-3">
+            <label>{{form.path.label}}</label>
+            {{form.path}}
+        </div>
+        <div class="form-group float-md-right submit-button">
+            <button type="submit" class="btn-dark">Import</button>
+        </div>
+    </div>
+</form>
 
     <div id="unification-modal" class="modal fade" role="dialog">
         {% if unification_form %}

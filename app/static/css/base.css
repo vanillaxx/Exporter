@@ -1,3 +1,64 @@
+header {
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+}
+
+main {
+    margin: 3em;
+}
+h2 {
+    text-align: center;
+    color: #495057;
+    font-weight: bold;
+    font-family: Verdana, Arial, sans-serif;
+    margin-bottom: 1em;
+}
+
+.description-font {
+    color: #495057;
+    font-family: Verdana, Arial, sans-serif;
+}
+
+.form-legend {
+    font-size: 16px;
+    margin: 0.5em;
+    width: auto;
+    color: #0c5460;
+    font-weight: bold;
+}
+
+.radio-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    margin-left: 0.5em;
+    color: #495057;
+}
+
+.form-row {
+    margin: 1em;
+    margin-top: 0;
+    color: #495057;
+}
+
+.left {
+    float: left;
+    margin-right: 150px;
+}
+
+.form-group>label {
+    color: #0c5460;
+    font-weight: bold;
+}
+
+.right {
+    float: left;
+}
+
+.submit-button {
+    margin-right: 3em;
+}
+
 h1 {
     text-align: center;
     color: #0c5460;
