@@ -569,6 +569,25 @@ def get_existing_data_stock_quotes(connection, overlapping_data):
 
 
 @with_connection
+def get_existing_data_stock_quotes(connection, company_id, overlapping_dates_intervals):
+    c = connection.cursor()
+    dates_intervals_condition = ' OR '.join(['''( "Date" = '%s' AND "Interval" = '%s' )''']
+                                                                * len(overlapping_dates_intervals))
+    overlapping_dates_intervals = [date_interval for row in overlapping_dates_intervals for date_interval in row]
+    dates_intervals_condition = dates_intervals_condition % tuple(overlapping_dates_intervals)
+
+    query = '''SELECT CompanyID, Date, Stock, Change, Open, High, Low,
+                  Volume, Turnover, Interval FROM StockQuotes
+                  WHERE CompanyID = {company_id}
+                  AND ( {dates_intervals_condition} )
+                  ORDER BY Date, Interval'''\
+        .format(company_id=company_id, dates_intervals_condition=dates_intervals_condition)
+
+    c.execute(query)
+    return c.fetchall()
+
+
+@with_connection
 def get_existing_data_ratios(connection, overlapping_data):
     c = connection.cursor()
     date_condition_template = ""

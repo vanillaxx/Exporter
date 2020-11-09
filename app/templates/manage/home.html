@@ -24,8 +24,18 @@
         </div>
     {% endif %}
 </div>
+<div id="pop-up-stock" class="modal fade" role="dialog">
+    {% if error_stock %}
+        <div id="stock_is_overlapping">
+            {% include "manage/overlapping_merge_details.html" with error=error_stock sheet='stock' overlap=overlap_stock %}
+        </div>
+    {% endif %}
+</div>
 <script>
-    var errors_amount = ($("#bs_is_overlapping").length == 0 ? 0 : 1 ) + ($("#fr_is_overlapping").length == 0 ? 0 : 1 ) + ($("#dp_is_overlapping").length == 0 ? 0 : 1 );
+    var errors_amount = ($("#bs_is_overlapping").length == 0 ? 0 : 1 )
+        + ($("#fr_is_overlapping").length == 0 ? 0 : 1 )
+        + ($("#dp_is_overlapping").length == 0 ? 0 : 1 )
+        + ($("#stock_is_overlapping").length == 0 ? 0 : 1 );
     console.log(errors_amount)
 </script>
 {% endblock %}
