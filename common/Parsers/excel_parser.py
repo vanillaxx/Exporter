@@ -1,10 +1,8 @@
 import xlrd
 import common.DAL.db_queries_insert
 import common.DAL.db_queries_get
-import sys
 import datetime
 from calendar import monthrange
-import re
 from common.Utils.Errors import UniqueError, ParseError
 from sqlite3 import IntegrityError
 from common.DAL.db_queries_get import exactly_same_assets, exactly_same_assets_categories, exactly_same_equity_liabilities, \
@@ -338,31 +336,3 @@ functions = {'bs': ep.parse_balance_sheet,
              'fr': ep.parse_financial_ratios,
              'dp': ep.parse_du_pont_indicators
              }
-
-if __name__ == "__main__":
-    help = '''[path] [option]
-    options
-    -b QS - parse QS of balance sheet
-    -b YS - parse YS of balance sheet
-    -f QS - parse QS of financial ratio
-    -f YS - parse YS of financial ratio
-    -d QS - parse QS of Du Pont indicators
-    -d YS - parse YS of Du Pont indicators'''
-
-    if len(sys.argv) < 3:
-        print(help)
-    elif sys.argv[2] == '-g':
-        excel_file = sys.argv[1]
-        end_date = sys.argv[3]
-        pattern = re.compile("\d\d\d\d-\d\d-\d\d")
-        if pattern.match(end_date):
-            functions[sys.argv[2]](excel_file, end_date)
-        else:
-            print("Pass end date in format YYYY-MM-DD")
-    else:
-        excel_file = sys.argv[1]
-        sheet = sys.argv[3]
-        try:
-            functions[sys.argv[2]](excel_file, sheet)
-        except ValueError as e:
-            print(e)

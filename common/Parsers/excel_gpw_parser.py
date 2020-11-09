@@ -1,4 +1,4 @@
-from common.Utils.Errors import CompanyNotFoundError, ParseError, UniqueError
+from common.Utils.Errors import ParseError, UniqueError
 from common.Utils.dates import *
 from common.Utils.gpw_utils import save_value_to_database
 import xlrd

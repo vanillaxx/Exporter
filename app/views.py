@@ -40,7 +40,7 @@ def error(request):
 
 
 def import_notoria(request):
-    def render_overlapping_data_popup(chosen_sheet, sheet_shortcut, get_existing_data_func):
+    def render_overlapping_data_popup(chosen_sheet, sheet_shortcut, get_existing_data_func, request):
         for sheet in chosen_sheet:
             try:
                 res = excel_parser.functions[sheet_shortcut](file_path, sheet)
@@ -49,6 +49,12 @@ def import_notoria(request):
                     existing = get_existing_data_func(data)
                     data["exists"] = list(map(lambda x: list(x), existing))
                 return e, None
+            except ParseError as e:
+                messages.error(request, e)
+                return render(request, 'import/notoria.html', {'form': NotoriaImportForm()})
+            except Exception as e:
+                messages.error(request, "Error occurred while parsing. " + type(e).__name__ + ": " + str(e))
+                return render(request, 'import/notoria.html', {'form': NotoriaImportForm()})
             return [], res
 
     try:
@@ -68,25 +74,27 @@ def import_notoria(request):
                 result_bs = None
                 result_fr = None
                 result_dp = None
+
                 if chosen_sheets_bs:
                     error_bs, result_bs = render_overlapping_data_popup(chosen_sheets_bs, 'bs',
-                                                                        get_existing_data_balance_sheet)
+                                                                        get_existing_data_balance_sheet, request)
                     if error_bs:
                         overlap_bs = error_bs.overlapping_data
 
                 if chosen_sheets_fr:
                     error_fr, result_fr = render_overlapping_data_popup(chosen_sheets_fr, 'fr',
-                                                                        get_existing_data_ratios)
+                                                                        get_existing_data_ratios, request)
                     if error_fr:
                         overlap_fr = error_fr.overlapping_data
 
                 if chosen_sheets_dp:
                     error_dp, result_dp = render_overlapping_data_popup(chosen_sheets_dp, 'dp',
-                                                                        get_existing_data_ratios)
+                                                                        get_existing_data_ratios, request)
                     if error_dp:
                         overlap_dp = error_dp.overlapping_data
 
                 if error_bs or error_fr or error_dp:
+                    messages.success(request, "Parsed notoria successfully.")
                     return render(request, 'import/notoria.html',
                                   {'form': form,
                                    "error_bs": error_bs,
@@ -98,16 +106,16 @@ def import_notoria(request):
 
                 result = ParsingResult.combine_notoria_results(result_bs, result_dp, result_fr)
                 if result is not None:
+                    messages.success(request, "Parsed notoria successfully")
                     return render(request, 'import/notoria.html', {'form': NotoriaImportForm(),
                                                                    'unification_form':
                                                                        UnificationForm(unification=result.unification_info),
                                                                    'unification': result.to_json()})
 
-                return render(request, 'manage/home.html', {'message': "Parsed notoria succsessfully"})
-        else:
-            form = NotoriaImportForm()
+                messages.success(request, "Parsed notoria successfully")
+                return render(request, 'import/notoria.html', {'form': NotoriaImportForm()})
 
-        return render(request, 'import/notoria.html', {'form': form})
+        return render(request, 'import/notoria.html', {'form': NotoriaImportForm()})
     except:
         return render(request, 'error.html')
 
@@ -157,14 +165,21 @@ def import_stooq(request):
 
                     interval = form.cleaned_data.get('interval', None)
 
+                    wrong_form = False
                     if not company and not ticker:
-                        return render(request, 'manage/home.html', {'message': "Wrong form"})
+                        messages.warning(request, "Wrong form: no company or ticker is provided.")
+                        wrong_form = True
 
-                    if (company or ticker) and (not date_from or not date_to):
-                        return render(request, 'manage/home.html', {'message': "Wrong form"})
+                    if not date_from or not date_to:
+                        messages.warning(request, "Wrong form: no date from or to is provided.")
+                        wrong_form = True
 
-                    if date_to and date_from and date_to < date_from and (company or ticker):
-                        return render(request, 'manage/home.html', {'message': "Wrong form"})
+                    if date_from and date_to and date_to < date_from:
+                        messages.warning(request, "Wrong form: date from is larger then date to.")
+                        wrong_form = True
+
+                    if wrong_form:
+                        return render(request, 'import/stooq.html', {'form': form})
 
                     if company:
                         ticker = company.ticker
@@ -175,24 +190,32 @@ def import_stooq(request):
                             if error:
                                 overlap = error.overlapping_data
                         except ParseError as e:
-                            message = "Parse error: " + e.details
-                            return render(request, 'manage/home.html', {'message': message})
+                            messages.error(request, e)
+                            return render(request, 'import/stooq.html', {'form': StooqImportForm()})
+                        except Exception as e:
+                            messages.error(request, "Error occurred while parsing. " + type(e).__name__ + ": "+ str(e))
+                            return render(request, 'import/stooq.html', {'form': StooqImportForm()})
                     else:
-                        return render(request, 'manage/home.html', {'message': "Wrong form"})
+                        messages.warning(request, "Wrong form.")
+                        return render(request, 'import/stooq.html', {'form': form})
 
                 else:
                     date = form.cleaned_data.get('date', None)
 
                     if not date:
-                        return render(request, 'manage/home.html', {'message': "Wrong form"})
+                        messages.warning(request, "Wrong form: no date is provided.")
+                        return render(request, 'import/stooq.html', {'form': form})
 
                     try:
                         error, result = parse_stooq_all_companies(date)
                         if error:
                             overlap = error.overlapping_data
                     except ParseError as e:
-                        message = "Parse error: " + e.details
-                        return render(request, 'manage/home.html', {'message': message})
+                        messages.error(request, e)
+                        return render(request, 'import/stooq.html', {'form': StooqImportForm()})
+                    except Exception as e:
+                        messages.error(request, "Error occurred while parsing. " + type(e).__name__ + ": "+ str(e))
+                        return render(request, 'import/stooq.html', {'form': StooqImportForm()})
 
                 if error:
                     return render(request, 'import/stooq.html',
@@ -205,14 +228,14 @@ def import_stooq(request):
                                                                      UnificationForm(unification=result.unification_info),
                                                                  'unification': result.to_json()})
 
-                return render(request, 'manage/home.html', {'message': "Parsed stooq.com data successfully"})
+                messages.success(request, "Parsed stooq.com data successfully.")
+                return render(request, 'import/stooq.html', {'form': StooqImportForm()})
             else:
-                return render(request, 'manage/home.html', {'message': "Wrong form"})
-        else:
-            form = StooqImportForm()
+                messages.warning(request, "Wrong form.")
+                return render(request, 'import/stooq.html', {'form': form})
 
-        return render(request, 'import/stooq.html', {'form': form})
-    except:
+        return render(request, 'import/stooq.html', {'form': StooqImportForm()})
+    except Exception as e:
         return render(request, 'error.html')
 
 
@@ -246,17 +269,27 @@ def import_gpw(request):
                     overlapping['columns'].pop(1)
                     overlapping['values'] = list(map(remove_name, overlapping['values']))
 
+                    messages.success(request, 'Parsed GPW file successfully.')
                     return render(request, 'import/gpw.html',
                                   {'form': GpwImportForm(),
                                    'overlapping': e.overlapping_data[0],
                                    'data': json.dumps([overlapping])})
+                except ParseError as e:
+                    messages.error(request, e)
+                    return render(request, 'import/gpw.html', {'form': GpwImportForm()})
+                except Exception as e:
+                    messages.error(request, "Error occurred while parsing. " + type(e).__name__ + ": " + str(e))
+                    return render(request, 'import/gpw.html', {'form': GpwImportForm()})
 
                 if result is not None:
+                    messages.success(request, 'Parsed GPW file successfully.')
                     return render(request, 'import/gpw.html', {'form': GpwImportForm(),
                                                                'unification_form':
                                                                    UnificationForm(unification=result.unification_info),
                                                                'unification': result.to_json()})
-                return render(request, 'manage/home.html', {'message': "Parsed GPW file successfully"})
+
+                messages.success(request, 'Parsed GPW file successfully.')
+                return render(request, 'import/gpw.html', {'form': GpwImportForm()})
         else:
             form = GpwImportForm()
 
@@ -274,7 +307,7 @@ def export(request):
                 if not file_name.endswith(".csv"):
                     file_name += ".csv"
                 if os.path.isfile(file_name):
-                    form.add_error('file_name', 'File with that name already exists.')
+                    messages.error(request, 'File with that name already exists.')
                     return render(request, 'export/export.html', {'form': form})
 
                 chosen_data = request.POST.get('chosen_data', None)
@@ -307,10 +340,11 @@ def export(request):
 
                 success = [status for status in statuses if status is ExportStatus.SUCCESS]
                 if len(success) >= 1:
-                    status = ExportStatus.SUCCESS
-                    return render(request, 'manage/home.html', {'message': status.get_message(file_name)})
+                    messages.success(request, ExportStatus.SUCCESS.get_message(file_name))
+                    return render(request, 'export/export.html', {'form': ExportForm()})
                 else:
-                    return render(request, 'manage/home.html', {'message': ExportStatus.FAILURE.get_message()})
+                    messages.success(request, ExportStatus.FAILURE.get_message(file_name))
+                    return render(request, 'export/export.html', {'form': ExportForm()})
 
         else:
             form = ExportForm()
@@ -341,10 +375,10 @@ def export_database(request):
                     _delete_all_info_from_database()
 
                 if not copied_properly:
-                    messages.error(request, 'Cannot export database')
+                    messages.error(request, 'Cannot export database.')
                     return render(request, 'manage/databaseExport.html', {'form': form})
                 else:
-                    messages.success(request, 'Database exported successfully')
+                    messages.success(request, 'Database exported successfully.')
                     return render(request, 'manage/databaseExport.html', {'form': ExportDatabaseForm()})
 
         return render(request, 'manage/databaseExport.html', {'form': ExportDatabaseForm()})
@@ -375,7 +409,7 @@ def import_database(request):
                 file = form.cleaned_data['file']
 
                 if not is_properly_database(file):
-                    messages.error(request, 'Chosen file is not of properly SQLite3 file type')
+                    messages.error(request, 'Chosen file is not of properly SQLite3 file type.')
                     return render(request, 'manage/databaseExport.html', {'form': form})
 
                 if not _is_database_empty():
@@ -385,7 +419,7 @@ def import_database(request):
 
                 merge_database(file)
 
-                messages.success(request, 'Database imported successfully')
+                messages.success(request, 'Database imported successfully.')
                 return render(request, 'manage/databaseImport.html', {'form': ImportDatabaseForm()})
 
         return render(request, 'manage/databaseImport.html', {'form': ImportDatabaseForm()})
@@ -409,7 +443,7 @@ def replace_data(request):
             listed_value = list(value)
             listed_value[0] = existing_company_id
             replace_values(table_name, columns, listed_value)
-    return HttpResponse({'message': "Data replaced successfully"})
+    return HttpResponse({'message': "Data replaced successfully."})
 
 
 def replace_data_multiple(request):
@@ -430,11 +464,11 @@ def replace_database(request):
     try:
         merge_database(path)
     except DatabaseImportError as e:
-        error = 'Cannot export database: {}'.format(e)
-        messages.error(request, 'Cannot export database')
-        return HttpResponse({'message': str(e)})
+        messages.error(request, e)
+        return HttpResponse(e)
 
-    return HttpResponse({'message': "Database replaced successfully"})
+    messages.success(request, "Database imported successfully.")
+    return HttpResponse("Database imported successfully.")
 
 
 def insert_data(request):
@@ -466,7 +500,7 @@ def insert_data(request):
 class CompanyMergeView(SuccessMessageMixin, BSModalFormView):
     template_name = 'manage/companies/merge.html'
     form_class = MergeForm
-    success_message = 'Success: Companies were merged.'
+    success_message = 'Companies were merged.'
     success_url = reverse_lazy('companies')
 
     def form_valid(self, form):
@@ -748,8 +782,7 @@ def delete_data(request):
         delete_from_dupont_indicators(company_to_delete_id)
         delete_company(company_to_delete_id)
 
-    return HttpResponse({'message': "Data replaced successfully"})
-
+    return HttpResponse({'message': "Data replaced successfully."})
 
 # region database_private_methods
 
@@ -800,7 +833,7 @@ class CompanyView(generic.ListView):
 class CompanyCreateView(BSModalCreateView):
     template_name = 'manage/companies/create.html'
     form_class = CompanyModelForm
-    success_message = 'Success: Company was created.'
+    success_message = 'Company was created.'
     success_url = reverse_lazy('companies')
 
 
@@ -808,14 +841,14 @@ class CompanyUpdateView(BSModalUpdateView):
     model = Company
     template_name = 'manage/companies/update.html'
     form_class = CompanyModelForm
-    success_message = 'Success: Company was updated.'
+    success_message = 'Company was updated.'
     success_url = reverse_lazy('companies')
 
 
 class CompanyDeleteView(BSModalDeleteView):
     model = Company
     template_name = 'manage/companies/delete.html'
-    success_message = 'Success: Company was deleted.'
+    success_message = 'Company was deleted.'
     success_url = reverse_lazy('companies')
 
 
@@ -828,7 +861,7 @@ class AssetsView(generic.ListView):
 class AssetsCreateView(BSModalCreateView):
     template_name = 'manage/assets/create.html'
     form_class = AssetsModelForm
-    success_message = 'Success: Assets was created.'
+    success_message = 'Assets was created.'
     success_url = reverse_lazy('assets')
 
 
@@ -836,14 +869,14 @@ class AssetsUpdateView(BSModalUpdateView):
     model = Assets
     template_name = 'manage/assets/update.html'
     form_class = AssetsModelForm
-    success_message = 'Success: Assets was updated.'
+    success_message = 'Assets was updated.'
     success_url = reverse_lazy('assets')
 
 
 class AssetsDeleteView(BSModalDeleteView):
     model = Assets
     template_name = 'manage/assets/delete.html'
-    success_message = 'Success: Assets was deleted.'
+    success_message = 'Assets was deleted.'
     success_url = reverse_lazy('assets')
 
 
@@ -856,7 +889,7 @@ class AssetsCategoryView(generic.ListView):
 class AssetsCategoryCreateView(BSModalCreateView):
     template_name = 'manage/assetsCategories/create.html'
     form_class = AssetsCategoryModelForm
-    success_message = 'Success: Assets category was created.'
+    success_message = 'Assets category was created.'
     success_url = reverse_lazy('assets_categories')
 
 
@@ -864,14 +897,14 @@ class AssetsCategoryUpdateView(BSModalUpdateView):
     model = AssetsCategories
     template_name = 'manage/assetsCategories/update.html'
     form_class = AssetsCategoryModelForm
-    success_message = 'Success: Assets category was updated.'
+    success_message = 'Assets category was updated.'
     success_url = reverse_lazy('assets_categories')
 
 
 class AssetsCategoryDeleteView(BSModalDeleteView):
     model = AssetsCategories
     template_name = 'manage/assetsCategories/delete.html'
-    success_message = 'Success: Assets category was deleted.'
+    success_message = 'Assets category was deleted.'
     success_url = reverse_lazy('assets_categories')
 
 
@@ -884,7 +917,7 @@ class DuPontIndicatorView(generic.ListView):
 class DuPontIndicatorCreateView(BSModalCreateView):
     template_name = 'manage/duPont/create.html'
     form_class = DuPointIndicatorModelForm
-    success_message = 'Success: DuPont indicator was created.'
+    success_message = 'DuPont indicator was created.'
     success_url = reverse_lazy('dupont')
 
 
@@ -892,14 +925,14 @@ class DuPontIndicatorUpdateView(BSModalUpdateView):
     model = DuPontIndicators
     template_name = 'manage/duPont/update.html'
     form_class = DuPointIndicatorModelForm
-    success_message = 'Success: DuPont indicator was updated.'
+    success_message = 'DuPont indicator was updated.'
     success_url = reverse_lazy('dupont')
 
 
 class DuPontIndicatorDeleteView(BSModalDeleteView):
     model = DuPontIndicators
     template_name = 'manage/duPont/delete.html'
-    success_message = 'Success: DuPont indicator was deleted.'
+    success_message = 'DuPont indicator was deleted.'
     success_url = reverse_lazy('dupont')
 
 
@@ -912,7 +945,7 @@ class EkdClassView(generic.ListView):
 class EkdClassCreateView(BSModalCreateView):
     template_name = 'manage/ekdClasses/create.html'
     form_class = EkdClassModelForm
-    success_message = 'Success: EKD class was created.'
+    success_message = 'EKD class was created.'
     success_url = reverse_lazy('ekd_classes')
 
 
@@ -920,14 +953,14 @@ class EkdClassUpdateView(BSModalUpdateView):
     model = EkdClass
     template_name = 'manage/ekdClasses/update.html'
     form_class = EkdClassModelForm
-    success_message = 'Success: EKD class was updated.'
+    success_message = 'EKD class was updated.'
     success_url = reverse_lazy('ekd_classes')
 
 
 class EkdClassDeleteView(BSModalDeleteView):
     model = EkdClass
     template_name = 'manage/ekdClasses/delete.html'
-    success_message = 'Success: EKD class was deleted.'
+    success_message = 'EKD class was deleted.'
     success_url = reverse_lazy('ekd_classes')
 
 
@@ -940,7 +973,7 @@ class EkdSectionView(generic.ListView):
 class EkdSectionCreateView(BSModalCreateView):
     template_name = 'manage/ekdSections/create.html'
     form_class = EkdSectionModelForm
-    success_message = 'Success: EKD section was created.'
+    success_message = 'EKD section was created.'
     success_url = reverse_lazy('ekd_sections')
 
 
@@ -948,14 +981,14 @@ class EkdSectionUpdateView(BSModalUpdateView):
     model = EkdSection
     template_name = 'manage/ekdSections/update.html'
     form_class = EkdSectionModelForm
-    success_message = 'Success: EKD section was updated.'
+    success_message = 'EKD section was updated.'
     success_url = reverse_lazy('ekd_sections')
 
 
 class EkdSectionDeleteView(BSModalDeleteView):
     model = EkdSection
     template_name = 'manage/ekdSections/delete.html'
-    success_message = 'Success: EKD section was deleted.'
+    success_message = 'EKD section was deleted.'
     success_url = reverse_lazy('ekd_sections')
 
 
@@ -968,7 +1001,7 @@ class EquityLiabilitiesView(generic.ListView):
 class EquityLiabilitiesCreateView(BSModalCreateView):
     template_name = 'manage/equityLiabilities/create.html'
     form_class = EquityLiabilitiesModelForm
-    success_message = 'Success: Equity Liabilities was created.'
+    success_message = 'Equity Liabilities was created.'
     success_url = reverse_lazy('equity_liabilities')
 
 
@@ -976,14 +1009,14 @@ class EquityLiabilitiesUpdateView(BSModalUpdateView):
     model = EquityLiabilities
     template_name = 'manage/equityLiabilities/update.html'
     form_class = EquityLiabilitiesModelForm
-    success_message = 'Success: EquityLiabilities was updated.'
+    success_message = 'EquityLiabilities was updated.'
     success_url = reverse_lazy('equity_liabilities')
 
 
 class EquityLiabilitiesDeleteView(BSModalDeleteView):
     model = EquityLiabilities
     template_name = 'manage/equityLiabilities/delete.html'
-    success_message = 'Success: EquityLiabilities was deleted.'
+    success_message = 'EquityLiabilities was deleted.'
     success_url = reverse_lazy('equity_liabilities')
 
 
@@ -996,7 +1029,7 @@ class EquityLiabilitiesCategoryView(generic.ListView):
 class EquityLiabilitiesCategoryCreateView(BSModalCreateView):
     template_name = 'manage/equityLiabilitiesCategories/create.html'
     form_class = EquityLiabilitiesCategoryModelForm
-    success_message = 'Success: Equity liabilities category was created.'
+    success_message = 'Equity liabilities category was created.'
     success_url = reverse_lazy('equity_liabilities_categories')
 
 
@@ -1004,14 +1037,14 @@ class EquityLiabilitiesCategoryUpdateView(BSModalUpdateView):
     model = EquityLiabilitiesCategories
     template_name = 'manage/equityLiabilitiesCategories/update.html'
     form_class = EquityLiabilitiesCategoryModelForm
-    success_message = 'Success: Equity liabilities category was updated.'
+    success_message = 'Equity liabilities category was updated.'
     success_url = reverse_lazy('equity_liabilities_categories')
 
 
 class EquityLiabilitiesCategoryDeleteView(BSModalDeleteView):
     model = EquityLiabilitiesCategories
     template_name = 'manage/equityLiabilitiesCategories/delete.html'
-    success_message = 'Success: Equity liabilities category was deleted.'
+    success_message = 'Equity liabilities category was deleted.'
     success_url = reverse_lazy('equity_liabilities_categories')
 
 
@@ -1024,7 +1057,7 @@ class FinancialRatiosView(generic.ListView):
 class FinancialRatiosCreateView(BSModalCreateView):
     template_name = 'manage/financial/create.html'
     form_class = FinancialRatiosModelForm
-    success_message = 'Success: Financial ratios was created.'
+    success_message = 'Financial ratios was created.'
     success_url = reverse_lazy('financial')
 
 
@@ -1032,14 +1065,14 @@ class FinancialRatiosUpdateView(BSModalUpdateView):
     model = FinancialRatios
     template_name = 'manage/financial/update.html'
     form_class = FinancialRatiosModelForm
-    success_message = 'Success: Financial ratios was updated.'
+    success_message = 'Financial ratios was updated.'
     success_url = reverse_lazy('financial')
 
 
 class FinancialRatiosDeleteView(BSModalDeleteView):
     model = FinancialRatios
     template_name = 'manage/financial/delete.html'
-    success_message = 'Success: Financial ratios was deleted.'
+    success_message = 'Financial ratios was deleted.'
     success_url = reverse_lazy('financial')
 
 
@@ -1052,7 +1085,7 @@ class MarketValueView(generic.ListView):
 class MarketValueCreateView(BSModalCreateView):
     template_name = 'manage/market/create.html'
     form_class = MarketValuesModelForm
-    success_message = 'Success: Market value was created.'
+    success_message = 'Market value was created.'
     success_url = reverse_lazy('market')
 
 
@@ -1060,14 +1093,14 @@ class MarketValueUpdateView(BSModalUpdateView):
     model = MarketValues
     template_name = 'manage/market/update.html'
     form_class = MarketValuesModelForm
-    success_message = 'Success: Market value was updated.'
+    success_message = 'Market value was updated.'
     success_url = reverse_lazy('market')
 
 
 class MarketValueDeleteView(BSModalDeleteView):
     model = MarketValues
     template_name = 'manage/market/delete.html'
-    success_message = 'Success: Market value was deleted.'
+    success_message = 'Market value was deleted.'
     success_url = reverse_lazy('market')
 
 
@@ -1080,7 +1113,7 @@ class StockQuoteView(generic.ListView):
 class StockQuoteCreateView(BSModalCreateView):
     template_name = 'manage/stock/create.html'
     form_class = StockQuotesModelForm
-    success_message = 'Success: Stock quote was created.'
+    success_message = 'Stock quote was created.'
     success_url = reverse_lazy('stock')
 
 
@@ -1088,14 +1121,14 @@ class StockQuoteUpdateView(BSModalUpdateView):
     model = StockQuotes
     template_name = 'manage/stock/update.html'
     form_class = StockQuotesModelForm
-    success_message = 'Success: Stock quote was updated.'
+    success_message = 'Stock quote was updated.'
     success_url = reverse_lazy('stock')
 
 
 class StockQuoteDeleteView(BSModalDeleteView):
     model = StockQuotes
     template_name = 'manage/stock/delete.html'
-    success_message = 'Success: Stock quote was deleted.'
+    success_message = 'Stock quote was deleted.'
     success_url = reverse_lazy('stock')
 
 # endregion

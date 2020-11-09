@@ -1,0 +1,19 @@
+{% extends './base.html' %}
+{% block content %}
+{% load static %}
+<br>
+
+{% if messages %}
+    {% for m in messages %}
+        {% if m.tags == "success" %}<div class="alert alert-success" style="z-index: -1">{{ m }}</div>{% endif %}
+        {% if m.tags == "error" %} <div class="alert alert-danger" style="z-index: -1">{{ m }}</div>{% endif %}
+        {% if m.tags == "warning" %} <div class="alert alert-warning" style="z-index: -1">{{ m }}</div>{% endif %}
+        {% if m.tags == "info" %} <div class="alert alert-info" style="z-index: -1">{{ m }}</div>{% endif %}
+        {% if m.tags == "debug" %} <div class="alert alert-dark" style="z-index: -1">{{ m }}</div>{% endif %}
+    {% endfor %}
+{% endif %}
+
+{% block entity %}
+{% endblock %}
+
+{% endblock %}
