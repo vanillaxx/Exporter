@@ -7,9 +7,8 @@ from calendar import monthrange
 import re
 from common.Utils.Errors import UniqueError, ParseError
 from sqlite3 import IntegrityError
-from common.DAL.db_queries import exactly_same_assets, exactly_same_assets_categories, exactly_same_equity_liabilities, \
+from common.DAL.db_queries_get import exactly_same_assets, exactly_same_assets_categories, exactly_same_equity_liabilities, \
     exactly_same_equity_liabilities_categories, exactly_same_financial_ratios, exactly_same_dupont_indicators
-
 from common.Utils.company_unification import Company
 from common.Utils.parsing_result import ParsingResult
 from common.Utils.unification_info import NotoriaUnificationInfo
