@@ -1,10 +1,7 @@
 <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content" style="width: 1000px">
         <div class="modal-header">
-            <h3 class="modal-title">Data for these companies and dates already exists</h3>
-            <button type="button" class="close" data-dismiss="modal">
-                <span aria-hidden="true">&times;</span><span class="sr-only">Close</span>
-            </button>
+            <h5 class="modal-title">Data for these companies and dates already exists</h5>
         </div>
         <div id="gpw-overlapping" class="container">
             <div class="modal-body">
@@ -63,6 +60,10 @@
                 </button>
             </div>
         </div>
+        <div id="{{ sheet | escapejs}}-close-button" class="form-group modal-footer submit-button"
+             style="display: none">
+            <span class="btn btn-dark" data-dismiss="modal" aria-label="Close">Close</span>
+        </div>
     </div>
 </div>
 
@@ -93,12 +94,14 @@
                     'csrfmiddlewaretoken': csrf_token
                 },
                 function () {
-                    $('#gpw-overlapping').html("Data replaced successfully.");
+                    $('#gpw-overlapping').html("<div class='modal-body'>Data replaced successfully</div>");
+                    $('#gpw-overlapping').show();
                 });
 
         });
         $('#ignore-button').click(function () {
-            $('#gpw-overlapping').html("Data imported successfully. Overlapping data ignored.");
+            $('#gpw-overlapping').html("<div class='modal-body'>Data imported successfully. Data which overlapped ignored.</div>");
+            $('#gpw-overlapping').show();
         });
     })
 </script>

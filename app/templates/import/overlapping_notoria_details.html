@@ -1,15 +1,12 @@
 <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content" style="width: 1000px">
         <div class="modal-header">
-            <h3>Data for such company and dates already exists.</h3>
-            <button type="button" class="close" data-dismiss="modal">
-                <span aria-hidden="true">&times;</span><span class="sr-only">Close</span>
-            </button>
+            <h5>Data for such company and dates already exists.</h5>
         </div>
         <div id="{{ sheet | escapejs }}" class="container">
             {% for data in error.overlapping_data %}
-            <h3> {{ data.table_name }} </h3>
             <div class="modal-body">
+                <h5> {{ data.table_name }} </h5>
                 <h5 class="modal-title">
                     Data imported from file
                 </h5>
@@ -72,6 +69,10 @@
                 </button>
             </div>
         </div>
+        <div id="{{ sheet | escapejs}}-close-button" class="form-group modal-footer submit-button"
+             style="display: none">
+            <span class="btn btn-dark" data-dismiss="modal" aria-label="Close">Close</span>
+        </div>
     </div>
 </div>
 <script type="text/javascript" src="/static/js/bootstrap.js"></script>
@@ -98,12 +99,14 @@
                     'csrfmiddlewaretoken': csrf_token
                 },
                 function () {
-                    $('#' + sheet).html("Data replaced successfully");
+                    $('#' + sheet).html("<div class='modal-body'>Data replaced successfully</div>");
+                    $('#' + sheet + '-close-button').show();
                 });
 
         })
         $("#" + sheet + "-ignore-button").click(function () {
-            $('#' + sheet).html("Data imported successfully. Data which overlapped ignored.");
+            $('#' + sheet).html("<div class='modal-body'>Data imported successfully. Data which overlapped ignored.</div>");
+            $('#' + sheet + '-close-button').show();
         })
     })
 </script>
