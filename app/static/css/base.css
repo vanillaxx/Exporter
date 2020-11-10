@@ -1,21 +1,41 @@
+:root {
+    --primary-green: #003300;
+    --second-gray: #495057;
+}
+
 header {
     margin-top: 1.5em;
     margin-bottom: 0.5em;
 }
 
+body {
+    font-family: Arial, sans-serif;
+    color: black;
+}
+
 main {
     margin: 3em;
 }
+
+h1 {
+    text-align: center;
+    color: var(--primary-green);
+    font-size: 46px;
+    font-family: Verdana, Arial, sans-serif;
+    letter-spacing: 5px;
+    font-weight: bold;
+}
+
 h2 {
     text-align: center;
-    color: #495057;
+    color: var(--primary-green);
     font-weight: bold;
     font-family: Verdana, Arial, sans-serif;
     margin-bottom: 1em;
 }
 
 .description-font {
-    color: #495057;
+    color: var(--second-gray);
     font-family: Verdana, Arial, sans-serif;
 }
 
@@ -23,7 +43,7 @@ h2 {
     font-size: 16px;
     margin: 0.5em;
     width: auto;
-    color: #0c5460;
+    color: var(--primary-green);
     font-weight: bold;
 }
 
@@ -32,13 +52,13 @@ h2 {
     padding: 0;
     margin: 0;
     margin-left: 0.5em;
-    color: #495057;
+    color: var(--second-gray);
 }
 
 .form-row {
     margin: 1em;
     margin-top: 0;
-    color: #495057;
+    color: var(--second-gray);
 }
 
 .left {
@@ -46,39 +66,41 @@ h2 {
     margin-right: 150px;
 }
 
-.form-group>label {
-    color: #0c5460;
-    font-weight: bold;
-}
-
 .right {
     float: left;
+}
+
+.form-group > label {
+    color: var(--primary-green);
+    font-weight: bold;
 }
 
 .submit-button {
     margin-right: 3em;
 }
 
-h1 {
+nav {
     text-align: center;
-    color: #0c5460;
-    font-size: 46px;
-    font-family: Verdana, Arial, sans-serif;
-    letter-spacing: 5px;
-    font-weight: bold;
 }
 
-body {
-    font-family: Arial, sans-serif;
-    color: #000000;
-}
-
-.buttons {
+.menu-dropdown {
     display: inline-block;
+    position: relative;
+}
+
+.menu-dropdown:hover .menu-dropdown-options {
+    display: block;
+}
+
+.menu-dropdown:hover .menu-button {
+    background-color: #696969;
+}
+
+.menu-button {
     width: 250px;
     border: none;
-    background-color: #e2e6ea;
-    color: #222222;
+    background-color: #808080;
+    color: #FFFFFF;
     text-transform: uppercase;
     font-size: 12px;
     cursor: pointer;
@@ -88,42 +110,25 @@ body {
     font-weight: bold;
 }
 
-#button-div {
-    text-align: center;
-}
-
-.menu-options {
+.menu-dropdown-options {
+    display: none;
     position: absolute;
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
-    background-color: #e2e6ea;
-    width: 250px;
-    color: #222222;
-}
-
-.menu-options a {
-    color: #222222;
-}
-
-.menu-options li {
-    border-top: 1px solid #888888;
+    background-color: #f1f1f1;
     font-size: 15px;
+    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+    z-index: 1;
+    left: 2%;
+}
+
+.menu-dropdown-options a {
+    display: block;
+    font-size: 15px;
+    color: black;
     padding: 6px 10px;
+    min-width: 250px;
+    text-decoration: none;
 }
 
-.menu-options li.last-child {
-    border: none;
-}
-
-#import-options {
-    left: 50%;
-    margin-left: 2px;
-    transform: translateX(-155%);
-}
-
-#manage-options {
-    left: 50%;
-    margin-left: -1px;
-    transform: translateX(+55%);
+.menu-dropdown-options a:hover {
+    background-color: #ddd;
 }
