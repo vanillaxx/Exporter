@@ -87,6 +87,11 @@
         $('.modal-dialog').draggable({
             handle: ".modal-header"
         });
+
+        $('#pop-up-' + sheet).modal({
+            backdrop: 'static',
+            keyboard: false
+        });
         $('#pop-up-' + sheet).modal('show');
 
         $("#" + sheet + "-replace-button").click(function () {
