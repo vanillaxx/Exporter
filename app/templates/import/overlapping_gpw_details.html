@@ -16,7 +16,7 @@
                         <thead>
                         <tr>
                             {% for column in overlapping.columns %}
-                                <th scope="col"> {{ column }} </th>
+                            <th scope="col"> {{ column }}</th>
                             {% endfor %}
                         </tr>
                         </thead>
@@ -24,7 +24,7 @@
                         {% for values in overlapping.values %}
                         <tr>
                             {% for value in values %}
-                                <td> {{ value }} </td>
+                            <td> {{ value }}</td>
                             {% endfor %}
                         </tr>
                         {% endfor %}
@@ -40,7 +40,7 @@
                         <thead>
                         <tr>
                             {% for column in overlapping.columns %}
-                            <th scope="col"> {{ column }} </th>
+                            <th scope="col"> {{ column }}</th>
                             {% endfor %}
                         </tr>
                         </thead>
@@ -48,7 +48,7 @@
                         {% for values in overlapping.exists %}
                         <tr>
                             {% for value in values %}
-                            <td> {{ value }} </td>
+                            <td> {{ value }}</td>
                             {% endfor %}
                         </tr>
                         {% endfor %}
@@ -58,7 +58,9 @@
             </div>
             <div class="modal-footer">
                 <button id="replace-button" type="button" class="btn btn-primary">Replace data in database</button>
-                <button id="ignore-button" type="button" class="btn btn-primary" data-dismiss="modal">Ignore imported data</button>
+                <button id="ignore-button" type="button" class="btn btn-primary" data-dismiss="modal">Ignore imported
+                    data
+                </button>
             </div>
         </div>
     </div>
@@ -73,6 +75,11 @@
 
         $('.modal-dialog').draggable({
             handle: ".modal-header"
+        });
+
+        $('#overlapping-modal').modal({
+            backdrop: 'static',
+            keyboard: false
         });
         $('#overlapping-modal').modal('show');
 
