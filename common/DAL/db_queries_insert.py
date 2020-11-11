@@ -41,8 +41,7 @@ def insert_value(connection, table_name, column, value):
 
 @with_connection
 def insert_stock_quotes(connection, values):
-    command = '''INSERT INTO StockQuotes
-                (CompanyID, Date, Stock, Change, Open, High, Low, Volume, Turnover, Interval)
+    command = '''INSERT INTO StockQuotes(CompanyID, Date, Stock, Change, Open, High, Low, Volume, Turnover, Interval)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'''
     with connection:
         connection.execute(command, values)
