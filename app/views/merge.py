@@ -14,10 +14,10 @@ from common.DAL.db_queries_get import get_existing_data_financial_ratios, get_ex
     get_existing_data_stock_quotes_merge
 from common.DAL.db_queries_merge import merge_assets, merge_assets_categories, merge_dupont_indicators, \
     merge_equity_liabilities_categories, merge_equity_liabilities, merge_financial_ratios, \
-    merge_stock_quotes
-from common.DAL.db_queries_delete import delete_from_assets, delete_from_assets_categories,\
-    delete_from_dupont_indicators, delete_from_equity_liabilities, delete_from_equity_liabilities_categories,\
-    delete_from_financial_ratios, delete_company, delete_from_stock_quotes
+    merge_stock_quotes, merge_market_values
+from common.DAL.db_queries_delete import delete_from_assets, delete_from_assets_categories, \
+    delete_from_dupont_indicators, delete_from_equity_liabilities, delete_from_equity_liabilities_categories, \
+    delete_from_financial_ratios, delete_company, delete_from_stock_quotes, delete_from_market_values
 from common.DAL.db_queries_insert import replace_values
 
 
@@ -42,6 +42,7 @@ class CompanyMergeView(SuccessMessageMixin, BSModalFormView):
         merge_financial_ratios(chosen_from, chosen_to)
         merge_dupont_indicators(chosen_from, chosen_to)
         merge_stock_quotes(chosen_from, chosen_to)
+        merge_market_values(chosen_from, chosen_to)
 
         overlapping_assets = Assets.objects.filter(company_id=chosen_from).order_by('date')
         overlapping_assets_categories = AssetsCategories.objects.filter(company_id=chosen_from).order_by('date')
@@ -185,8 +186,10 @@ class CompanyMergeView(SuccessMessageMixin, BSModalFormView):
             overlapping_stock_quotes_data = add_overlapping_stock_quotes(StockQuotes, overlapping_stock_quotes,
                                                                          overlapping_stock_quotes_data)
 
+        overlapping_market_values_data = self.add_overlapping_market_values(chosen_from, chosen_to)
+
         if overlapping_balance_data or overlapping_financial_ratios_data or overlapping_dupont_indicators_data \
-                or overlapping_stock_quotes_data:
+                or overlapping_stock_quotes_data or overlapping_market_values_data:
             error_bs = []
             error_fr = []
             error_dp = []
@@ -195,6 +198,7 @@ class CompanyMergeView(SuccessMessageMixin, BSModalFormView):
             overlap_fr = []
             overlap_dp = []
             overlap_stock = []
+            overlap_market_values = []
             if overlapping_balance_data:
                 error_bs = UniqueError(*overlapping_balance_data)
                 overlap_bs = json.dumps(error_bs.overlapping_data, default=str)
@@ -207,6 +211,10 @@ class CompanyMergeView(SuccessMessageMixin, BSModalFormView):
             if overlapping_stock_quotes_data:
                 error_stock = UniqueError(*overlapping_stock_quotes_data)
                 overlap_stock = json.dumps(error_stock.overlapping_data, default=str)
+            if overlapping_market_values_data:
+                error_market_values = UniqueError(*overlapping_market_values_data)
+                overlap_market_values = json.dumps(overlapping_market_values_data, default=str)
+
             return render(self.request, 'manage/home.html',
                           {"company_to_delete_id": chosen_from,
                            "error_bs": error_bs,
@@ -216,7 +224,9 @@ class CompanyMergeView(SuccessMessageMixin, BSModalFormView):
                            "error_dp": error_dp,
                            "overlap_dp": overlap_dp,
                            "error_stock": error_stock,
-                           "overlap_stock": overlap_stock
+                           "overlap_stock": overlap_stock,
+                           'error_mv': error_market_values,
+                           'overlap_mv': overlap_market_values
                            })
         else:
             if balance_was_same:
@@ -231,9 +241,39 @@ class CompanyMergeView(SuccessMessageMixin, BSModalFormView):
             if stock_was_same:
                 delete_from_stock_quotes(chosen_from)
 
+            delete_from_market_values(chosen_from)
+
             delete_company(chosen_from)
             messages.success(self.request, self.success_message)
             return HttpResponseRedirect(self.get_success_url())
+
+    @staticmethod
+    def add_overlapping_market_values(chosen_from, chosen_to):
+        overlapping_values = MarketValues.objects.filter(company_id=chosen_from)
+        overlapping_dates = overlapping_values.values_list('period_end', flat=True)
+        merge_to = MarketValues.objects.filter(company_id=chosen_to, period_end__in=overlapping_dates)\
+            .values_list('period_end', 'market_value')
+        merge_from = overlapping_values.values_list('period_end', 'market_value')
+
+        merge_to_unique = list(merge_to.difference(merge_from).order_by('period_end'))
+        merge_from_unique = list(merge_from.difference(merge_to).order_by('period_end'))
+
+        def add_id(t, id):
+            t = list(t)
+            t.insert(0, id)
+            return t
+
+        if merge_from_unique and merge_to_unique:
+            merge_to_unique = list(map(lambda t: add_id(t, chosen_to), merge_to_unique))
+            merge_from_unique = list(map(lambda t: add_id(t, chosen_from), merge_from_unique))
+
+            result = {'table_name': 'MarketValues',
+                      'columns': ['CompanyID', 'Period end', 'Market value'],
+                      'values': merge_from_unique,
+                      'exists': merge_to_unique}
+            return [result]
+        else:
+            return []
 
 
 def merge_data(request):
@@ -266,6 +306,8 @@ def merge_data(request):
         delete_from_financial_ratios(company_to_delete_id)
     elif sheet == 'dp':
         delete_from_dupont_indicators(company_to_delete_id)
+    elif sheet == 'mv':
+        delete_from_market_values(company_to_delete_id)
 
     if int(errors_amount) == 0:
         delete_from_assets(company_to_delete_id)
@@ -275,6 +317,7 @@ def merge_data(request):
         delete_from_stock_quotes(company_to_delete_id)
         delete_from_financial_ratios(company_to_delete_id)
         delete_from_dupont_indicators(company_to_delete_id)
+        delete_from_market_values(company_to_delete_id)
         delete_company(company_to_delete_id)
 
     return HttpResponse({'message': "Data replaced successfully"})
@@ -295,6 +338,8 @@ def delete_data(request):
         delete_from_financial_ratios(company_to_delete_id)
     elif sheet == 'dp':
         delete_from_dupont_indicators(company_to_delete_id)
+    elif sheet == 'mv':
+        delete_from_market_values(company_to_delete_id)
 
     if int(errors_amount) == 0:
         delete_from_assets(company_to_delete_id)
@@ -304,6 +349,7 @@ def delete_data(request):
         delete_from_stock_quotes(company_to_delete_id)
         delete_from_financial_ratios(company_to_delete_id)
         delete_from_dupont_indicators(company_to_delete_id)
+        delete_from_market_values(company_to_delete_id)
         delete_company(company_to_delete_id)
 
     return HttpResponse({'message': "Data replaced successfully."})

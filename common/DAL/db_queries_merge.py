@@ -59,6 +59,14 @@ def merge_stock_quotes(connection, merge_from, merge_to):
 
 
 @with_connection
+def merge_market_values(connection, merge_from, merge_to):
+    values = merge_to, merge_from
+    command = 'UPDATE OR IGNORE MarketValues SET CompanyId = (?) WHERE CompanyID = (?) '
+    with connection:
+        connection.execute(command, values)
+
+
+@with_connection
 def merge_database(connection, path):
     try:
         connection.execute('ATTACH DATABASE ? AS to_import', (path,))

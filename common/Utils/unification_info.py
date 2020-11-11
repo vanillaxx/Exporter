@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from sqlite3 import IntegrityError
 
 from common.DAL.db_queries_insert import insert_market_value, insert_stock_quotes, insert_values
 from common.Utils.company_unification import Company
@@ -50,7 +51,10 @@ class GPWUnificationInfo(UnificationInfo):
             self.data = data
 
     def insert_data_to_db(self, company_id):
-        insert_market_value(company_id, self.data['value'], self.data['end_date'])
+        try:
+            insert_market_value(company_id, self.data['value'], self.data['end_date'])
+        except IntegrityError as e:
+            print(e)
 
     def get_data_type(self):
         return 'GPW file'
@@ -63,9 +67,12 @@ class StooqUnificationInfo(UnificationInfo):
         self.data = data
 
     def insert_data_to_db(self, company_id):
-        for data in self.data:
-            data[0] = company_id
-            insert_stock_quotes(tuple(data))
+        try:
+            for data in self.data:
+                data[0] = company_id
+                insert_stock_quotes(tuple(data))
+        except IntegrityError as e:
+            print(e)
 
     def get_data_type(self):
         return 'stooq.com data'
