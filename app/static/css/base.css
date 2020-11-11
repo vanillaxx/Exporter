@@ -27,11 +27,10 @@ h1 {
 }
 
 h2 {
-    text-align: center;
     color: var(--primary-green);
     font-weight: bold;
     font-family: Verdana, Arial, sans-serif;
-    margin-bottom: 1em;
+    margin: 0 0 1em 0.85em;
 }
 
 .description-font {

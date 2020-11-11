@@ -2,17 +2,23 @@
 {% block entity %}
 {% load static %}
 
-<h3>Import database</h3>
+<h2>Import database</h2>
 
 <form method="post">{% csrf_token %}
-    <h4>{{form.file_sheet}}</h4>
-    {{form.file}}
-<button type="submit">Import</button>
+    <div class="col-sm-4 col-xs-4 m-3">
+        <div class="form-group">
+            <label>{{form.file_sheet}}</label>
+            {{form.file}}
+        </div>
+        <div class="form-group float-md-right submit-button">
+            <button type="submit" class="btn-dark">Import</button>
+        </div>
+    </div>
 </form>
 
 <div id="pop-up-databaseImport" class="modal fade" role="dialog">
     {% if path %}
-        {% include "manage/database_is_not_empty_error.html" with path=path sheet='databaseImport' %}
+    {% include "manage/database_is_not_empty_error.html" with path=path sheet='databaseImport' %}
     {% endif %}
 </div>
 
