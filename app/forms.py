@@ -120,7 +120,8 @@ class ExportForm(forms.Form):
     file_name = forms.CharField(label='File name:', max_length=100)
     company_choices = Company.objects.all().order_by('name')
     chosen_companies = forms.ModelMultipleChoiceField(queryset=company_choices,
-                                                      widget=forms.SelectMultiple(attrs={'class': 'form-control'}))
+                                                      widget=forms.SelectMultiple(attrs={'class': 'form-control',
+                                                                                         'style': 'height: 12em;'}))
     date_ranges_count = forms.CharField(widget=forms.HiddenInput())
     choices_i = [('d', 'Daily'),
                  ('w', 'Weekly'),
@@ -164,7 +165,8 @@ class ExportForm(forms.Form):
 
 
 class ExportDatabaseForm(forms.Form):
-    folder = forms.CharField(label='Folder name:', max_length=100, required=True)
+    folder = forms.CharField(label='Folder name:', max_length=100, required=True,
+                             widget=forms.TextInput(attrs={'class': 'form-control'}))
     delete = forms.BooleanField(required=False)
 
     folder_sheet = 'Folder where database file will be saved'
@@ -172,7 +174,8 @@ class ExportDatabaseForm(forms.Form):
 
 
 class ImportDatabaseForm(forms.Form):
-    file = forms.CharField(label='File name:', max_length=100, required=True)
+    file = forms.CharField(label='File name:', max_length=100, required=True,
+                           widget=forms.TextInput(attrs={'class': 'form-control'}))
 
     file_sheet = 'File with database to be imported'
 

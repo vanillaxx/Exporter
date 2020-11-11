@@ -4,15 +4,14 @@
 
 <div>
     <h2>Data import from Stooq</h2>
-    <div class="description-font m-4">
+    <div class="description-font col-sm-4 col-xs-4 m-3">
         Import stock quotes from <a href="https://stooq.com/">https://stooq.com/</a> website.
     </div>
 </div>
 
 <form method="post">{% csrf_token %}
-
-    <div class="wrapper">
-        <div class="left">
+    <div class="wrapper m-3">
+        <div class="left col-sm-4 col-xs-4">
             <input type="radio" id="radio_one" name="import_type" value="one">
             <label class="description-font" for="radio_one" data-toggle="tooltip"
                    title="Choose any company, any period of time and time interval
@@ -53,7 +52,7 @@
             </div>
         </div>
 
-        <div class="right">
+        <div class="right col-sm-4 col-xs-4">
             <input type="radio" id="radio_all" name="import_type" value="all">
             <label class="description-font" for="radio_all" data-toggle="tooltip" title="Only daily stock quotes from a few days back will be available,
                     but it will download information about turnover.">Import data for all companies
