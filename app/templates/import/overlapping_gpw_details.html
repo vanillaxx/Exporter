@@ -60,7 +60,7 @@
                 </button>
             </div>
         </div>
-        <div id="{{ sheet | escapejs}}-close-button" class="form-group modal-footer submit-button"
+        <div id="gpw-close-button" class="form-group modal-footer submit-button"
              style="display: none">
             <span class="btn btn-dark" data-dismiss="modal" aria-label="Close">Close</span>
         </div>
@@ -95,13 +95,13 @@
                 },
                 function () {
                     $('#gpw-overlapping').html("<div class='modal-body'>Data replaced successfully</div>");
-                    $('#gpw-overlapping').show();
+                    $('#gpw-close-button').show();
                 });
 
         });
         $('#ignore-button').click(function () {
             $('#gpw-overlapping').html("<div class='modal-body'>Data imported successfully. Data which overlapped ignored.</div>");
-            $('#gpw-overlapping').show();
+            $('#gpw-close-button').show();
         });
     })
 </script>
