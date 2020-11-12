@@ -15,7 +15,6 @@ urlpatterns = [
     path('export', export_data.export, name='export'),
     path('manage/home', general.manage, name='manage_home'),
     path('manage/merge_data', merge.merge_data, name='merge_data'),
-    path('manage/delete_data', merge.delete_data, name='delete_data'),
     path('manage/databaseExport', database.export_database, name='export_database'),
     path('manage/databaseImport', database.import_database, name='import_database'),
     path('manage/replace_database', database.replace_database, name='replace_database'),

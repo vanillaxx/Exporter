@@ -1,14 +1,14 @@
 <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content" style="width: 1000px">
         <div class="modal-header">
-            <h5>Data for such company and dates already exists.</h5>
+            <h5>Chosen companies have overlapping data.</h5>
         </div>
         <div id="{{ sheet | escapejs }}" class="container">
             {% for data in error.overlapping_data %}
             <div class="modal-body">
                 <h3> {{ data.table_name }} </h3>
                 <h5 class="modal-title">
-                    Data from company which will be deleted
+                    Data for company which will be deleted - {{ chosen_from }}
                 </h5>
                 <div style="overflow: scroll; height: 400px; width: 800px">
                     <table id="{{ sheet | escapejs }}-overlapping-data-{{ forloop.counter0 | escapejs }}"
@@ -32,8 +32,9 @@
                         </tbody>
                     </table>
                 </div>
+                <br>
                 <h5 class="modal-title">
-                    Data for company to which we merge data
+                    Data for company which stays in database - {{ chosen_to }}
                 </h5>
                 <div style="overflow: scroll; height: 400px; width: 800px">
                     <table id="{{ sheet | escapejs }}-existing-data-{{ forloop.counter0 | escapejs }}"
@@ -84,7 +85,6 @@
         const sheet = '{{ sheet | escapejs }}'
         const csrf_token = "{{ csrf_token | escapejs }}"
         const overlap = '{{overlap|safe}}'
-        const company_to_delete_id = "{{ company_to_delete_id | escapejs}}"
         $('.modal-dialog').draggable({
             handle: ".modal-header"
         });
@@ -96,11 +96,8 @@
         $('#pop-up-' + sheet).modal('show');
 
         $("#" + sheet + "-replace-button").click(function () {
-            errors_amount--;
             $.post('../merge_data', {
                     data: overlap,
-                    errors_amount: errors_amount,
-                    sheet: sheet,
                     'csrfmiddlewaretoken': csrf_token
                 },
                 function () {
@@ -110,18 +107,8 @@
 
         })
         $("#" + sheet + "-ignore-button").click(function () {
-            errors_amount--;
-            $.post('../delete_data', {
-                    company_to_delete_id: company_to_delete_id,
-                    sheet: sheet,
-                    errors_amount: errors_amount,
-                    'csrfmiddlewaretoken': csrf_token
-                },
-                function () {
-                    $('#' + sheet).html("<div class='modal-body'>Data replaced successfully</div>");
+            $('#' + sheet).html("<div class='modal-body'>Data replaced successfully</div>");
                     $('#' + sheet + '-close-button').show();
-                });
-
-        })
+        });
     })
 </script>
