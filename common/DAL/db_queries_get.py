@@ -102,6 +102,18 @@ def exactly_same_assets(connection, columns, values):
     return c.fetchall()
 
 
+@with_connection
+def exactly_same_stock_quote(connection, values):
+    c = connection.cursor()
+    query = '''SELECT 1 FROM StockQuotes
+               WHERE CompanyID IS ? AND Date IS ? AND Stock IS ? AND Change IS ? AND Open IS ?
+               AND High IS ? AND Low IS ? AND Volume IS ? AND Turnover IS ? AND Interval IS ?
+               '''
+
+    c.execute(query, values)
+    return c.fetchall()
+
+
 def get_company(company: Company):
     company.standardise()
 
