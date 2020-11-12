@@ -34,6 +34,12 @@ class Company:
                              (self.name, company.bloomberg),
                              (self.bloomberg, company.name)]
 
+        if self.ticker and company.ticker and self.ticker != company.ticker:
+            return False
+
+        if self.isin and company.isin and self.isin != company.isin:
+            return False
+
         return any(compare_names(names_tuple) for names_tuple in tuples_to_compare)
 
 
@@ -41,6 +47,8 @@ def compare_names(names_tuple):
     name1 = names_tuple[0]
     name2 = names_tuple[1]
     if not name1 or not name2:
+        return False
+    if len(name1) < 3 < len(name2) or len(name2) < 3 < len(name1):
         return False
 
     similarity_threshold = 85
@@ -72,19 +80,30 @@ def standardise(name: str):
     name = name.upper()
     name = strip_legal_terms(name)
 
+    if not name:
+        name = None
+
     return name
 
 
 def strip_legal_terms(name: str):
-    terms = prepare_terms()
-    additional_terms = ['SPÓŁKA AKCYJNA', 'SPÓŁKA Z O.O.', 'SPÓŁKA Z O. O.', 'SP. Z O.O.', 'SP. Z O. O.']
-    additional_terms.extend(list(map(strip_accents, additional_terms)))
-    additional_terms.extend(list(map(strip_punctuation_marks, additional_terms)))
-    additional_terms = set(additional_terms)
+    terms = ['SPÓŁKA AKCYJNA', 'SPÓŁKA Z O.O.', 'SPÓŁKA Z O. O.', 'SP. Z O.O.', 'SP. Z O. O.',
+             'S.A.', 'S.P.A.', 'S.P.A', 'PLC']
+    terms.extend(list(map(strip_accents, terms)))
+    terms.extend(list(map(strip_punctuation_marks, terms)))
+    terms = set(terms)
 
-    name = basename(name, terms)
-    for term in additional_terms:
-        name = name.replace(term, '')
+    terms = list(map(lambda s: s.replace('.', '\\.'), terms))
+    middle_terms = terms.copy()
+    middle_terms.remove('SPA')
+
+    end_term_pattern = re.compile(f" ({'|'.join(terms)})$")
+    middle_term_pattern = re.compile(f" ({'|'.join(middle_terms)}) ")
+
+    name = re.sub(middle_term_pattern, ' ', name, 1)
+    name = re.sub(end_term_pattern, '', name, 1)
+
+    name = re.sub(r'\s+', ' ', name)
     name = name.strip()
 
     return name
@@ -99,4 +118,3 @@ def strip_accents(name: str):
 
 def strip_punctuation_marks(name: str):
     return name.translate(str.maketrans('', '', string.punctuation))
-

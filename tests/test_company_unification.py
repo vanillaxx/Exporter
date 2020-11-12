@@ -5,7 +5,12 @@ def test_strip_legal_terms():
     names = [
         ('AB SA', 'AB'),
         ('CCC SPÓŁKA AKCYJNA', 'CCC'),
-        ('CYFROWY POLSAT SA', 'CYFROWY POLSAT')
+        ('CYFROWY POLSAT SA', 'CYFROWY POLSAT'),
+        ('GAMING FACTORY SA - PDA', 'GAMING FACTORY - PDA'),
+        ('PBS FINANSE SA', 'PBS FINANSE'),
+        ('PBS FINANSE', 'PBS FINANSE'),
+        ('UNICREDIT S.P.A', 'UNICREDIT'),
+        ('UNICREDIT SPA', 'UNICREDIT')
     ]
 
     for name, expected in names:
