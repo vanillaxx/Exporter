@@ -31,11 +31,19 @@
         </div>
     {% endif %}
 </div>
+<div id="pop-up-mv" class="modal fade" role="dialog">
+    {% if overlap_mv %}
+        <div id="mv_is_overlapping">
+            {% include "manage/overlapping_merge_details.html" with error=error_mv sheet='mv' overlap=overlap_mv %}
+        </div>
+    {% endif %}
+</div>
 <script>
     var errors_amount = ($("#bs_is_overlapping").length == 0 ? 0 : 1 )
         + ($("#fr_is_overlapping").length == 0 ? 0 : 1 )
         + ($("#dp_is_overlapping").length == 0 ? 0 : 1 )
-        + ($("#stock_is_overlapping").length == 0 ? 0 : 1 );
+        + ($("#stock_is_overlapping").length == 0 ? 0 : 1 )
+        + ($("#mv_is_overlapping").length == 0 ? 0 : 1 );
     console.log(errors_amount)
 </script>
 {% endblock %}
