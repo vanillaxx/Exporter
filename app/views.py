@@ -40,6 +40,10 @@ def error(request):
 
 
 def import_notoria(request):
+    def is_excel_file(file_path):
+        extension = os.path.splitext(file_path)
+        return extension == '.xls' or extension == '.xlsx'
+
     def render_overlapping_data_popup(chosen_sheet, sheet_shortcut, get_existing_data_func, request):
         for sheet in chosen_sheet:
             try:
@@ -71,20 +75,35 @@ def import_notoria(request):
                 save = False
                 files_paths = []
                 if directory_import:
-                    override_save = form.cleaned_data.get('override_save')
-                    for root, dirs, files in os.walk(file_path):
-                        for file in files:
-                            absolute_path = os.path.join(root, file)
-                            files_paths.append(absolute_path)
-                        break
-                    if override_save == 'o':
-                        override = True
-                        save = False
-                    elif override_save == 's':
-                        save = True
-                        override = False
+                    if os.path.isdir(file_path):
+                        override_save = form.cleaned_data.get('override_save')
+                        for root, dirs, files in os.walk(file_path):
+                            for file in files:
+                                if is_excel_file(file):
+                                    absolute_path = os.path.join(root, file)
+                                    files_paths.append(absolute_path)
+                                else:
+                                    messages.error(request,
+                                                   "Directory must have only excel files from notoria.")
+                                    return render(request, 'import/notoria.html', {'form': NotoriaImportForm()})
+                            break
+                        if override_save == 'o':
+                            override = True
+                            save = False
+                        elif override_save == 's':
+                            save = True
+                            override = False
+                    else:
+                        messages.error(request,
+                                       "Pass proper path to directory with Notoria excel files, e.g '/home/notoria")
+                        return render(request, 'import/notoria.html', {'form': NotoriaImportForm()})
                 else:
-                    files_paths = [file_path]
+                    extension = os.path.splitext(file_path)
+                    if extension == '.xls' or extension == '.xlsx':
+                        files_paths = [file_path]
+                    else:
+                        messages.error(request, "Pass proper path to Notoria excel files, e.g '/home/AGORA.xlsx'")
+                        return render(request, 'import/notoria.html', {'form': NotoriaImportForm()})
 
 
                 error_bs = []
