@@ -43,7 +43,7 @@ def import_notoria(request):
     def render_overlapping_data_popup(chosen_sheet, sheet_shortcut, get_existing_data_func, request):
         for sheet in chosen_sheet:
             try:
-                res = excel_parser.functions[sheet_shortcut](file_path, sheet)
+                res = excel_parser.functions[sheet_shortcut](file_path, sheet, override=override, save=save)
             except UniqueError as e:
                 for data in e.overlapping_data:
                     existing = get_existing_data_func(data)
@@ -53,6 +53,7 @@ def import_notoria(request):
                 messages.error(request, e)
                 return render(request, 'import/notoria.html', {'form': NotoriaImportForm()})
             except Exception as e:
+                print(e)
                 messages.error(request, "Error occurred while parsing. " + type(e).__name__ + ": " + str(e))
                 return render(request, 'import/notoria.html', {'form': NotoriaImportForm()})
             return [], res
@@ -62,10 +63,30 @@ def import_notoria(request):
             form = NotoriaImportForm(request.POST)
             if form.is_valid():
                 file_path = request.POST.get('file_path', None)
-                print(file_path)
                 chosen_sheets_bs = form.cleaned_data.get('chosen_sheets_bs')
                 chosen_sheets_fr = form.cleaned_data.get('chosen_sheets_fr')
                 chosen_sheets_dp = form.cleaned_data.get('chosen_sheets_dp')
+                directory_import = form.cleaned_data.get('directory_import')
+                override = False
+                save = False
+                files_paths = []
+                if directory_import:
+                    override_save = form.cleaned_data.get('override_save')
+                    for root, dirs, files in os.walk(file_path):
+                        for file in files:
+                            absolute_path = os.path.join(root, file)
+                            files_paths.append(absolute_path)
+                        break
+                    if override_save == 'o':
+                        override = True
+                        save = False
+                    elif override_save == 's':
+                        save = True
+                        override = False
+                else:
+                    files_paths = [file_path]
+
+
                 error_bs = []
                 error_fr = []
                 error_dp = []
@@ -76,23 +97,26 @@ def import_notoria(request):
                 result_fr = None
                 result_dp = None
 
-                if chosen_sheets_bs:
-                    error_bs, result_bs = render_overlapping_data_popup(chosen_sheets_bs, 'bs',
+                for fp in files_paths:
+                    file_path = fp.__str__()
+                    if chosen_sheets_bs:
+
+                        error_bs, result_bs = render_overlapping_data_popup(chosen_sheets_bs, 'bs',
                                                                         get_existing_data_balance_sheet, request)
-                    if error_bs:
-                        overlap_bs = error_bs.overlapping_data
+                        if error_bs:
+                            overlap_bs = error_bs.overlapping_data
 
-                if chosen_sheets_fr:
-                    error_fr, result_fr = render_overlapping_data_popup(chosen_sheets_fr, 'fr',
+                    if chosen_sheets_fr:
+                        error_fr, result_fr = render_overlapping_data_popup(chosen_sheets_fr, 'fr',
                                                                         get_existing_data_ratios, request)
-                    if error_fr:
-                        overlap_fr = error_fr.overlapping_data
+                        if error_fr:
+                            overlap_fr = error_fr.overlapping_data
 
-                if chosen_sheets_dp:
-                    error_dp, result_dp = render_overlapping_data_popup(chosen_sheets_dp, 'dp',
-                                                                        get_existing_data_ratios, request)
-                    if error_dp:
-                        overlap_dp = error_dp.overlapping_data
+                    if chosen_sheets_dp:
+                        error_dp, result_dp = render_overlapping_data_popup(chosen_sheets_dp, 'dp',
+                                                                            get_existing_data_ratios, request)
+                        if error_dp:
+                            overlap_dp = error_dp.overlapping_data
 
                 if error_bs or error_fr or error_dp:
                     messages.success(request, "Parsed notoria successfully.")
@@ -104,7 +128,6 @@ def import_notoria(request):
                                    "overlap_bs": json.dumps(overlap_bs),
                                    "overlap_fr": json.dumps(overlap_fr),
                                    "overlap_dp": json.dumps(overlap_dp)})
-
                 result = ParsingResult.combine_notoria_results(result_bs, result_dp, result_fr)
                 if result is not None:
                     messages.success(request, "Parsed notoria successfully")
