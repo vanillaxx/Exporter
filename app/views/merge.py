@@ -11,7 +11,7 @@ import json
 from django.contrib import messages
 from bootstrap_modal_forms.generic import BSModalFormView
 from common.DAL.db_queries_get import get_existing_data_financial_ratios, get_existing_data_dupont_indicators, \
-    get_existing_data_stock_quotes_merge
+    get_existing_data_stock_quotes_merge, update_company
 from common.DAL.db_queries_merge import merge_assets, merge_assets_categories, merge_dupont_indicators, \
     merge_equity_liabilities_categories, merge_equity_liabilities, merge_financial_ratios, \
     merge_stock_quotes, merge_market_values
@@ -19,6 +19,7 @@ from common.DAL.db_queries_delete import delete_from_assets, delete_from_assets_
     delete_from_dupont_indicators, delete_from_equity_liabilities, delete_from_equity_liabilities_categories, \
     delete_from_financial_ratios, delete_company, delete_from_stock_quotes, delete_from_market_values
 from common.DAL.db_queries_insert import replace_values
+from common.Utils import company_unification
 
 
 class CompanyMergeView(SuccessMessageMixin, BSModalFormView):
@@ -33,12 +34,12 @@ class CompanyMergeView(SuccessMessageMixin, BSModalFormView):
         return super().form_valid(form)
 
     def merge_companies(self, valid_data):
-        chosen_from = valid_data.get('chosen_from')
-        chosen_to = valid_data.get('chosen_to')
-        chosen_from_name = chosen_from.name
-        chosen_from = chosen_from.id
-        chosen_to_name = chosen_to.name
-        chosen_to = chosen_to.id
+        chosen_from_company = valid_data.get('chosen_from')
+        chosen_to_company = valid_data.get('chosen_to')
+        chosen_from_name = chosen_from_company.name
+        chosen_from = chosen_from_company.id
+        chosen_to_name = chosen_to_company.name
+        chosen_to = chosen_to_company.id
 
         merge_assets(chosen_from, chosen_to)
         merge_assets_categories(chosen_from, chosen_to)
@@ -48,6 +49,13 @@ class CompanyMergeView(SuccessMessageMixin, BSModalFormView):
         merge_dupont_indicators(chosen_from, chosen_to)
         merge_stock_quotes(chosen_from, chosen_to)
         merge_market_values(chosen_from, chosen_to)
+
+        ekd_section = chosen_from_company.ekd_section_id
+        ekd_class = chosen_from_company.ekd_class_id
+
+        if ekd_section is not None and ekd_class is not None:
+            ekd_section = ekd_section.value
+            ekd_class = ekd_class.value
 
         overlapping_assets = Assets.objects.filter(company_id=chosen_from).order_by('date')
         overlapping_assets_categories = AssetsCategories.objects.filter(company_id=chosen_from).order_by('date')
@@ -183,6 +191,10 @@ class CompanyMergeView(SuccessMessageMixin, BSModalFormView):
         delete_from_dupont_indicators(chosen_from)
         delete_from_market_values(chosen_from)
         delete_company(chosen_from)
+
+        update_company(chosen_to, company_unification.Company(
+            name=chosen_from_company.name, ticker=chosen_from_company.ticker, isin=chosen_from_company.isin,
+            bloomberg=chosen_from_company.bloomberg, ekd_section=ekd_section, ekd_class=ekd_class))
 
         if overlapping_balance_data or overlapping_financial_ratios_data or overlapping_dupont_indicators_data \
                 or overlapping_stock_quotes_data or overlapping_market_values_data:
