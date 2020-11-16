@@ -15,7 +15,8 @@
   </div>
 </div>
 
-<button id="create-equity-liabilities" class="btn btn-primary" type="button" name="button">Create equity liabilities</button>
+<button id="create-equity-liabilities" class="btn btn-primary" type="button" name="button">
+    <span class="fa fa-plus"></span> Create equity liabilities</button>
 
 <table class="table table-sm table-bordered">
     <thead>
@@ -87,7 +88,7 @@
         <td>
             <button type="button" id="update-equity-liabilities" class="bs-modal btn btn-sm btn-primary"
                     data-form-url="{% url 'update_equity_liabilities' el.id %}">
-                <span class="fa fa-pencil"></span>
+                <span class="fa fa-pencil-alt"></span>
             </button>
             <button type="button" id="delete-equity-liabilities" class="bs-modal btn btn-sm btn-danger"
                     data-form-url="{% url 'delete_equity_liabilities' el.id %}">
