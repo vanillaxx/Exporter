@@ -62,3 +62,11 @@ def delete_from_stock_quotes(connection, company_id):
     command = 'DELETE FROM StockQuotes WHERE CompanyID = (?) '
     with connection:
         connection.execute(command, values)
+
+
+@with_connection
+def delete_from_market_values(connection, company_id):
+    values = company_id,
+    command = 'DELETE FROM MarketValues WHERE CompanyID = (?) '
+    with connection:
+        connection.execute(command, values)

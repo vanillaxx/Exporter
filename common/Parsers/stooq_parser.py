@@ -5,7 +5,7 @@ import numbers
 import requests
 import pandas as pd
 from common.DAL.db_queries_insert import insert_company, insert_stock_quotes
-from common.DAL.db_queries_get import get_company, get_interval_id_from_shortcut
+from common.DAL.db_queries_get import get_company, get_interval_id_from_shortcut, exactly_same_stock_quote
 import re
 from datetime import date
 from common.Utils.Errors import *
@@ -128,17 +128,18 @@ class StooqParser:
             if possible_companies:
                 unification_info.append(StooqUnificationInfo(company=company, possible_matches=possible_companies,
                                                              data=[stock_quotes]))
-
             else:
+                stock_quotes_to_insert = (company_id, parsed_data, float_or_none(row['Last']),
+                                          float_or_none(row['Change.1']), float_or_none(row['Open']),
+                                          float_or_none(row['High']), float_or_none(row['Low']),
+                                          int_or_none(row['Volume']), int_or_none(row['Turnover']), interval_id)
                 try:
-                    insert_stock_quotes((company_id, parsed_data, float_or_none(row['Last']),
-                                         float_or_none(row['Change.1']), float_or_none(row['Open']),
-                                         float_or_none(row['High']), float_or_none(row['Low']),
-                                         float_or_none(row['Volume']), float_or_none(row['Turnover']), interval_id))
+                    insert_stock_quotes(stock_quotes_to_insert)
                 except IntegrityError:
-                    if not overlapping_stock:
-                        self._init_overlapping_info(overlapping_stock)
-                    overlapping_stock["values"].append(stock_quotes)
+                    if not exactly_same_stock_quote(stock_quotes_to_insert):
+                        if not overlapping_stock:
+                            self._init_overlapping_info(overlapping_stock)
+                        overlapping_stock["values"].append(stock_quotes)
 
         if overlapping_stock:
             raise UniqueError(overlapping_stock)
@@ -226,15 +227,17 @@ class StooqParser:
             if possible_companies:
                 unification_info.add_data(stock_quotes)
             else:
-                try:
-                    insert_stock_quotes((company_id, parsed_date, float_or_none(row['Close']),
+                stock_quotes_to_insert = (company_id, parsed_date, float_or_none(row['Close']),
                                          float_or_none(row['Change.1']), float_or_none(row['Open']),
                                          float_or_none(row['High']), float_or_none(row['Low']),
-                                         float_or_none(row['Volume']), None, interval_id))
+                                         int_or_none(row['Volume']), None, interval_id)
+                try:
+                    insert_stock_quotes(stock_quotes_to_insert)
                 except IntegrityError:
-                    if not overlapping_stock:
-                        self._init_overlapping_info(overlapping_stock)
-                    overlapping_stock["values"].append(stock_quotes)
+                    if not exactly_same_stock_quote(stock_quotes_to_insert):
+                        if not overlapping_stock:
+                            self._init_overlapping_info(overlapping_stock)
+                        overlapping_stock["values"].append(stock_quotes)
 
         if overlapping_stock:
             raise UniqueError(overlapping_stock)
@@ -294,3 +297,9 @@ def float_or_none(val):
     if val is None:
         return None
     return float(val)
+
+
+def int_or_none(val):
+    if val is None:
+        return None
+    return int(val)
