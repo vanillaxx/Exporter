@@ -132,8 +132,8 @@ def get_company_id(connection, company_name, company_ticker, company_isin):
     c = connection.cursor()
     query = '''SELECT ID FROM Company
               WHERE Name = ?
-              OR Ticker = ?
-              OR ISIN = ?'''
+              OR ISIN = ?
+              OR Ticker = ?'''
     c.execute(query, (company_name, company_ticker, company_isin))
     company = c.fetchone()
     if not company:
