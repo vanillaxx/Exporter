@@ -53,13 +53,6 @@ def import_notoria(request):
                     existing = get_existing_data_func(data)
                     data["exists"] = list(map(lambda x: list(x), existing))
                 return e, None
-            except ParseError as e:
-                messages.error(request, e)
-                return render(request, 'import/notoria.html', {'form': NotoriaImportForm()})
-            except Exception as e:
-                print(e)
-                messages.error(request, "Error occurred while parsing. " + type(e).__name__ + ": " + str(e))
-                return render(request, 'import/notoria.html', {'form': NotoriaImportForm()})
             return [], res
 
     try:
@@ -116,26 +109,33 @@ def import_notoria(request):
                 result_fr = None
                 result_dp = None
 
-                for fp in files_paths:
-                    file_path = fp.__str__()
-                    if chosen_sheets_bs:
+                try:
+                    for fp in files_paths:
+                        file_path = fp.__str__()
+                        if chosen_sheets_bs:
+                            error_bs, result_bs = render_overlapping_data_popup(chosen_sheets_bs, 'bs',
+                                                                            get_existing_data_balance_sheet, request)
+                            if error_bs:
+                                overlap_bs = error_bs.overlapping_data
 
-                        error_bs, result_bs = render_overlapping_data_popup(chosen_sheets_bs, 'bs',
-                                                                        get_existing_data_balance_sheet, request)
-                        if error_bs:
-                            overlap_bs = error_bs.overlapping_data
-
-                    if chosen_sheets_fr:
-                        error_fr, result_fr = render_overlapping_data_popup(chosen_sheets_fr, 'fr',
-                                                                        get_existing_data_ratios, request)
-                        if error_fr:
-                            overlap_fr = error_fr.overlapping_data
-
-                    if chosen_sheets_dp:
-                        error_dp, result_dp = render_overlapping_data_popup(chosen_sheets_dp, 'dp',
+                        if chosen_sheets_fr:
+                            error_fr, result_fr = render_overlapping_data_popup(chosen_sheets_fr, 'fr',
                                                                             get_existing_data_ratios, request)
-                        if error_dp:
-                            overlap_dp = error_dp.overlapping_data
+                            if error_fr:
+                                overlap_fr = error_fr.overlapping_data
+
+                        if chosen_sheets_dp:
+                            error_dp, result_dp = render_overlapping_data_popup(chosen_sheets_dp, 'dp',
+                                                                                get_existing_data_ratios, request)
+                            if error_dp:
+                                overlap_dp = error_dp.overlapping_data
+                except ParseError as e:
+                    messages.error(request, e)
+                    return render(request, 'import/notoria.html', {'form': NotoriaImportForm()})
+                except Exception as e:
+                    print(e)
+                    messages.error(request, "Error occurred while parsing. " + type(e).__name__ + ": " + str(e))
+                    return render(request, 'import/notoria.html', {'form': NotoriaImportForm()})
 
                 if error_bs or error_fr or error_dp:
                     messages.success(request, "Parsed notoria successfully.")
