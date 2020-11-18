@@ -1,5 +1,7 @@
 from django.http import HttpResponse
 from django.shortcuts import render
+
+from common.DAL.db_queries_get import update_company
 from common.Utils.unification_info import UnificationInfo
 import json
 from common.DAL.db_queries_insert import insert_company, replace_values
@@ -46,6 +48,7 @@ def insert_data(request):
                 company_id = insert_company(ui.company)
             else:
                 company_id = json.loads(company_id)
+                update_company(company_id, ui.company)
 
             ui.insert_data_to_db(company_id)
 

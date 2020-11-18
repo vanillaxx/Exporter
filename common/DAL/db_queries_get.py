@@ -124,6 +124,9 @@ def get_company(company: Company):
         companies = get_all_companies_info()
         possible_companies = company.get_possible_matches(companies)
 
+    else:
+        update_company(company_id, company)
+
     return company_id, possible_companies
 
 
@@ -146,6 +149,26 @@ def get_all_companies_info(connection):
     c = connection.cursor()
     c.execute("SELECT ID, Name, Ticker, Bloomberg FROM Company ")
     return c.fetchall()
+
+
+@with_connection
+def update_company(connection, company_id, company: Company):
+    if company.ekd_section is not None and company.ekd_class is not None:
+        company.ekd_section = get_ekd_section_id_from_value(ekd_section=company.ekd_section)
+        company.ekd_class = get_ekd_class_id_from_value(ekd_class=company.ekd_class)
+
+    values = company.isin, company.ticker, company.bloomberg, company.ekd_section, company.ekd_class, company_id
+
+    command = '''UPDATE OR IGNORE Company
+                 SET ISIN = ifnull(ISIN, ?),
+                     Ticker = ifnull(Ticker, ?),
+                     Bloomberg = ifnull(Bloomberg, ?),
+                     EKDSectionID = ifnull(EKDSectionID, ?),
+                     EKDClassID = ifnull(EKDClassID, ?)
+                 WHERE ID = ?'''
+
+    with connection:
+        connection.execute(command, values)
 
 
 @with_connection
