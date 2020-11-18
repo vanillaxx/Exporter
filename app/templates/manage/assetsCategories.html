@@ -15,7 +15,8 @@
   </div>
 </div>
 
-<button id="create-assets-category" class="btn btn-primary" type="button" name="button">Create assets category</button>
+<button id="create-assets-category" class="btn btn-primary" type="button" name="button">
+    <span class="fa fa-plus"></span> Create assets category</button>
 
 <table class="table table-sm table-bordered">
     <thead>
@@ -43,7 +44,7 @@
         <td>
             <button type="button" id="update-assets-category" class="bs-modal btn btn-sm btn-primary"
                     data-form-url="{% url 'update_assets_category' ac.id %}">
-                <span class="fa fa-pencil"></span>
+                <span class="fa fa-pencil-alt"></span>
             </button>
             <button type="button" id="delete-assets-category" class="bs-modal btn btn-sm btn-danger"
                     data-form-url="{% url 'delete_assets_category' ac.id %}">

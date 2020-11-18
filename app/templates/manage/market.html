@@ -15,7 +15,8 @@
   </div>
 </div>
 
-<button id="create-market" class="btn btn-primary" type="button" name="button">Create market value</button>
+<button id="create-market" class="btn btn-primary" type="button" name="button">
+    <span class="fa fa-plus"></span> Create market value</button>
 
 <table class="table table-sm table-bordered">
     <thead>
@@ -35,7 +36,7 @@
         <td>
             <button type="button" id="update-market" class="bs-modal btn btn-sm btn-primary"
                     data-form-url="{% url 'update_market' mv.id %}">
-                <span class="fa fa-pencil"></span>
+                <span class="fa fa-pencil-alt"></span>
             </button>
             <button type="button" id="delete-market" class="bs-modal btn btn-sm btn-danger"
                     data-form-url="{% url 'delete_market' mv.id %}">
