@@ -137,7 +137,7 @@ def get_company_id(connection, company_name, company_ticker, company_isin):
               WHERE Name = ?
               OR ISIN = ?
               OR Ticker = ?'''
-    c.execute(query, (company_name, company_ticker, company_isin))
+    c.execute(query, (company_name, company_isin, company_ticker))
     company = c.fetchone()
     if not company:
         return None

@@ -19,8 +19,15 @@
             <legend class="form-legend">{{form.dp_sheet}}</legend>
             {{form.chosen_sheets_dp}}
         </fieldset>
+        <div class="form-group m-3 form-checkbox">
+            {{form.directory_import}}
+            <label for="id_directory_import">{{form.directory_import.label}}</label>
+        </div>
+        <div id="directory_choices" class="form-group m-3" style="display: none">
+            {{form.override_save}}
+        </div>
         <div class="form-group m-3">
-            <label for="file_path">Pass path to file: </label>
+            <label id="source_path" for="file_path">File path</label>
             <input class="form-control" id="file_path" type="text" name="file_path" value="{{ file_path }}">
         </div>
         <div class="form-group float-md-right submit-button">
@@ -45,10 +52,20 @@
 </div>
 <div id="unification-modal" class="modal fade" role="dialog">
     {% if unification_form %}
-        {% include "import/company_unification_details.html" %}
+    {% include "import/company_unification_details.html" %}
     {% endif %}
 </div>
-
+<script>
+    $("#id_directory_import").change(function () {
+        if ($(this).is(":checked")) {
+            $("#directory_choices").show();
+            $("#source_path").html("Directory path");
+        } else {
+            $("#directory_choices").hide();
+            $("#source_path").html("File path");
+        }
+    })
+</script>
 {{ form.errors }}
 {{ form.non_field_errors }}
 {% endblock %}

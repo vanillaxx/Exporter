@@ -1,4 +1,5 @@
 from django.shortcuts import render
+import os.path
 from common.Parsers import excel_parser, pdf_gpw_parser, stooq_parser, pdf_yearbook_parser, excel_yearbook_parser, \
     excel_gpw_parser
 from common.Utils.Errors import UniqueError, ParseError
@@ -11,21 +12,19 @@ from common.DAL.db_queries_get import get_existing_data_balance_sheet, get_exist
 
 
 def import_notoria(request):
+    def is_excel_file(file_path):
+        extension = os.path.splitext(file_path)[1]
+        return extension == '.xls' or extension == '.xlsx'
+
     def render_overlapping_data_popup(chosen_sheet, sheet_shortcut, get_existing_data_func, request):
         for sheet in chosen_sheet:
             try:
-                res = excel_parser.functions[sheet_shortcut](file_path, sheet)
+                res = excel_parser.functions[sheet_shortcut](file_path, sheet, override=override, save=save)
             except UniqueError as e:
                 for data in e.overlapping_data:
                     existing = get_existing_data_func(data)
                     data["exists"] = list(map(lambda x: list(x), existing))
                 return e, None
-            except ParseError as e:
-                messages.error(request, e)
-                return render(request, 'import/notoria.html', {'form': NotoriaImportForm()})
-            except Exception as e:
-                messages.error(request, "Error occurred while parsing. " + type(e).__name__ + ": " + str(e))
-                return render(request, 'import/notoria.html', {'form': NotoriaImportForm()})
             return [], res
 
     try:
@@ -33,10 +32,45 @@ def import_notoria(request):
             form = NotoriaImportForm(request.POST)
             if form.is_valid():
                 file_path = request.POST.get('file_path', None)
-                print(file_path)
                 chosen_sheets_bs = form.cleaned_data.get('chosen_sheets_bs')
                 chosen_sheets_fr = form.cleaned_data.get('chosen_sheets_fr')
                 chosen_sheets_dp = form.cleaned_data.get('chosen_sheets_dp')
+                directory_import = form.cleaned_data.get('directory_import')
+                override = False
+                save = False
+                files_paths = []
+                if directory_import:
+                    if os.path.isdir(file_path):
+                        override_save = form.cleaned_data.get('override_save')
+                        for root, dirs, files in os.walk(file_path):
+                            for file in files:
+                                if is_excel_file(file):
+                                    absolute_path = os.path.join(root, file)
+                                    files_paths.append(absolute_path)
+                                else:
+                                    messages.error(request,
+                                                   "Directory must have only excel files from notoria.")
+                                    return render(request, 'import/notoria.html', {'form': NotoriaImportForm()})
+                            break
+                        if override_save == 'o':
+                            override = True
+                            save = False
+                        elif override_save == 's':
+                            save = True
+                            override = False
+                    else:
+                        messages.error(request,
+                                       "Pass proper path to directory with Notoria excel files, e.g '/home/notoria")
+                        return render(request, 'import/notoria.html', {'form': NotoriaImportForm()})
+                else:
+                    extension = os.path.splitext(file_path)
+                    if extension == '.xls' or extension == '.xlsx':
+                        files_paths = [file_path]
+                    else:
+                        messages.error(request, "Pass proper path to Notoria excel files, e.g '/home/AGORA.xlsx'")
+                        return render(request, 'import/notoria.html', {'form': NotoriaImportForm()})
+
+
                 error_bs = []
                 error_fr = []
                 error_dp = []
@@ -47,23 +81,33 @@ def import_notoria(request):
                 result_fr = None
                 result_dp = None
 
-                if chosen_sheets_bs:
-                    error_bs, result_bs = render_overlapping_data_popup(chosen_sheets_bs, 'bs',
-                                                                        get_existing_data_balance_sheet, request)
-                    if error_bs:
-                        overlap_bs = error_bs.overlapping_data
+                try:
+                    for fp in files_paths:
+                        file_path = fp.__str__()
+                        if chosen_sheets_bs:
+                            error_bs, result_bs = render_overlapping_data_popup(chosen_sheets_bs, 'bs',
+                                                                            get_existing_data_balance_sheet, request)
+                            if error_bs:
+                                overlap_bs = error_bs.overlapping_data
 
-                if chosen_sheets_fr:
-                    error_fr, result_fr = render_overlapping_data_popup(chosen_sheets_fr, 'fr',
-                                                                        get_existing_data_ratios, request)
-                    if error_fr:
-                        overlap_fr = error_fr.overlapping_data
+                        if chosen_sheets_fr:
+                            error_fr, result_fr = render_overlapping_data_popup(chosen_sheets_fr, 'fr',
+                                                                            get_existing_data_ratios, request)
+                            if error_fr:
+                                overlap_fr = error_fr.overlapping_data
 
-                if chosen_sheets_dp:
-                    error_dp, result_dp = render_overlapping_data_popup(chosen_sheets_dp, 'dp',
-                                                                        get_existing_data_ratios, request)
-                    if error_dp:
-                        overlap_dp = error_dp.overlapping_data
+                        if chosen_sheets_dp:
+                            error_dp, result_dp = render_overlapping_data_popup(chosen_sheets_dp, 'dp',
+                                                                                get_existing_data_ratios, request)
+                            if error_dp:
+                                overlap_dp = error_dp.overlapping_data
+                except ParseError as e:
+                    messages.error(request, e)
+                    return render(request, 'import/notoria.html', {'form': NotoriaImportForm()})
+                except Exception as e:
+                    print(e)
+                    messages.error(request, "Error occurred while parsing. " + type(e).__name__ + ": " + str(e))
+                    return render(request, 'import/notoria.html', {'form': NotoriaImportForm()})
 
                 if error_bs or error_fr or error_dp:
                     messages.success(request, "Parsed notoria successfully.")
@@ -75,7 +119,6 @@ def import_notoria(request):
                                    "overlap_bs": json.dumps(overlap_bs),
                                    "overlap_fr": json.dumps(overlap_fr),
                                    "overlap_dp": json.dumps(overlap_dp)})
-
                 result = ParsingResult.combine_notoria_results(result_bs, result_dp, result_fr)
                 if result is not None:
                     messages.success(request, "Parsed notoria successfully")
@@ -86,7 +129,11 @@ def import_notoria(request):
 
                 messages.success(request, "Parsed notoria successfully")
                 return render(request, 'import/notoria.html', {'form': NotoriaImportForm()})
-
+            else:
+                for field in form:
+                    for err in field.errors:
+                        messages.error(request, field.label + ": " + err)
+                return render(request, 'import/notoria.html', {'form': NotoriaImportForm()})
         return render(request, 'import/notoria.html', {'form': NotoriaImportForm()})
     except:
         return render(request, 'error.html')

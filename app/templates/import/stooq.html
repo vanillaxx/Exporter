@@ -78,17 +78,23 @@
 </div>
 <div id="unification-modal" class="modal fade" role="dialog">
     {% if unification_form %}
-        {% include "import/company_unification_details.html" %}
+    {% include "import/company_unification_details.html" %}
     {% endif %}
 </div>
 
 {{ form.errors }}
 {{ form.non_field_errors }}
 <script>
-    $('[data-toggle="tooltip"]').tooltip()
-    $("[name=import_type]").click(function () {
-        $('.toggle-show').hide();
-        $("#" + $(this).val() + "_content").show();
-    });
+    function initStooqToggleTooltips() {
+        $('[data-toggle="tooltip"]').tooltip()
+        $("[name=import_type]").click(function () {
+            $('.toggle-show').hide();
+            $("#" + $(this).val() + "_content").show();
+        });
+    }
+
+    $(document).ready(function () {
+        initStooqToggleTooltips();
+    })
 </script>
 {% endblock %}

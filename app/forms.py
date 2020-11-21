@@ -181,7 +181,7 @@ class ImportDatabaseForm(forms.Form):
 
 
 class NotoriaImportForm(forms.Form):
-    file_path = forms.CharField(label='Path to files:', max_length=100)
+    file_path = forms.CharField(label='Path', max_length=512)
     choices_bs = [('YS', 'Yearly'),
                   ('QS', 'Quarterly')]
     choices_fr = [('YS', 'Yearly'),
@@ -202,6 +202,12 @@ class NotoriaImportForm(forms.Form):
     bs_sheet = 'Balance sheet'
     fr_sheet = 'Financial ratios'
     dp_sheet = 'DuPont Indicators'
+    directory_import = forms.BooleanField(required=False, label='Import from whole directory')
+    choices_override_save = [('o', 'Override data from database'),
+                             ('s', 'Save data already existing in database')]
+
+    override_save = forms.ChoiceField(choices=choices_override_save, initial='o',
+                                      widget=forms.RadioSelect(attrs={'class': "radio-list"}), required=True)
 
 
 class StooqImportForm(forms.Form):
