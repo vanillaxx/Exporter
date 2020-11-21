@@ -181,7 +181,7 @@ class ImportDatabaseForm(forms.Form):
 
 
 class NotoriaImportForm(forms.Form):
-    file_path = forms.CharField(label='Path to files:', max_length=100)
+    file_path = forms.CharField(label='Path', max_length=512)
     choices_bs = [('YS', 'Yearly'),
                   ('QS', 'Quarterly')]
     choices_fr = [('YS', 'Yearly'),

@@ -116,7 +116,9 @@ def exactly_same_stock_quote(connection, values):
 
 def get_company(company: Company):
     company.standardise()
-
+    print(company.name)
+    print(company.ticker)
+    print(company.isin)
     company_id = get_company_id(company.name, company.ticker, company.isin)
     possible_companies = []
 
@@ -137,7 +139,7 @@ def get_company_id(connection, company_name, company_ticker, company_isin):
               WHERE Name = ?
               OR ISIN = ?
               OR Ticker = ?'''
-    c.execute(query, (company_name, company_ticker, company_isin))
+    c.execute(query, (company_name, company_isin, company_ticker))
     company = c.fetchone()
     if not company:
         return None

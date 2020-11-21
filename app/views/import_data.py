@@ -13,7 +13,7 @@ from common.DAL.db_queries_get import get_existing_data_balance_sheet, get_exist
 
 def import_notoria(request):
     def is_excel_file(file_path):
-        extension = os.path.splitext(file_path)
+        extension = os.path.splitext(file_path)[1]
         return extension == '.xls' or extension == '.xlsx'
 
     def render_overlapping_data_popup(chosen_sheet, sheet_shortcut, get_existing_data_func, request):
@@ -129,7 +129,11 @@ def import_notoria(request):
 
                 messages.success(request, "Parsed notoria successfully")
                 return render(request, 'import/notoria.html', {'form': NotoriaImportForm()})
-
+            else:
+                for field in form:
+                    for err in field.errors:
+                        messages.error(request, field.label + ": " + err)
+                return render(request, 'import/notoria.html', {'form': NotoriaImportForm()})
         return render(request, 'import/notoria.html', {'form': NotoriaImportForm()})
     except:
         return render(request, 'error.html')
