@@ -15,7 +15,8 @@
   </div>
 </div>
 
-<button id="create-financial" class="btn btn-primary" type="button" name="button">Create financial ratios</button>
+<button id="create-financial" class="btn btn-primary" type="button" name="button">
+    <span class="fa fa-plus"></span> Create financial ratios</button>
 
 <table class="table table-sm table-bordered">
     <thead>
@@ -77,7 +78,7 @@
         <td>
             <button type="button" id="update-financial" class="bs-modal btn btn-sm btn-primary"
                     data-form-url="{% url 'update_financial' fr.id %}">
-                <span class="fa fa-pencil"></span>
+                <span class="fa fa-pencil-alt"></span>
             </button>
             <button type="button" id="delete-financial" class="bs-modal btn btn-sm btn-danger"
                     data-form-url="{% url 'delete_financial' fr.id %}">

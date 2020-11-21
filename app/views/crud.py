@@ -15,6 +15,7 @@ class CompanyView(generic.ListView):
 
 
 class CompanyCreateView(BSModalCreateView):
+    model = Company
     template_name = 'manage/companies/create.html'
     form_class = CompanyModelForm
     success_message = 'Company was created.'
@@ -43,6 +44,7 @@ class AssetsView(generic.ListView):
 
 
 class AssetsCreateView(BSModalCreateView):
+    model = Assets
     template_name = 'manage/assets/create.html'
     form_class = AssetsModelForm
     success_message = 'Assets was created.'
@@ -71,6 +73,7 @@ class AssetsCategoryView(generic.ListView):
 
 
 class AssetsCategoryCreateView(BSModalCreateView):
+    model = AssetsCategories
     template_name = 'manage/assetsCategories/create.html'
     form_class = AssetsCategoryModelForm
     success_message = 'Assets category was created.'
@@ -99,6 +102,7 @@ class DuPontIndicatorView(generic.ListView):
 
 
 class DuPontIndicatorCreateView(BSModalCreateView):
+    model = DuPontIndicators
     template_name = 'manage/duPont/create.html'
     form_class = DuPointIndicatorModelForm
     success_message = 'DuPont indicator was created.'
@@ -127,6 +131,7 @@ class EkdClassView(generic.ListView):
 
 
 class EkdClassCreateView(BSModalCreateView):
+    model = EkdClass
     template_name = 'manage/ekdClasses/create.html'
     form_class = EkdClassModelForm
     success_message = 'EKD class was created.'
@@ -155,6 +160,7 @@ class EkdSectionView(generic.ListView):
 
 
 class EkdSectionCreateView(BSModalCreateView):
+    model = EkdClass
     template_name = 'manage/ekdSections/create.html'
     form_class = EkdSectionModelForm
     success_message = 'EKD section was created.'
@@ -183,6 +189,7 @@ class EquityLiabilitiesView(generic.ListView):
 
 
 class EquityLiabilitiesCreateView(BSModalCreateView):
+    model = EquityLiabilities
     template_name = 'manage/equityLiabilities/create.html'
     form_class = EquityLiabilitiesModelForm
     success_message = 'Equity Liabilities was created.'
@@ -211,6 +218,7 @@ class EquityLiabilitiesCategoryView(generic.ListView):
 
 
 class EquityLiabilitiesCategoryCreateView(BSModalCreateView):
+    model = EquityLiabilitiesCategories
     template_name = 'manage/equityLiabilitiesCategories/create.html'
     form_class = EquityLiabilitiesCategoryModelForm
     success_message = 'Equity liabilities category was created.'
@@ -239,6 +247,7 @@ class FinancialRatiosView(generic.ListView):
 
 
 class FinancialRatiosCreateView(BSModalCreateView):
+    model = FinancialRatios
     template_name = 'manage/financial/create.html'
     form_class = FinancialRatiosModelForm
     success_message = 'Financial ratios was created.'
@@ -267,6 +276,7 @@ class MarketValueView(generic.ListView):
 
 
 class MarketValueCreateView(BSModalCreateView):
+    model = MarketValues
     template_name = 'manage/market/create.html'
     form_class = MarketValuesModelForm
     success_message = 'Market value was created.'
@@ -295,6 +305,7 @@ class StockQuoteView(generic.ListView):
 
 
 class StockQuoteCreateView(BSModalCreateView):
+    model = StockQuotes
     template_name = 'manage/stock/create.html'
     form_class = StockQuotesModelForm
     success_message = 'Stock quote was created.'

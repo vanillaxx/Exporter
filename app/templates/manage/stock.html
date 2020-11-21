@@ -15,7 +15,8 @@
   </div>
 </div>
 
-<button id="create-stock" class="btn btn-primary" type="button" name="button">Create stock quote</button>
+<button id="create-stock" class="btn btn-primary" type="button" name="button">
+    <span class="fa fa-plus"></span> Create stock quote</button>
 
 <table class="table table-sm table-bordered">
     <thead>
@@ -49,7 +50,7 @@
         <td>
             <button type="button" id="update-stock" class="bs-modal btn btn-sm btn-primary"
                     data-form-url="{% url 'update_stock' sq.id %}">
-                <span class="fa fa-pencil"></span>
+                <span class="fa fa-pencil-alt"></span>
             </button>
             <button type="button" id="delete-stock" class="bs-modal btn btn-sm btn-danger"
                     data-form-url="{% url 'delete_stock' sq.id %}">
