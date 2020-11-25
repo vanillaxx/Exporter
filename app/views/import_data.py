@@ -63,7 +63,7 @@ def import_notoria(request):
                                        "Pass proper path to directory with Notoria excel files, e.g '/home/notoria")
                         return render(request, 'import/notoria.html', {'form': NotoriaImportForm()})
                 else:
-                    extension = os.path.splitext(file_path)
+                    extension = os.path.splitext(file_path)[1]
                     if extension == '.xls' or extension == '.xlsx':
                         files_paths = [file_path]
                     else:
