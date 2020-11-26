@@ -141,10 +141,15 @@ class StooqParser:
                             self._init_overlapping_info(overlapping_stock)
                         overlapping_stock["values"].append(stock_quotes)
 
+        if unification_info:
+            if overlapping_stock:
+                result = ParsingResult(unification_info=unification_info, overlapping_info=overlapping_stock)
+            else:
+                result = ParsingResult(unification_info=unification_info)
+            return result
+
         if overlapping_stock:
             raise UniqueError(overlapping_stock)
-        if unification_info:
-            return ParsingResult(unification_info=unification_info)
 
     def download_company(self, company, start_date, end_date, interval='d'):  # no turnover
         start_day, start_month, start_year = start_date.day, start_date.month, start_date.year
@@ -239,10 +244,11 @@ class StooqParser:
                             self._init_overlapping_info(overlapping_stock)
                         overlapping_stock["values"].append(stock_quotes)
 
-        if overlapping_stock:
-            raise UniqueError(overlapping_stock)
         if unification_info.data:
             return ParsingResult(unification_info=[unification_info])
+
+        if overlapping_stock:
+            raise UniqueError(overlapping_stock)
 
     def _init_overlapping_info(self, overlapping_info):
         overlapping_info["table_name"] = self._table_name

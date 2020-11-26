@@ -94,7 +94,7 @@
         $('#pop-up-' + sheet).modal('show');
 
         $("#" + sheet + "-replace-button").click(function () {
-            $.post('../replace_data_multiple', {
+            $.post('../import/replace_data_multiple', {
                     data: overlap,
                     'csrfmiddlewaretoken': csrf_token
                 },

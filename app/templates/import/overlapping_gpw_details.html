@@ -89,7 +89,7 @@
 
 
         $("#replace-button").click(function () {
-            $.post('../replace_data_multiple', {
+            $.post('../import/replace_data_multiple', {
                     data: data,
                     'csrfmiddlewaretoken': csrf_token
                 },

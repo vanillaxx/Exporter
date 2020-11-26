@@ -55,11 +55,15 @@ class ExcelGPWParser:
             raise ParseError(path, '1: "ISIN" should be in B5 cell and "Nazwa" should be in C5 cell or 2: "Nazwa" '
                                    'should be in B5 cell')
 
+        if unification_info:
+            if overlapping_info and overlapping_info['values']:
+                result = ParsingResult(unification_info=unification_info, overlapping_info=overlapping_info)
+            else:
+                result = ParsingResult(unification_info=unification_info)
+            return result
+
         if overlapping_info and overlapping_info['values']:
             raise UniqueError(overlapping_info)
-
-        if unification_info:
-            return ParsingResult(unification_info=unification_info)
 
     def get_date(self, end_date):
         if end_date is not None:

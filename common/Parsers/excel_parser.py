@@ -106,7 +106,7 @@ class ExcelParser():
         if sheet_name not in self.available_sheets:
             raise ParseError(path, "Available sheet names: QS, YS")
         excel_sheet = get_sheet(path, sheet_name)
-        is_directory_import = not (override or save)
+        is_directory_import = override or save
         company_id, unification_info = self.get_company_id_balance_sheet(path, is_directory_import)
         curr_row = 0
         curr_column = 2
@@ -277,10 +277,11 @@ class ExcelParser():
             overlapping_data.append(overlapping_equity_liabilities)
         if overlapping_equity_liabilities_categories:
             overlapping_data.append(overlapping_equity_liabilities_categories)
-        if overlapping_data and not is_directory_import:
-            raise UniqueError(*overlapping_data)
+
         if unification_info is not None and unification_info.data:
             return ParsingResult([unification_info])
+        if overlapping_data and not is_directory_import:
+            raise UniqueError(*overlapping_data)
         return None
 
     def parse_financial_ratios(self, path, sheet_name, override=False, save=False):
@@ -295,7 +296,7 @@ class ExcelParser():
         if sheet_name not in self.available_sheets:
             raise ParseError(path, "Available sheet names: QS, YS")
         excel_sheet = get_sheet(path, sheet_name)
-        is_directory_import = not (override or save)
+        is_directory_import = override or save
         company_id, unification_info = self.get_company_id_balance_sheet(path, is_directory_import)
         curr_row = 200
         if ratio_name == 'DuPont indicators':
@@ -355,12 +356,11 @@ class ExcelParser():
                     curr_row = dates_row + 1
                 break
             curr_row += 1
-        if overlapping_ratios and not is_directory_import:
-            raise UniqueError(overlapping_ratios)
         if unification_info is not None and unification_info.data:
             return ParsingResult([unification_info])
+        if overlapping_ratios and not is_directory_import:
+            raise UniqueError(overlapping_ratios)
         return None
-
 
     def get_company_id_balance_sheet(self, path, is_directory_import):
         company = self.parse_company(path)
