@@ -3,7 +3,7 @@ from django.shortcuts import render
 
 from app.forms import GpwImportForm, StooqImportForm, NotoriaImportForm
 from common.DAL.db_queries_get import update_company, get_existing_data_stock_quotes, get_existing_data_balance_sheet, \
-    get_existing_data_ratios
+    get_existing_financial_ratios_for_parsed_file, get_existing_dupont_indicators_for_parsed_file
 from common.Utils.Errors import UniqueError
 from common.Utils.gpw_utils import copy_and_remove_name_from_overlapping_info
 from common.Utils.unification_info import UnificationInfo
@@ -110,8 +110,8 @@ def __render_response_for_notoria(request, overlapping):
         'EquityLiabilities': (get_existing_data_balance_sheet, overlap_bs),
         'AssetsCategories': (get_existing_data_balance_sheet, overlap_bs),
         'EquityLiabilitiesCategories': (get_existing_data_balance_sheet, overlap_bs),
-        'FinancialRatios': (get_existing_data_ratios, overlap_fr),
-        'DuPontIndicators': (get_existing_data_ratios, overlap_dp)
+        'FinancialRatios': (get_existing_financial_ratios_for_parsed_file, overlap_fr),
+        'DuPontIndicators': (get_existing_dupont_indicators_for_parsed_file, overlap_dp)
     }
 
     for data in overlapping:

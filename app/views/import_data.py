@@ -8,8 +8,9 @@ from common.Utils.parsing_result import ParsingResult
 from ..forms import *
 import json
 from django.contrib import messages
-from common.DAL.db_queries_get import get_existing_data_balance_sheet, get_existing_data_ratios, \
-    get_existing_data_stock_quotes
+from common.DAL.db_queries_get import get_existing_data_balance_sheet, \
+    get_existing_data_stock_quotes, get_existing_dupont_indicators_for_parsed_file, \
+    get_existing_financial_ratios_for_parsed_file
 
 
 def import_notoria(request):
@@ -93,13 +94,13 @@ def import_notoria(request):
 
                         if chosen_sheets_fr:
                             error_fr, result_fr = render_overlapping_data_popup(chosen_sheets_fr, 'fr',
-                                                                            get_existing_data_ratios, request)
+                                                                            get_existing_financial_ratios_for_parsed_file, request)
                             if error_fr:
                                 overlap_fr = error_fr.overlapping_data
 
                         if chosen_sheets_dp:
                             error_dp, result_dp = render_overlapping_data_popup(chosen_sheets_dp, 'dp',
-                                                                                get_existing_data_ratios, request)
+                                                                                get_existing_dupont_indicators_for_parsed_file, request)
                             if error_dp:
                                 overlap_dp = error_dp.overlapping_data
                 except ParseError as e:
