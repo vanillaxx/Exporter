@@ -84,6 +84,8 @@
         const sheet = '{{ sheet | escapejs }}'
         const csrf_token = "{{ csrf_token | escapejs }}"
         const overlap = '{{overlap|safe}}'
+        const url = "{% url 'replace_data_multiple' %}";
+
         $('.modal-dialog').draggable({
             handle: ".modal-header"
         });
@@ -94,7 +96,7 @@
         $('#pop-up-' + sheet).modal('show');
 
         $("#" + sheet + "-replace-button").click(function () {
-            $.post('../import/replace_data_multiple', {
+            $.post(url, {
                     data: overlap,
                     'csrfmiddlewaretoken': csrf_token
                 },

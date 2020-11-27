@@ -86,10 +86,11 @@
 
         const csrf_token = '{{ csrf_token | escapejs }}';
         const data = '{{ data | safe }}';
+        const url = "{% url 'replace_data_multiple' %}";
 
 
         $("#replace-button").click(function () {
-            $.post('../import/replace_data_multiple', {
+            $.post(url, {
                     data: data,
                     'csrfmiddlewaretoken': csrf_token
                 },
@@ -102,6 +103,9 @@
         $('#ignore-button').click(function () {
             $('#gpw-overlapping').html("<div class='modal-body'>Data imported successfully. Data which overlapped ignored.</div>");
             $('#gpw-close-button').show();
+        });
+        $("#gpw-close-button").click(function () {
+
         });
     })
 </script>

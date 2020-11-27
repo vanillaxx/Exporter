@@ -1,6 +1,6 @@
 <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content" style="width: 1000px">
-        <form method="post" action="../insert_data">{% csrf_token %}
+        <form method="post" action="{% url 'insert_data' %}">{% csrf_token %}
             <div class="modal-header">
                 <h3 class="modal-title">Unify companies</h3>
                 <button type="button" class="close" data-dismiss="modal">
