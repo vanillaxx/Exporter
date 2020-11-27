@@ -134,7 +134,7 @@ class NotoriaUnificationInfo(UnificationInfo):
             return overlapping[0]
         else:
             overlapping_info = {}
-            overlapping_data.appennd(overlapping_info)
+            overlapping_data.append(overlapping_info)
             return overlapping_info
 
     def get_data_type(self):

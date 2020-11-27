@@ -1,7 +1,7 @@
 from django.http import HttpResponse
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 
-from app.forms import GpwImportForm, StooqImportForm, NotoriaImportForm
+from app.forms import GpwImportForm, StooqImportForm, NotoriaImportForm, UnificationForm
 from common.DAL.db_queries_get import update_company, get_existing_data_stock_quotes, get_existing_data_balance_sheet, \
     get_existing_financial_ratios_for_parsed_file, get_existing_dupont_indicators_for_parsed_file
 from common.Utils.Errors import UniqueError
@@ -9,6 +9,7 @@ from common.Utils.gpw_utils import copy_and_remove_name_from_overlapping_info
 from common.Utils.unification_info import UnificationInfo
 import json
 from common.DAL.db_queries_insert import insert_company, replace_values
+from django.contrib import messages
 
 
 def replace_data(request):
@@ -42,6 +43,7 @@ def insert_data(request):
     if request.method == 'POST':
         data_json = request.POST.get('unification')
         data = json.loads(data_json)
+        # print(data)
 
         overlapping_data_json = request.POST.get('overlapping', json.dumps({}))
         overlapping_data = json.loads(overlapping_data_json)
@@ -59,7 +61,7 @@ def insert_data(request):
             else:
                 company_id, company_name = json.loads(company)
                 update_company(company_id, ui.company)
-                # company_name = ui.company.name
+                company_name = ui.company.name
 
             ui.insert_data_to_db(new_overlapping_data, company_id, company_name)
 
@@ -74,8 +76,12 @@ def insert_data(request):
             }
             return render_response[data_type[0]](request, new_overlapping_data)
         else:
-            return render(request, 'manage/home.html',
-                          {'message': f'Parsed {data_type[1]} successfully. Chosen companies unified'})
+            get_url = {
+                'notoria': 'import_notoria_success',
+                'stooq': 'import_stooq_success',
+                'gpw': 'import_gpw_success'
+            }
+            return redirect(get_url[data_type[0]])
 
     return render(request, 'base.html')
 
@@ -104,6 +110,9 @@ def __render_response_for_notoria(request, overlapping):
     overlap_bs = []
     overlap_fr = []
     overlap_dp = []
+    error_bs = None
+    error_fr = None
+    error_dp = None
 
     get_existing_data_func_and_overlap = {
         'Assets': (get_existing_data_balance_sheet, overlap_bs),
@@ -120,11 +129,18 @@ def __render_response_for_notoria(request, overlapping):
         data['exists'] = list(map(lambda x: list(x), existing))
         overlap.append(data)
 
+    if overlap_bs:
+        error_bs = UniqueError(*overlap_bs)
+    if overlap_fr:
+        error_fr = UniqueError(*overlap_fr)
+    if overlap_dp:
+        error_dp = UniqueError(*overlap_dp)
+
     return render(request, 'import/notoria.html',
                   {'form': NotoriaImportForm(),
-                   'error_bs': UniqueError(*overlap_bs),
-                   'error_fr': UniqueError(*overlap_fr),
-                   'error_dp': UniqueError(*overlap_dp),
+                   'error_bs': error_bs,
+                   'error_fr': error_fr,
+                   'error_dp': error_dp,
                    'overlap_bs': json.dumps(overlap_bs),
                    'overlap_fr': json.dumps(overlap_fr),
                    'overlap_dp': json.dumps(overlap_dp)})

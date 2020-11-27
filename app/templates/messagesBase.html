@@ -12,6 +12,13 @@
         {% if m.tags == "debug" %} <div class="alert alert-dark" style="z-index: -1">{{ m }}</div>{% endif %}
     {% endfor %}
 {% endif %}
+{% if request.path == '/import/gpw/success' and request.method == 'GET' %}
+    <div class="alert alert-success" style="z-index: -1">Parsed GPW file successfully.</div>
+{% elif request.path == '/import/stooq/success' and request.method == 'GET' %}
+    <div class="alert alert-success" style="z-index: -1">Parsed Stooq.com data successfully.</div>
+{% elif request.path == '/import/notoria/success' and request.method == 'GET' %}
+    <div class="alert alert-success" style="z-index: -1">Parsed notoria successfully.</div>
+{% endif %}
 
 {% block entity %}
 {% endblock %}

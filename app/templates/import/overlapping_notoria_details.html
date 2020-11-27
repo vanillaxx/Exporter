@@ -85,6 +85,8 @@
         const csrf_token = "{{ csrf_token | escapejs }}"
         const overlap = '{{overlap|safe}}'
         const url = "{% url 'replace_data' %}";
+        const url_notoria = "{% url 'import_notoria_success' %}";
+        const current_url = '{{ request.path }}';
 
         $('.modal-dialog').draggable({
             handle: ".modal-header"
@@ -110,5 +112,11 @@
             $('#' + sheet).html("<div class='modal-body'>Data imported successfully. Data which overlapped ignored.</div>");
             $('#' + sheet + '-close-button').show();
         })
+        $('#' + sheet + '-close-button').click(function () {
+           errors_number--;
+           if (errors_number === 0 && current_url === '/import/insert_data') {
+               window.location.href=url_notoria;
+           }
+        });
     })
 </script>

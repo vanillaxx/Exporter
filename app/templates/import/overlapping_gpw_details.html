@@ -87,7 +87,8 @@
         const csrf_token = '{{ csrf_token | escapejs }}';
         const data = '{{ data | safe }}';
         const url = "{% url 'replace_data_multiple' %}";
-
+        const url_gpw = "{% url 'import_gpw_success' %}";
+        const current_url = '{{ request.path }}';
 
         $("#replace-button").click(function () {
             $.post(url, {
@@ -98,14 +99,15 @@
                     $('#gpw-overlapping').html("<div class='modal-body'>Data replaced successfully</div>");
                     $('#gpw-close-button').show();
                 });
-
         });
         $('#ignore-button').click(function () {
             $('#gpw-overlapping').html("<div class='modal-body'>Data imported successfully. Data which overlapped ignored.</div>");
             $('#gpw-close-button').show();
         });
         $("#gpw-close-button").click(function () {
-
+            if (current_url === '/import/insert_data'){
+                window.location.href=url_gpw
+            }
         });
     })
 </script>
