@@ -2,7 +2,7 @@ from django.shortcuts import render
 import os.path
 from common.Parsers import excel_parser, pdf_gpw_parser, stooq_parser, pdf_yearbook_parser, excel_yearbook_parser, \
     excel_gpw_parser
-from common.Utils.Errors import UniqueError, ParseError
+from common.Utils.Errors import UniqueError, ParseError, DateError
 from common.Utils.gpw_utils import copy_and_remove_name_from_overlapping_info
 from common.Utils.parsing_result import ParsingResult
 from ..forms import *
@@ -299,6 +299,7 @@ def import_gpw(request):
                 path = form.cleaned_data['path']
                 file_type = form.cleaned_data['file_type']
                 directory_import = form.cleaned_data.get('directory_import')
+                date = form.cleaned_data.get('date')
                 paths = []
                 save = False
                 override = False
@@ -339,7 +340,7 @@ def import_gpw(request):
                 for path in paths:
                     parser = parsers[file_type](save, override)
                     try:
-                        result = parser.parse(path)
+                        result = parser.parse(path, date)
                     except UniqueError as e:
                         overlapping = copy_and_remove_name_from_overlapping_info(e.overlapping_data[0])
 
@@ -348,6 +349,12 @@ def import_gpw(request):
                                       {'form': GpwImportForm(),
                                        'overlapping': e.overlapping_data[0],
                                        'data': json.dumps([overlapping])})
+                    except DateError as e:
+                        if directory_import:
+                            messages.error(request, f'{e} The file needs to be imported separately.')
+                        else:
+                            messages.error(request, e)
+                        return render(request, 'import/gpw.html', {'form': GpwImportForm(date=True)})
                     except ParseError as e:
                         messages.error(request, e)
                         return render(request, 'import/gpw.html', {'form': GpwImportForm()})

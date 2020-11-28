@@ -5,7 +5,7 @@ import collections
 import pandas as pd
 from datetime import date
 
-from common.Utils.Errors import UniqueError
+from common.Utils.Errors import UniqueError, DateError
 from common.Utils.gpw_utils import save_value_to_database
 from common.Utils.parsing_result import ParsingResult
 
@@ -45,15 +45,15 @@ class PdfYearbookParser:
         self.override = override
 
     # TODO errore
-    def parse(self, pdf_path, year=None):
+    def parse(self, pdf_path, data_date=None):
         self.pdf_path = pdf_path
         self.doc = fitz.Document(pdf_path)
 
-        if year is None:
-            self.find_data_date()
+        if data_date:
+            self.date = data_date
         else:
-            self.data_year = year - 1
-        self.date = date(int(self.data_year), month=12, day=31)
+            self.find_data_date()
+            self.date = date(int(self.data_year), month=12, day=31)
 
         dataframes = [self.process_page(page, page_num) for page_num, page in enumerate(self.doc.pages())]
         dataframes = [dataframe for dataframe in dataframes if dataframe is not None]
@@ -88,7 +88,7 @@ class PdfYearbookParser:
         if self.yearbook_year and self.data_year is None:
             self.data_year = int(self.yearbook_year) - 1
         elif self.yearbook_year is None and self.data_year is None:
-            raise ValueError('Cannot find the yearbook year')
+            raise DateError(self.pdf_path)
 
     def process_page(self, page, page_num):
         media_box = page.MediaBox

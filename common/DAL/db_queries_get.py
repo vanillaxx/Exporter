@@ -650,6 +650,7 @@ def get_existing_financial_ratios_for_parsed_file(connection, overlapping_data):
     c.execute(query)
     return c.fetchall()
 
+
 @with_connection
 def get_existing_dupont_indicators_for_parsed_file(connection, overlapping_data):
     c = connection.cursor()
