@@ -258,6 +258,11 @@ class GpwImportForm(forms.Form):
     file_type = forms.ChoiceField(label='Type of file', choices=choices,
                                   widget=forms.RadioSelect(attrs={'class': 'radio-list'}))
     path = forms.CharField(label='Path to file', widget=forms.TextInput(attrs={'class': 'form-control'}))
+    directory_import = forms.BooleanField(required=False, label='Import whole directory')
+    choices_override_save = [('o', 'Override data from database'),
+                             ('s', 'Save data already existing in database')]
+    override_save = forms.ChoiceField(choices=choices_override_save, initial='o',
+                                      widget=forms.RadioSelect(attrs={'class': "radio-list"}), required=True)
 
 
 class UnificationForm(BSModalForm):

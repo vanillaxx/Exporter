@@ -13,11 +13,17 @@ from common.DAL.db_queries_get import get_existing_data_balance_sheet, \
     get_existing_financial_ratios_for_parsed_file
 
 
-def import_notoria(request):
-    def is_excel_file(file_path):
-        extension = os.path.splitext(file_path)[1]
-        return extension == '.xls' or extension == '.xlsx'
+def is_excel_file(file_path):
+    extension = os.path.splitext(file_path)[1]
+    return extension == '.xls' or extension == '.xlsx'
 
+
+def is_pdf_file(file_path):
+    extension = os.path.splitext(file_path)[1]
+    return extension == '.pdf'
+
+
+def import_notoria(request):
     def render_overlapping_data_popup(chosen_sheet, sheet_shortcut, get_existing_data_func, request):
         for sheet in chosen_sheet:
             try:
@@ -267,11 +273,23 @@ def import_stooq(request):
 
 
 def import_gpw(request):
+    def correct_file(file_path):
+        if 'pdf' in file_type:
+            return is_pdf_file(file_path)
+        elif 'excel' in file_type:
+            return is_excel_file(file_path)
+
     parsers = {
         'yearbook_excel': excel_yearbook_parser.ExcelYearbookParser,
         'yearbook_pdf': pdf_yearbook_parser.PdfYearbookParser,
         'statistics_excel': excel_gpw_parser.ExcelGPWParser,
         'statistics_pdf': pdf_gpw_parser.PdfGPWParser
+    }
+    file_types = {
+        'yearbook_excel': 'GPW Yearbook excel',
+        'yearbook_pdf': 'GPW Yearbook PDF',
+        'statistics_excel': 'GPW Statistic Bulletin excel',
+        'statistics_pdf': 'GPW Statistic Bulletin PDF'
     }
 
     try:
@@ -280,24 +298,62 @@ def import_gpw(request):
             if form.is_valid():
                 path = form.cleaned_data['path']
                 file_type = form.cleaned_data['file_type']
-                parser = parsers[file_type]()
-                try:
-                    result = parser.parse(path)
-                except UniqueError as e:
-                    overlapping = copy_and_remove_name_from_overlapping_info(e.overlapping_data[0])
+                directory_import = form.cleaned_data.get('directory_import')
+                paths = []
+                save = False
+                override = False
+                msg = 'file'
 
-                    messages.success(request, 'Parsed GPW file successfully.')
-                    return render(request, 'import/gpw.html',
-                                  {'form': GpwImportForm(),
-                                   'overlapping': e.overlapping_data[0],
-                                   'data': json.dumps([overlapping])})
+                if directory_import:
+                    if os.path.isdir(path):
+                        override_save = form.cleaned_data.get('override_save')
+                        for root, _, files in os.walk(path):
+                            for file in files:
+                                if correct_file(file):
+                                    absolute_path = os.path.join(root, file)
+                                    paths.append(absolute_path)
+                                else:
+                                    messages.error(request,
+                                                   f'Directory has to contain {file_types[file_type]} files only.')
+                                    return render(request, 'import/gpw.html', {'form': form})
+                            break
 
-                except ParseError as e:
-                    messages.error(request, e)
-                    return render(request, 'import/gpw.html', {'form': GpwImportForm()})
-                except Exception as e:
-                    messages.error(request, "Error occurred while parsing. " + type(e).__name__ + ": " + str(e))
-                    return render(request, 'import/gpw.html', {'form': GpwImportForm()})
+                        if override_save == 'o':
+                            override = True
+                        elif override_save == 's':
+                            save = True
+
+                        if len(paths) > 1:
+                            msg = 'files'
+                    else:
+                        messages.error(request, 'Pass a correct path to a directory with GPW files.')
+                        return render(request, 'import/gpw.html', {'form': form})
+                else:
+                    if correct_file(path):
+                        paths = [path]
+                    else:
+                        messages.error(request, f'Pass a correct path to a {file_types[file_type]} file.')
+                        return render(request, 'import/gpw.html', {'form': form})
+
+                result = None
+                for path in paths:
+                    parser = parsers[file_type](save, override)
+                    try:
+                        result = parser.parse(path)
+                    except UniqueError as e:
+                        overlapping = copy_and_remove_name_from_overlapping_info(e.overlapping_data[0])
+
+                        messages.success(request, 'Parsed GPW file successfully.')
+                        return render(request, 'import/gpw.html',
+                                      {'form': GpwImportForm(),
+                                       'overlapping': e.overlapping_data[0],
+                                       'data': json.dumps([overlapping])})
+                    except ParseError as e:
+                        messages.error(request, e)
+                        return render(request, 'import/gpw.html', {'form': GpwImportForm()})
+                    except Exception as e:
+                        messages.error(request, f'Error occurred while parsing {path}. {type(e).__name__}: {str(e)}')
+                        return render(request, 'import/gpw.html', {'form': GpwImportForm()})
 
                 if result is not None:
                     messages.success(request, 'Parsed GPW file successfully.')
@@ -307,7 +363,7 @@ def import_gpw(request):
                                                                'unification': result.to_json(),
                                                                'overlapping_data': json.dumps(result.overlapping_info)})
 
-                messages.success(request, 'Parsed GPW file successfully.')
+                messages.success(request, f'Parsed GPW {msg} successfully.')
                 return render(request, 'import/gpw.html', {'form': GpwImportForm()})
         else:
             form = GpwImportForm()

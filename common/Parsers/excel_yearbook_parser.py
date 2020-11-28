@@ -8,11 +8,13 @@ from common.Utils.parsing_result import ParsingResult
 
 
 class ExcelYearbookParser:
-    def __init__(self):
+    def __init__(self, save, override):
         self.workbook = None
         self.date = None
         self.unification_info = []
         self.overlapping_info = {}
+        self.save = save
+        self.override = override
 
     def parse(self, pdf_path, year=None):
         self.workbook = xlrd.open_workbook(pdf_path)
@@ -31,6 +33,8 @@ class ExcelYearbookParser:
 
         if self.overlapping_info and self.overlapping_info['values']:
             raise UniqueError(self.overlapping_info)
+
+        return None
 
     def get_date_and_sheet_names(self, year):
         sheet = self.workbook.sheet_by_index(0)
@@ -79,7 +83,8 @@ class ExcelYearbookParser:
 
             if name and market_value:
                 market_value = market_value * multiplier
-                save_value_to_database(name, isin, market_value, self.date, self.overlapping_info, self.unification_info)
+                save_value_to_database(name, isin, market_value, self.date, self.overlapping_info,
+                                       self.unification_info, self.save, self.override)
                 data.append([name, isin, market_value])
         return data
 

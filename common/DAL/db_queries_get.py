@@ -114,17 +114,17 @@ def exactly_same_stock_quote(connection, values):
     return c.fetchall()
 
 
-def get_company(company: Company):
+def get_company(company: Company, directory_import=False):
     company.standardise()
 
     company_id = get_company_id(company.name, company.ticker, company.isin)
     possible_companies = []
 
-    if company_id is None:
+    if company_id is None and not directory_import:
         companies = get_all_companies_info()
         possible_companies = company.get_possible_matches(companies)
 
-    else:
+    elif company_id is not None:
         update_company(company_id, company)
 
     return company_id, possible_companies

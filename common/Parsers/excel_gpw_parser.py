@@ -7,8 +7,10 @@ from common.Utils.parsing_result import ParsingResult
 
 
 class ExcelGPWParser:
-    def __init__(self):
+    def __init__(self, save, override):
         self.workbook = None
+        self.save = save
+        self.override = override
 
     def parse(self, path, end_date=None):
         self.workbook = xlrd.open_workbook(path)
@@ -35,7 +37,8 @@ class ExcelGPWParser:
                 name = excel_sheet.cell(curr_row, name_column).value
                 value = excel_sheet.cell(curr_row, capitalization_column).value * milion
 
-                save_value_to_database(name, isin, value, end_date, overlapping_info, unification_info)
+                save_value_to_database(name, isin, value, end_date, overlapping_info, unification_info,
+                                       self.save, self.override)
 
                 curr_row = curr_row + 1
 
@@ -48,7 +51,8 @@ class ExcelGPWParser:
                 value = excel_sheet.cell(curr_row, capitalization_column).value * milion
                 isin = None
 
-                save_value_to_database(name, isin, value, end_date, overlapping_info, unification_info)
+                save_value_to_database(name, isin, value, end_date, overlapping_info, unification_info,
+                                       self.save, self.override)
 
                 curr_row = curr_row + 1
         else:
@@ -64,6 +68,8 @@ class ExcelGPWParser:
 
         if overlapping_info and overlapping_info['values']:
             raise UniqueError(overlapping_info)
+
+        return None
 
     def get_date(self, end_date):
         if end_date is not None:

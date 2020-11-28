@@ -30,12 +30,14 @@ class PdfGPWParser:
     capitalisation_value_column = 'Kapitalizacja'
     company_column = 'Nazwa'
 
-    def __init__(self):
+    def __init__(self, save, override):
         self.doc = None
         self.pdf_path = None
         self.date = None
         self.overlapping_info = {}
         self.unification_info = []
+        self.save = save
+        self.override = override
 
     def parse(self, pdf_path, data_date=None):
         self.pdf_path = pdf_path
@@ -59,6 +61,8 @@ class PdfGPWParser:
 
         if self.overlapping_info and self.overlapping_info['values']:
             raise UniqueError(self.overlapping_info)
+
+        return None
 
     # TODO errors
     def find_data_date(self):
@@ -213,4 +217,4 @@ class PdfGPWParser:
         market_value = row[self.capitalisation_value_column]
 
         save_value_to_database(company_name, company_isin, market_value, self.date,
-                               self.overlapping_info, self.unification_info)
+                               self.overlapping_info, self.unification_info, self.save, self.override)
