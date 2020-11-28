@@ -141,7 +141,8 @@ class ExportForm(forms.Form):
                                                required=False)
     chosen_interval_stooq = forms.ChoiceField(choices=choices_i, initial='d',
                                               widget=forms.RadioSelect(attrs={'class': 'radio-list'}), required=False)
-    chosen_interval_gpw = forms.ChoiceField(choices=choices_i_gpw, initial=choices_i_gpw[0], widget=forms.RadioSelect)
+    chosen_interval_gpw = forms.ChoiceField(choices=choices_i_gpw, initial=choices_i_gpw[0],
+                                            widget=forms.RadioSelect(attrs={'class': "radio-list"}))
 
     def __init__(self, *args, **kwargs):
         date_ranges = kwargs.pop('count', 0)
@@ -287,5 +288,6 @@ class UnificationForm(BSModalForm):
                 choices = info.possible_matches
                 self.fields[f'company_choices_{ind}'] = forms.ChoiceField(label=label,
                                                                           choices=choices,
-                                                                          widget=forms.RadioSelect,
+                                                                          widget=forms.RadioSelect(
+                                                                              attrs={'class': "radio-list"}),
                                                                           required=False)
