@@ -51,6 +51,8 @@ class PdfYearbookParser:
 
         if data_date:
             self.date = data_date
+            self.data_year = data_date.year
+            self.yearbook_year = data_date.year + 1
         else:
             self.find_data_date()
             self.date = date(int(self.data_year), month=12, day=31)

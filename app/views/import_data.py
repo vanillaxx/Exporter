@@ -1,3 +1,4 @@
+import dateutil
 from django.shortcuts import render
 import os.path
 from common.Parsers import excel_parser, pdf_gpw_parser, stooq_parser, pdf_yearbook_parser, excel_yearbook_parser, \
@@ -323,7 +324,7 @@ def import_gpw(request):
                             override = True
                         elif override_save == 's':
                             save = True
-
+                        date = None
                         if len(paths) > 1:
                             msg = 'files'
                     else:
@@ -339,6 +340,8 @@ def import_gpw(request):
                 result = None
                 for path in paths:
                     parser = parsers[file_type](save, override)
+                    if date:
+                        date = dateutil.parser.parse(date)
                     try:
                         result = parser.parse(path, date)
                     except UniqueError as e:
