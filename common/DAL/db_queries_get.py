@@ -623,23 +623,57 @@ def get_existing_data_stock_quotes_merge(connection, company_id, overlapping_dat
 
 
 @with_connection
-def get_existing_data_ratios(connection, overlapping_data):
+def get_existing_financial_ratios_for_parsed_file(connection, overlapping_data):
     c = connection.cursor()
     date_condition_template = ""
     values = overlapping_data["values"]
     values_length = (len(values))
+    company_id = values[0][0]
     for i in range(values_length - 1):
         date_condition_template += ' ( "Period start" = "{start}" AND "Period end" = "{end}" ) OR'.format(
             start=values[i][1], end=values[i][2])
     date_condition_template += ' ( "Period start" = "{start}" AND "Period end" = "{end}" )'.format(
         start=values[values_length - 1][1],
         end=values[values_length - 1][2])
-    query = '''SELECT * FROM {table}  
-              WHERE{date_condition}'''.format(table=overlapping_data["table_name"],
+    query = '''SELECT
+                C.ID, "Period start", "Period end", "Gross profit margin on sales", "Operating profit margin",
+                "Gross profit margin", "Net profit margin", "Return on equity (ROE)", "Return on assets (ROA)",
+                "Working capital ratio", "Current ratio", "Quick ratio", "Cash ratio", "Receivables turnover",
+                "Inventory turnover", "The operating cycle", "Rotation commitments", "Cash conversion cycle",
+                "Rotation assets", "Rotation of assets", "Assets ratio", "Debt ratio", "Debt service ratio",
+                "Rate debt security" 
+                FROM FinancialRatios FR
+                JOIN Company C on FR.CompanyID = C.ID
+               WHERE FR.CompanyID = {company_id}
+               AND ( {date_condition} )'''.format(company_id=company_id,
                                               date_condition=date_condition_template)
     c.execute(query)
     return c.fetchall()
 
+@with_connection
+def get_existing_dupont_indicators_for_parsed_file(connection, overlapping_data):
+    c = connection.cursor()
+    date_condition_template = ""
+    values = overlapping_data["values"]
+    values_length = (len(values))
+    company_id = values[0][0]
+    for i in range(values_length - 1):
+        date_condition_template += ' ( "Period start" = "{start}" AND "Period end" = "{end}" ) OR'.format(
+            start=values[i][1], end=values[i][2])
+    date_condition_template += ' ( "Period start" = "{start}" AND "Period end" = "{end}" )'.format(
+        start=values[values_length - 1][1],
+        end=values[values_length - 1][2])
+    query = '''SELECT
+                C.ID, "Period start" timestamp, "Period end" timestamp, "Return on equity (ROE)",
+                "Return on assets (ROA)", "Leverage (EM)", "Net profit margin", "Asset utilization (AU)",
+                "Load gross profit", "Load operating profit", "Operating profit margin", "EBITDA margin"
+               FROM DuPontIndicators DP
+               JOIN Company C on DP.CompanyID = C.ID
+               WHERE DP.CompanyID = {company_id}
+               AND ( {date_condition} )'''.format(company_id=company_id,
+                                              date_condition=date_condition_template)
+    c.execute(query)
+    return c.fetchall()
 
 @with_connection
 def get_existing_data_financial_ratios(connection, company_id, overlapping_dates):

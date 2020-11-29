@@ -1,6 +1,6 @@
 <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content" style="width: 1000px">
-        <form method="post" action="../insert_data">{% csrf_token %}
+        <form method="post" action="{% url 'insert_data' %}">{% csrf_token %}
             <div class="modal-header">
                 <h3 class="modal-title">Unify companies</h3>
                 <button type="button" class="close" data-dismiss="modal">
@@ -11,6 +11,7 @@
                 <div class="modal-body">
                     {{ unification_form }}
                     <input type="hidden" value="{{ unification }}" name="unification" />
+                    <input type="hidden" value="{{ overlapping_data }}" name="overlapping" />
                 </div>
                 <div class="modal-footer">
                     <button id="submit-button" type="submit" class="btn btn-primary">Submit</button>

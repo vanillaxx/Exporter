@@ -6,8 +6,7 @@
 
 <form method="post">{% csrf_token %}
     <div class="col-sm-4 col-xs-4">
-        <fieldset class="border m-3 p-2"
-        ">
+        <fieldset class="border m-3 p-2">
         <legend class="form-legend">{{form.file_type.label}}</legend>
         {{form.file_type}}
         </fieldset>

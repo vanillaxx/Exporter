@@ -1,8 +1,8 @@
+import json
 import re
 import string
 import unicodedata
 from fuzzywuzzy import fuzz
-from cleanco import prepare_terms, basename
 
 
 class Company:
@@ -25,7 +25,7 @@ class Company:
             self.bloomberg = self.bloomberg.upper()
 
     def get_possible_matches(self, companies):
-        return [(id, name) for (id, name, ticker, bloomberg) in companies
+        return [(json.dumps((id, name)), name) for (id, name, ticker, bloomberg) in companies
                 if self.is_similar(Company(name=name, ticker=ticker, bloomberg=bloomberg))]
 
     def is_similar(self, company):
@@ -41,6 +41,9 @@ class Company:
             return False
 
         return any(compare_names(names_tuple) for names_tuple in tuples_to_compare)
+
+    def __str__(self):
+        return f'company: {self.name} {self.isin} {self.ticker} {self.bloomberg}'
 
 
 def compare_names(names_tuple):

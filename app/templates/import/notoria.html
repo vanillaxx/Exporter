@@ -37,17 +37,23 @@
 </form>
 <div id="pop-up-bs" class="modal fade" role="dialog">
     {% if error_bs %}
-    {% include "import/overlapping_notoria_details.html" with error=error_bs sheet='bs' overlap=overlap_bs %}
+        <div id="bs_overlapping">
+            {% include "import/overlapping_notoria_details.html" with error=error_bs sheet='bs' overlap=overlap_bs %}
+        </div>
     {% endif %}
 </div>
 <div id="pop-up-fr" class="modal fade" role="dialog">
     {% if error_fr %}
-    {% include "import/overlapping_notoria_details.html" with error=error_fr sheet='fr' overlap=overlap_fr %}
+        <div id="fr_overlapping">
+            {% include "import/overlapping_notoria_details.html" with error=error_fr sheet='fr' overlap=overlap_fr %}
+        </div>
     {% endif %}
 </div>
 <div id="pop-up-dp" class="modal fade" role="dialog">
     {% if error_dp %}
-    {% include "import/overlapping_notoria_details.html" with error=error_dp sheet='dp' overlap=overlap_dp %}
+         <div id="dp_overlapping">
+            {% include "import/overlapping_notoria_details.html" with error=error_dp sheet='dp' overlap=overlap_dp %}
+         </div>
     {% endif %}
 </div>
 <div id="unification-modal" class="modal fade" role="dialog">
@@ -65,6 +71,9 @@
             $("#source_path").html("File path");
         }
     })
+    let errors_number = ($("#bs_overlapping").length === 0 ? 0 : 1 )
+        + ($("#fr_overlapping").length === 0 ? 0 : 1 )
+        + ($("#dp_overlapping").length === 0 ? 0 : 1 );
 </script>
 {{ form.errors }}
 {{ form.non_field_errors }}

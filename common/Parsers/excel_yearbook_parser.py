@@ -21,11 +21,16 @@ class ExcelYearbookParser:
         if not data:
             raise ValueError('No data found')
 
+        if self.unification_info:
+            if self.overlapping_info and self.overlapping_info['values']:
+                result = ParsingResult(unification_info=self.unification_info,
+                                       overlapping_info=self.overlapping_info)
+            else:
+                result = ParsingResult(unification_info=self.unification_info)
+            return result
+
         if self.overlapping_info and self.overlapping_info['values']:
             raise UniqueError(self.overlapping_info)
-
-        if self.unification_info:
-            return ParsingResult(unification_info=self.unification_info)
 
     def get_date_and_sheet_names(self, year):
         sheet = self.workbook.sheet_by_index(0)

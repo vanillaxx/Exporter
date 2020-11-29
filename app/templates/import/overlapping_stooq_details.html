@@ -84,6 +84,10 @@
         const sheet = '{{ sheet | escapejs }}'
         const csrf_token = "{{ csrf_token | escapejs }}"
         const overlap = '{{overlap|safe}}'
+        const url = "{% url 'replace_data_multiple' %}";
+        const url_stooq = "{% url 'import_stooq_success' %}";
+        const current_url = '{{ request.path }}';
+
         $('.modal-dialog').draggable({
             handle: ".modal-header"
         });
@@ -94,7 +98,7 @@
         $('#pop-up-' + sheet).modal('show');
 
         $("#" + sheet + "-replace-button").click(function () {
-            $.post('../replace_data_multiple', {
+            $.post(url, {
                     data: overlap,
                     'csrfmiddlewaretoken': csrf_token
                 },
@@ -103,10 +107,15 @@
                     $('#' + sheet + '-close-button').show();
                 });
 
-        })
+        });
         $("#" + sheet + "-ignore-button").click(function () {
             $('#' + sheet).html("<div class='modal-body'>Data imported successfully. Data which overlapped ignored.</div>");
             $('#' + sheet + '-close-button').show();
-        })
+        });
+        $("#" + sheet + "-close-button").click(function () {
+            if (current_url === '/import/insert_data') {
+                window.location.href = url_stooq
+            }
+        });
     })
 </script>

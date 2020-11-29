@@ -6,8 +6,11 @@ from .views import crud, database, export_data, general, import_data, merge, rep
 urlpatterns = [
     path('', general.index, name='index'),
     path('error', general.error, name='error'),
+    path('import/notoria/success', import_data.import_notoria, name='import_notoria_success'),
     path('import/notoria/', import_data.import_notoria, name='import_notoria'),
+    path('import/stooq/success', import_data.import_stooq, name='import_stooq_success'),
     path('import/stooq/', import_data.import_stooq, name='import_stooq'),
+    path('import/gpw/success', import_data.import_gpw, name='import_gpw_success'),
     path('import/gpw/', import_data.import_gpw, name='import_gpw'),
     path('import/replace_data', replace.replace_data, name='replace_data'),
     path('import/replace_data_multiple', replace.replace_data_multiple, name='replace_data_multiple'),

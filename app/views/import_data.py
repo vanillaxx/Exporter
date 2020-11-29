@@ -3,12 +3,14 @@ import os.path
 from common.Parsers import excel_parser, pdf_gpw_parser, stooq_parser, pdf_yearbook_parser, excel_yearbook_parser, \
     excel_gpw_parser
 from common.Utils.Errors import UniqueError, ParseError
+from common.Utils.gpw_utils import copy_and_remove_name_from_overlapping_info
 from common.Utils.parsing_result import ParsingResult
 from ..forms import *
 import json
 from django.contrib import messages
-from common.DAL.db_queries_get import get_existing_data_balance_sheet, get_existing_data_ratios, \
-    get_existing_data_stock_quotes
+from common.DAL.db_queries_get import get_existing_data_balance_sheet, \
+    get_existing_data_stock_quotes, get_existing_dupont_indicators_for_parsed_file, \
+    get_existing_financial_ratios_for_parsed_file
 
 
 def import_notoria(request):
@@ -92,13 +94,13 @@ def import_notoria(request):
 
                         if chosen_sheets_fr:
                             error_fr, result_fr = render_overlapping_data_popup(chosen_sheets_fr, 'fr',
-                                                                            get_existing_data_ratios, request)
+                                                                            get_existing_financial_ratios_for_parsed_file, request)
                             if error_fr:
                                 overlap_fr = error_fr.overlapping_data
 
                         if chosen_sheets_dp:
                             error_dp, result_dp = render_overlapping_data_popup(chosen_sheets_dp, 'dp',
-                                                                                get_existing_data_ratios, request)
+                                                                                get_existing_dupont_indicators_for_parsed_file, request)
                             if error_dp:
                                 overlap_dp = error_dp.overlapping_data
                 except ParseError as e:
@@ -124,8 +126,10 @@ def import_notoria(request):
                     messages.success(request, "Parsed notoria successfully")
                     return render(request, 'import/notoria.html', {'form': NotoriaImportForm(),
                                                                    'unification_form':
-                                                                       UnificationForm(unification=result.unification_info),
-                                                                   'unification': result.to_json()})
+                                                                       UnificationForm(unification=
+                                                                                       result.unification_info),
+                                                                   'unification': result.to_json(),
+                                                                   'overlapping_data': json.dumps({})})
 
                 messages.success(request, "Parsed notoria successfully")
                 return render(request, 'import/notoria.html', {'form': NotoriaImportForm()})
@@ -244,8 +248,12 @@ def import_stooq(request):
                 if result is not None:
                     return render(request, 'import/stooq.html', {'form': StooqImportForm(),
                                                                  'unification_form':
-                                                                     UnificationForm(unification=result.unification_info),
-                                                                 'unification': result.to_json()})
+                                                                     UnificationForm(
+                                                                         unification=result.unification_info
+                                                                     ),
+                                                                 'unification': result.to_json(),
+                                                                 'overlapping_data': json.dumps(result.overlapping_info)
+                                                                 })
 
                 messages.success(request, "Parsed stooq.com data successfully.")
                 return render(request, 'import/stooq.html', {'form': StooqImportForm()})
@@ -254,7 +262,7 @@ def import_stooq(request):
                 return render(request, 'import/stooq.html', {'form': form})
 
         return render(request, 'import/stooq.html', {'form': StooqImportForm()})
-    except Exception as e:
+    except:
         return render(request, 'error.html')
 
 
@@ -276,23 +284,14 @@ def import_gpw(request):
                 try:
                     result = parser.parse(path)
                 except UniqueError as e:
-                    def remove_name(l):
-                        new_l = l.copy()
-                        new_l.pop(1)
-                        return new_l
-
-                    overlapping = e.overlapping_data[0].copy()
-                    overlapping['columns'] = overlapping['columns'].copy()
-                    overlapping['values'] = overlapping['values'].copy()
-
-                    overlapping['columns'].pop(1)
-                    overlapping['values'] = list(map(remove_name, overlapping['values']))
+                    overlapping = copy_and_remove_name_from_overlapping_info(e.overlapping_data[0])
 
                     messages.success(request, 'Parsed GPW file successfully.')
                     return render(request, 'import/gpw.html',
                                   {'form': GpwImportForm(),
                                    'overlapping': e.overlapping_data[0],
                                    'data': json.dumps([overlapping])})
+
                 except ParseError as e:
                     messages.error(request, e)
                     return render(request, 'import/gpw.html', {'form': GpwImportForm()})
@@ -305,7 +304,8 @@ def import_gpw(request):
                     return render(request, 'import/gpw.html', {'form': GpwImportForm(),
                                                                'unification_form':
                                                                    UnificationForm(unification=result.unification_info),
-                                                               'unification': result.to_json()})
+                                                               'unification': result.to_json(),
+                                                               'overlapping_data': json.dumps(result.overlapping_info)})
 
                 messages.success(request, 'Parsed GPW file successfully.')
                 return render(request, 'import/gpw.html', {'form': GpwImportForm()})
