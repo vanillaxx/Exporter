@@ -1,3 +1,4 @@
+from common.Parsers.gpw_parser import GPWParser
 from common.Utils.Errors import ParseError, UniqueError, DateError
 from common.Utils.dates import *
 from common.Utils.gpw_utils import save_value_to_database
@@ -6,7 +7,7 @@ import xlrd
 from common.Utils.parsing_result import ParsingResult
 
 
-class ExcelGPWParser:
+class ExcelGPWParser(GPWParser):
     def __init__(self, save, override):
         self.workbook = None
         self.save = save

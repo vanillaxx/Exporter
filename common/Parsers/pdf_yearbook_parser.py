@@ -5,12 +5,13 @@ import collections
 import pandas as pd
 from datetime import date
 
-from common.Utils.Errors import UniqueError, DateError
+from common.Parsers.gpw_parser import GPWParser
+from common.Utils.Errors import UniqueError, DateError, ParseError
 from common.Utils.gpw_utils import save_value_to_database
 from common.Utils.parsing_result import ParsingResult
 
 
-class PdfYearbookParser:
+class PdfYearbookParser(GPWParser):
     table_title = 'Spółki według wartości rynkowej'
     old_table_title = 'Spółki o największej wartości rynkowej'
     market = ['Główny Rynek GPW',
@@ -44,7 +45,6 @@ class PdfYearbookParser:
         self.save = save
         self.override = override
 
-    # TODO errore
     def parse(self, pdf_path, data_date=None):
         self.pdf_path = pdf_path
         self.doc = fitz.Document(pdf_path)
@@ -60,7 +60,7 @@ class PdfYearbookParser:
         dataframes = [self.process_page(page, page_num) for page_num, page in enumerate(self.doc.pages())]
         dataframes = [dataframe for dataframe in dataframes if dataframe is not None]
         if not dataframes:
-            raise ValueError('No data found')
+            raise ParseError(self.pdf_path, 'No data found.')
 
         if self.unification_info:
             if self.overlapping_info and self.overlapping_info['values']:
@@ -165,7 +165,7 @@ class PdfYearbookParser:
         if column_info:
             market_value_column_name, index = column_info[0]
         else:
-            raise ValueError('Invalid column names: Market Value column not found.')
+            raise ParseError(self.pdf_path, 'Invalid column names: Market Value column not found.')
 
         multipliers = {
             'mln': 1000000,
@@ -192,7 +192,7 @@ class PdfYearbookParser:
 
             return new_df
         else:
-            raise ValueError('Invalid column names')
+            raise ParseError(self.pdf_path, 'Invalid column names')
 
     def save_value_to_database(self, row):
         company_name = row[self.company_column]

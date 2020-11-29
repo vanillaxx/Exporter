@@ -4,13 +4,14 @@ import collections
 import pandas as pd
 import numpy as np
 
-from common.Utils.Errors import UniqueError, DateError
+from common.Parsers.gpw_parser import GPWParser
+from common.Utils.Errors import UniqueError, DateError, ParseError
 from common.Utils.gpw_utils import save_value_to_database
 from common.Utils.dates import *
 from common.Utils.parsing_result import ParsingResult
 
 
-class PdfGPWParser:
+class PdfGPWParser(GPWParser):
     table_title = 'Spółki krajowe według kapitalizacji'
     skip = [
         table_title,
@@ -48,7 +49,7 @@ class PdfGPWParser:
         dataframes = [self.process_page(page, page_num) for page_num, page in enumerate(self.doc.pages())]
         dataframes = [dataframe for dataframe in dataframes if dataframe is not None]
         if not dataframes:
-            raise ValueError('No data found')
+            raise ParseError(self.pdf_path, 'No data found.')
 
         if self.unification_info:
             if self.overlapping_info and self.overlapping_info['values']:
@@ -195,7 +196,7 @@ class PdfGPWParser:
 
         if not all(name in columns for name in new_columns) and \
                 (self.company_column not in columns or self.capitalisation_value_column not in columns):
-            raise ValueError('Invalid column names')
+            raise ParseError(self.pdf_path, 'Invalid column names.')
 
         columns = columns + ['', '']
         df = df.rename(columns=lambda s: columns[s])
