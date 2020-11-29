@@ -36,3 +36,12 @@ class DatabaseImportError(Exception):
 
     def __str__(self):
         return 'Error occurred while importing database: {}'.format(str(self.error))
+
+
+class DateError(Exception):
+    def __init__(self, path):
+        self.path = path
+
+    def __str__(self):
+        return f'Cannot parse date in file {self.path}. ' \
+            f'Enter end date of the period for which the data was collected (e.g. 31.12.2018 for 2019 Yearbook).'

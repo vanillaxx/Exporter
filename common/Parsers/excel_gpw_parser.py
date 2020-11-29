@@ -1,4 +1,4 @@
-from common.Utils.Errors import ParseError, UniqueError
+from common.Utils.Errors import ParseError, UniqueError, DateError
 from common.Utils.dates import *
 from common.Utils.gpw_utils import save_value_to_database
 import xlrd
@@ -11,8 +11,10 @@ class ExcelGPWParser:
         self.workbook = None
         self.save = save
         self.override = override
+        self.path = None
 
     def parse(self, path, end_date=None):
+        self.path = path
         self.workbook = xlrd.open_workbook(path)
 
         sheet_name = 'kap'
@@ -72,7 +74,7 @@ class ExcelGPWParser:
         return None
 
     def get_date(self, end_date):
-        if end_date is not None:
+        if end_date:
             return end_date
         sheet = self.workbook.sheet_by_index(0)
         for row_index in range(sheet.nrows):
@@ -83,7 +85,7 @@ class ExcelGPWParser:
                 if end_date is not None:
                     break
                 if 'Kapitalizacja' in value or 'capitalization' in value:
-                    raise ValueError('Date not found')
+                    raise DateError(self.path)
                 end_date = find_date_in_monthly_statistics(value) \
                     or find_date_in_quarterly_statistics(value) \
                     or find_date_in_halfyearly_statistics(value) \

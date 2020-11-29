@@ -2,7 +2,7 @@ import xlrd
 import re
 from datetime import date
 
-from common.Utils.Errors import UniqueError
+from common.Utils.Errors import UniqueError, DateError
 from common.Utils.gpw_utils import save_value_to_database
 from common.Utils.parsing_result import ParsingResult
 
@@ -15,10 +15,12 @@ class ExcelYearbookParser:
         self.overlapping_info = {}
         self.save = save
         self.override = override
+        self.path = None
 
-    def parse(self, pdf_path, year=None):
+    def parse(self, pdf_path, data_date=None):
+        self.path = pdf_path
         self.workbook = xlrd.open_workbook(pdf_path)
-        self.date, sheet_names = self.get_date_and_sheet_names(year)
+        self.date, sheet_names = self.get_date_and_sheet_names(data_date)
         data = [self.parse_sheet(sheet_name) for sheet_name in sheet_names]
         if not data:
             raise ValueError('No data found')
@@ -36,17 +38,18 @@ class ExcelYearbookParser:
 
         return None
 
-    def get_date_and_sheet_names(self, year):
+    def get_date_and_sheet_names(self, data_date):
         sheet = self.workbook.sheet_by_index(0)
         sheet_name_column = 'tab'
         market_value_row = 'market value'
         year_pattern = r'(\d{4})'
 
+        year = data_date
         sheet_names = []
         for row_index in range(sheet.nrows):
             sheet_name = None
             for value in sheet.row_values(row_index):
-                if year is None:
+                if not year:
                     match = re.search(year_pattern, value)
                     if match:
                         year = match.group(0)
@@ -58,9 +61,10 @@ class ExcelYearbookParser:
         if not sheet_names:
             raise ValueError('Sheet names not found')
         if year is None:
-            raise ValueError('Date not found')
+            raise DateError(self.path)
 
-        data_date = date(int(year), month=12, day=31)
+        if not data_date:
+            data_date = date(int(year), month=12, day=31)
         return data_date, sheet_names
 
     def parse_sheet(self, sheet_name):

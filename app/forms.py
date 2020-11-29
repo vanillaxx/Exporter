@@ -141,7 +141,8 @@ class ExportForm(forms.Form):
                                                required=False)
     chosen_interval_stooq = forms.ChoiceField(choices=choices_i, initial='d',
                                               widget=forms.RadioSelect(attrs={'class': 'radio-list'}), required=False)
-    chosen_interval_gpw = forms.ChoiceField(choices=choices_i_gpw, initial=choices_i_gpw[0], widget=forms.RadioSelect)
+    chosen_interval_gpw = forms.ChoiceField(choices=choices_i_gpw, initial=choices_i_gpw[0],
+                                            widget=forms.RadioSelect(attrs={'class': "radio-list"}))
 
     def __init__(self, *args, **kwargs):
         date_ranges = kwargs.pop('count', 0)
@@ -264,6 +265,18 @@ class GpwImportForm(forms.Form):
     override_save = forms.ChoiceField(choices=choices_override_save, initial='o',
                                       widget=forms.RadioSelect(attrs={'class': "radio-list"}), required=True)
 
+    def __init__(self, *args, **kwargs):
+        date = kwargs.pop('date', False)
+        super(GpwImportForm, self).__init__(*args, **kwargs)
+        if date:
+            self.fields['date'] = forms.DateTimeField(required=False,
+                                                      widget=DatePickerInput(format='%d.%m.%Y',
+                                                                             attrs={'type': 'date',
+                                                                                    'class': 'datepicker form-control'}
+                                                                             ))
+        else:
+            self.fields['date'] = forms.CharField(required=False, widget=forms.HiddenInput())
+
 
 class UnificationForm(BSModalForm):
     def __init__(self, *args, **kwargs):
@@ -275,5 +288,6 @@ class UnificationForm(BSModalForm):
                 choices = info.possible_matches
                 self.fields[f'company_choices_{ind}'] = forms.ChoiceField(label=label,
                                                                           choices=choices,
-                                                                          widget=forms.RadioSelect,
+                                                                          widget=forms.RadioSelect(
+                                                                              attrs={'class': "radio-list"}),
                                                                           required=False)

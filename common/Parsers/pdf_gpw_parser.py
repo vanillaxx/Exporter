@@ -4,7 +4,7 @@ import collections
 import pandas as pd
 import numpy as np
 
-from common.Utils.Errors import UniqueError
+from common.Utils.Errors import UniqueError, DateError
 from common.Utils.gpw_utils import save_value_to_database
 from common.Utils.dates import *
 from common.Utils.parsing_result import ParsingResult
@@ -43,8 +43,7 @@ class PdfGPWParser:
         self.pdf_path = pdf_path
         self.doc = fitz.Document(pdf_path)
 
-        if data_date is None:
-            self.date = self.find_data_date()
+        self.date = self.find_data_date(data_date)
 
         dataframes = [self.process_page(page, page_num) for page_num, page in enumerate(self.doc.pages())]
         dataframes = [dataframe for dataframe in dataframes if dataframe is not None]
@@ -64,14 +63,16 @@ class PdfGPWParser:
 
         return None
 
-    # TODO errors
-    def find_data_date(self):
+    def find_data_date(self, data_date):
+        if data_date:
+            return data_date
+
         page = self.doc[0]
         text = page.getText()
         data_date = find_date_in_monthly_statistics(text) or find_date_in_quarterly_statistics(text) \
             or find_date_in_halfyearly_statistics(text) or find_date_in_yearly_statistics_pdf(page, text)
         if data_date is None:
-            raise ValueError('Date not found')
+            raise DateError(self.pdf_path)
         else:
             return data_date
 

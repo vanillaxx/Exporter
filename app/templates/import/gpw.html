@@ -18,6 +18,12 @@
                 {{form.override_save}}
             </div>
             <div class="form-group m-3">
+                {% if not form.date.is_hidden %}
+                    <label>Date</label>
+                {% endif %}
+                {{form.date}}
+            </div>
+            <div class="form-group m-3">
                 <label id="source_path">File path</label>
                 {{form.path}}
             </div>
