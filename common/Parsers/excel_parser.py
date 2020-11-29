@@ -365,7 +365,7 @@ class ExcelParser():
     def get_company_id_balance_sheet(self, path, is_directory_import):
         company = self.parse_company(path)
 
-        company_id, possible_companies = common.DAL.db_queries_get.get_company(company)
+        company_id, possible_companies = common.DAL.db_queries_get.get_company(company, is_directory_import)
 
         if company_id is None and (not possible_companies or is_directory_import):
             company_id = common.DAL.db_queries_insert.insert_company(company)

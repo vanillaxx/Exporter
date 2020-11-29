@@ -1,15 +1,16 @@
 import copy
 from sqlite3 import IntegrityError
 
-from common.DAL.db_queries_insert import insert_market_value, insert_company
+from common.DAL.db_queries_insert import insert_market_value, insert_company, replace_values, insert_values
 from common.DAL.db_queries_get import get_company, get_existing_data_for_market_values
 from common.Utils.company_unification import Company
 import common.Utils.unification_info
 
 
-def save_value_to_database(name, isin, value, end_date, overlapping_info: {}, unification_info: []):
+def save_value_to_database(name, isin, value, end_date, overlapping_info: {}, unification_info: [],
+                           save: bool, override: bool):
     company = Company(name=name, isin=isin)
-    company_id, possible_companies = get_company(company)
+    company_id, possible_companies = get_company(company, save or override)
 
     if company_id is None and possible_companies:
         unification_info.append(
@@ -22,10 +23,19 @@ def save_value_to_database(name, isin, value, end_date, overlapping_info: {}, un
         if company_id is None and not possible_companies:
             company_id = insert_company(company)
 
-        try:
-            insert_market_value(company_id, value, end_date)
-        except IntegrityError:
-            add_overlapping_info(overlapping_info, company_id, name, value, end_date)
+        table_name = 'MarketValues'
+        columns = ['CompanyID', 'Period end', 'Market value']
+        values = [company_id, str(end_date), value]
+
+        if save:
+            insert_values(table_name=table_name, columns=columns, values=values)
+        elif override:
+            replace_values(table_name=table_name, columns=columns, values=values)
+        else:
+            try:
+                insert_market_value(company_id, value, end_date)
+            except IntegrityError:
+                add_overlapping_info(overlapping_info, company_id, name, value, end_date)
 
 
 def add_overlapping_info(overlapping_info: {}, company_id, name, value, end_date):

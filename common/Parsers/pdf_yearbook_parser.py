@@ -35,12 +35,14 @@ class PdfYearbookParser:
     market_value_column = 'Wartość rynkowa'
     company_column = 'Spółka'
 
-    def __init__(self):
+    def __init__(self, save, override):
         self.doc = None
         self.pdf_path = None
         self.date = None
         self.overlapping_info = {}
         self.unification_info = []
+        self.save = save
+        self.override = override
 
     # TODO errore
     def parse(self, pdf_path, year=None):
@@ -68,6 +70,8 @@ class PdfYearbookParser:
 
         if self.overlapping_info and self.overlapping_info['values']:
             raise UniqueError(self.overlapping_info)
+
+        return None
 
     def find_data_date(self):
         for page in self.doc.pages():
@@ -194,4 +198,4 @@ class PdfYearbookParser:
         company_isin = None
 
         save_value_to_database(company_name, company_isin, market_value, self.date,
-                               self.overlapping_info, self.unification_info)
+                               self.overlapping_info, self.unification_info, self.save, self.override)

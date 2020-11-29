@@ -2,23 +2,30 @@
 {% block entity %}
 {% load static %}
 
-<h2>Data import from GPW</h2>
+    <h2>Data import from GPW</h2>
 
-<form method="post">{% csrf_token %}
-    <div class="col-sm-4 col-xs-4">
-        <fieldset class="border m-3 p-2">
-        <legend class="form-legend">{{form.file_type.label}}</legend>
-        {{form.file_type}}
-        </fieldset>
-        <div class="form-group m-3">
-            <label>{{form.path.label}}</label>
-            {{form.path}}
+    <form method="post">{% csrf_token %}
+        <div class="col-sm-4 col-xs-4">
+            <fieldset class="border m-3 p-2">
+            <legend class="form-legend">{{form.file_type.label}}</legend>
+            {{form.file_type}}
+            </fieldset>
+            <div class="form-group m-3 form-checkbox">
+                {{form.directory_import}}
+                <label>{{form.directory_import.label}}</label>
+            </div>
+            <div id="directory_choices" class="form-group m-3" style="display: none">
+                {{form.override_save}}
+            </div>
+            <div class="form-group m-3">
+                <label id="source_path">File path</label>
+                {{form.path}}
+            </div>
+            <div class="form-group float-md-right submit-button">
+                <button type="submit" class="btn-dark">Import</button>
+            </div>
         </div>
-        <div class="form-group float-md-right submit-button">
-            <button type="submit" class="btn-dark">Import</button>
-        </div>
-    </div>
-</form>
+    </form>
 
     <div id="unification-modal" class="modal fade" role="dialog">
         {% if unification_form %}
@@ -30,5 +37,19 @@
             {% include "import/overlapping_gpw_details.html" %}
         {% endif %}
     </div>
+
+    <script>
+        $("#id_directory_import").change(function () {
+            if ($(this).is(":checked")) {
+                $("#directory_choices").show();
+                $("#source_path").html("Directory path");
+            } else {
+                $("#directory_choices").hide();
+                $("#source_path").html("File path");
+            }
+        })
+    </script>
+    {{ form.errors }}
+    {{ form.non_field_errors }}
 
 {% endblock %}
