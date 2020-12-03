@@ -23,6 +23,7 @@ class ExcelYearbookParser(GPWParser):
         self.workbook = xlrd.open_workbook(self.path)
         self.date, sheet_names = self.get_date_and_sheet_names(data_date)
         data = [self.parse_sheet(sheet_name) for sheet_name in sheet_names]
+        data = [d for d in data if d]
         if not data:
             raise ParseError(self.path, 'No data found.')
 

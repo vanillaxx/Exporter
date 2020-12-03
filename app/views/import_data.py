@@ -338,6 +338,8 @@ def import_gpw(request):
                         return render(request, 'import/gpw.html', {'form': form})
 
                 result = None
+                errors = []
+                date_error = False
                 for path in paths:
                     parser = parsers[file_type](save, override)
                     if date:
@@ -354,16 +356,24 @@ def import_gpw(request):
                                        'data': json.dumps([overlapping])})
                     except DateError as e:
                         if directory_import:
-                            messages.error(request, f'{e} The file needs to be imported separately.')
+                            errors.append(f'{e} The file needs to be imported separately.')
+                            date_error = True
                         else:
                             messages.error(request, e)
-                        return render(request, 'import/gpw.html', {'form': GpwImportForm(date=True)})
+                            return render(request, 'import/gpw.html', {'form': GpwImportForm(date=True)})
                     except ParseError as e:
-                        messages.error(request, e)
-                        return render(request, 'import/gpw.html', {'form': GpwImportForm()})
+                        errors.append(e)
                     except Exception as e:
-                        messages.error(request, f'Error occurred while parsing {path}. {type(e).__name__}: {str(e)}')
-                        return render(request, 'import/gpw.html', {'form': GpwImportForm()})
+                        errors.append(f'Error occurred while parsing {path}. {type(e).__name__}: {str(e)}')
+
+                if errors:
+                    if date_error:
+                        form = GpwImportForm(date=True)
+                    else:
+                        form = GpwImportForm()
+                    for error in errors:
+                        messages.error(request, error)
+                    return render(request, 'import/gpw.html', {'form': form})
 
                 if result is not None:
                     messages.success(request, 'Parsed GPW file successfully.')
