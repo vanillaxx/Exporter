@@ -2,8 +2,8 @@
 
 ROOT_DIR=$(cd ../ && pwd)
 
-if [ ! -d "$ROOT_DIR"/exporter ]; then 
+if [ ! -d "$ROOT_DIR"/env ]; then 
 	. ./install.sh
 fi
 
-"$ROOT_DIR"/exporter/bin/python3 "$ROOT_DIR"/manage.py runserver
+cd ../ && "$ROOT_DIR"/env/bin/python3 "$ROOT_DIR"/manage.py runserver
