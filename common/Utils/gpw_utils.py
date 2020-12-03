@@ -65,3 +65,27 @@ def copy_and_remove_name_from_overlapping_info(overlapping: {}):
     overlapping_copy['values'] = list(map(remove_name, overlapping_copy['values']))
 
     return overlapping_copy
+
+
+def df_with_new_indexes(df):
+    rows_number = len(df)
+    new_indexes = range(1, rows_number + 1)
+    old_indexes = df.index.values
+    return df.rename(index=dict(zip(old_indexes, new_indexes)))
+
+
+def check_if_data_correct(warnings: [], row_index, page_num, company_name, company_isin, market_value, multiplier):
+    market_value_error = False
+    try:
+        market_value = float(market_value)
+    except ValueError:
+        market_value_error = True
+
+    if ((not company_name or company_name.isdigit()) and not company_isin) or market_value_error:
+        warnings.append(f'Row {row_index} on page {page_num}: '
+                        f'read incorrect values (name:{company_name}, market value: {market_value})')
+        return None
+    elif not market_value_error:
+        return market_value * multiplier
+    else:
+        return None

@@ -1,12 +1,11 @@
 import camelot
 import fitz
 import collections
-import pandas as pd
 import numpy as np
 
 from common.Parsers.gpw_parser import GPWParser
 from common.Utils.Errors import UniqueError, DateError, ParseError
-from common.Utils.gpw_utils import save_value_to_database
+from common.Utils.gpw_utils import save_value_to_database, df_with_new_indexes, check_if_data_correct
 from common.Utils.dates import *
 from common.Utils.parsing_result import ParsingResult
 
@@ -39,6 +38,7 @@ class PdfGPWParser(GPWParser):
         self.unification_info = []
         self.save = save
         self.override = override
+        self.warnings = []
 
     def parse(self, pdf_path, data_date=None):
         self.pdf_path = pdf_path
@@ -49,7 +49,7 @@ class PdfGPWParser(GPWParser):
         dataframes = [self.process_page(page, page_num) for page_num, page in enumerate(self.doc.pages())]
         dataframes = [dataframe for dataframe in dataframes if dataframe is not None]
         if not dataframes:
-            raise ParseError(self.pdf_path, 'No data found.')
+            raise ParseError(self.pdf_path, 'No data found. Probably problems with encoding.')
 
         if self.unification_info:
             if self.overlapping_info and self.overlapping_info['values']:
@@ -61,6 +61,9 @@ class PdfGPWParser(GPWParser):
 
         if self.overlapping_info and self.overlapping_info['values']:
             raise UniqueError(self.overlapping_info)
+
+        if self.warnings:
+            return ParsingResult(warnings=self.warnings)
 
         return None
 
@@ -89,12 +92,12 @@ class PdfGPWParser(GPWParser):
 
             tables = camelot.read_pdf(self.pdf_path, pages=str(page_num + 1), flavor='stream', table_areas=[table_area])
             if tables:
-                return self.parse_table(tables[0])
+                return self.parse_table(tables[0], page_num + 1)
         else:
             return None
 
     # TODO refactor
-    def parse_table(self, table):
+    def parse_table(self, table, page_num):
         df = table.df
         rows_number = len(df)
         columns = ['' for _ in range(15)]
@@ -105,8 +108,7 @@ class PdfGPWParser(GPWParser):
         name_pattern3 = re.compile(r'(?P<index>\d+)\n(?P<name>\w+)')
         drop_index = None
         for row, value in enumerate(df.values):
-            # print(value)
-            if value.any() in self.stop_parsing:
+            if np.in1d(self.stop_parsing, value).any():
                 drop_index = row
                 break
             match_isin = isin_pattern.match(value[0])
@@ -182,12 +184,12 @@ class PdfGPWParser(GPWParser):
         columns = [name for name in columns if name]
 
         new_columns = [self.isin_code_column, self.company_column, self.capitalisation_value_column]
+        multiplier = 1e6
         for new_name in new_columns:
             column_info = [(name, index) for index, name in enumerate(columns) if new_name in name]
             if column_info:
                 column_name, index = column_info[0]
                 if new_name == self.capitalisation_value_column:
-                    multiplier = 1
                     if 'mln' or 'mil' in column_name:
                         multiplier = 1000000
                     elif 'tys' in column_name:
@@ -205,18 +207,23 @@ class PdfGPWParser(GPWParser):
 
         new_df = df[new_columns].replace(regex=r'\*', value='')
         new_df[self.capitalisation_value_column] = new_df[self.capitalisation_value_column] \
-            .replace(regex=' ', value='') \
-            .replace(regex=',', value='.') \
-            .astype('float') \
-            .mul(multiplier)
+            .replace(regex=r'\s+', value='') \
+            .replace(regex=',', value='.')
+        new_df = df_with_new_indexes(new_df)
 
-        new_df.apply(self.save_value_to_database, axis=1)
+        new_df.apply(self.save_value_to_database, axis=1, args=(multiplier, page_num))
         return new_df
 
-    def save_value_to_database(self, row):
+    def save_value_to_database(self, row, multiplier, page_num):
+        row_index = row.name
         company_name = row[self.company_column]
         company_isin = row.get(self.isin_code_column)
         market_value = row[self.capitalisation_value_column]
 
-        save_value_to_database(company_name, company_isin, market_value, self.date,
-                               self.overlapping_info, self.unification_info, self.save, self.override)
+        market_value = check_if_data_correct(warnings=self.warnings, row_index=row_index, page_num=page_num,
+                                             company_name=company_name, company_isin=company_isin,
+                                             market_value=market_value, multiplier=multiplier)
+
+        if market_value is not None:
+            save_value_to_database(company_name, company_isin, market_value, self.date,
+                                   self.overlapping_info, self.unification_info, self.save, self.override)

@@ -2,12 +2,13 @@ from common.Utils.unification_info import UnificationInfo, NotoriaUnificationInf
 
 
 class ParsingResult:
-    def __init__(self, unification_info: [] = None, overlapping_info: {} = None):
+    def __init__(self, unification_info: [] = None, overlapping_info: {} = None, warnings: [] = None):
         self.unification_info = unification_info
         if overlapping_info is None:
             self.overlapping_info = {}
         else:
             self.overlapping_info = overlapping_info
+        self.warnings = warnings
 
     def to_json(self):
         return UnificationInfo.list_to_json(self.unification_info)

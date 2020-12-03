@@ -2,12 +2,12 @@ import camelot
 import fitz
 import re
 import collections
-import pandas as pd
 from datetime import date
+import numpy
 
 from common.Parsers.gpw_parser import GPWParser
 from common.Utils.Errors import UniqueError, DateError, ParseError
-from common.Utils.gpw_utils import save_value_to_database
+from common.Utils.gpw_utils import save_value_to_database, df_with_new_indexes, check_if_data_correct
 from common.Utils.parsing_result import ParsingResult
 
 
@@ -16,21 +16,11 @@ class PdfYearbookParser(GPWParser):
     old_table_title = 'Spółki o największej wartości rynkowej'
     market = ['Główny Rynek GPW',
               'Giełda Papierów Wartościowych w Warszawie']
-    data_year, yearbook_year = None, None
-    skip = [
-        f'Spółki według wartości rynkowej (na koniec {data_year} r.)',
-        f'Spółki według wartości rynkowej (na koniec {data_year} r.) (cd.)',
-        f'Spółki o największej wartości rynkowej na koniec {data_year} r.'
-    ]
+    skip, stop_parsing = None, None
     end_columns = [
         'Spółki krajowe', 'Spólki krajowe razem:', 'Spólki zagraniczne',
         'Spólki zagraniczne razem:', 'Razem spółki krajowe',
         'Razem spółki zagraniczne', 'Razem'
-    ]
-    stop_parsing = [
-        'Razem spółki zagraniczne',
-        'Spółki zagraniczne razem:'
-        f'{yearbook_year} Rocznik Giełdowy'
     ]
     year_pattern = r'Rocznik Giełdowy (?P<yearbook_year>\d{4})|Dane statystyczne za rok (?P<data_year>\d{4})'
     market_value_column = 'Wartość rynkowa'
@@ -40,10 +30,12 @@ class PdfYearbookParser(GPWParser):
         self.doc = None
         self.pdf_path = None
         self.date = None
+        self.data_year, self.yearbook_year = None, None
         self.overlapping_info = {}
         self.unification_info = []
         self.save = save
         self.override = override
+        self.warnings = []
 
     def parse(self, pdf_path, data_date=None):
         self.pdf_path = pdf_path
@@ -57,10 +49,21 @@ class PdfYearbookParser(GPWParser):
             self.find_data_date()
             self.date = date(int(self.data_year), month=12, day=31)
 
+        self.skip = [
+            f'Spółki według wartości rynkowej (na koniec {self.data_year} r.)',
+            f'Spółki według wartości rynkowej (na koniec {self.data_year} r.) (cd.)',
+            f'Spółki o największej wartości rynkowej na koniec {self.data_year} r.'
+        ]
+        self.stop_parsing = [
+            'Razem spółki zagraniczne',
+            'Spółki zagraniczne razem:',
+            f'{self.yearbook_year} Rocznik Giełdowy'
+        ]
+
         dataframes = [self.process_page(page, page_num) for page_num, page in enumerate(self.doc.pages())]
         dataframes = [dataframe for dataframe in dataframes if dataframe is not None]
         if not dataframes:
-            raise ParseError(self.pdf_path, 'No data found.')
+            raise ParseError(self.pdf_path, 'No data found. Probably problems with encoding.')
 
         if self.unification_info:
             if self.overlapping_info and self.overlapping_info['values']:
@@ -72,6 +75,9 @@ class PdfYearbookParser(GPWParser):
 
         if self.overlapping_info and self.overlapping_info['values']:
             raise UniqueError(self.overlapping_info)
+
+        if self.warnings:
+            return ParsingResult(warnings=self.warnings)
 
         return None
 
@@ -89,6 +95,8 @@ class PdfYearbookParser(GPWParser):
 
         if self.yearbook_year and self.data_year is None:
             self.data_year = int(self.yearbook_year) - 1
+        elif self.yearbook_year is None and self.data_year:
+            self.yearbook_year = int(self.data_year) + 1
         elif self.yearbook_year is None and self.data_year is None:
             raise DateError(self.pdf_path)
 
@@ -97,13 +105,13 @@ class PdfYearbookParser(GPWParser):
         x_max, x_min, y_max = media_box.x1, 0, 0
         title_rect = page.searchFor(self.table_title, hit_max=1) or page.searchFor(self.old_table_title, hit_max=1)
         if title_rect:
-            # print(page_num)
+            # check if it's the right market
             next_page = page_num + 1 if page_num + 1 < self.doc.pageCount else self.doc.pageCount
             gpw = [page.searchFor(market, hit_max=1) or self.doc.loadPage(next_page).searchFor(market, hit_max=1)
                    for market in self.market]
             gpw = [item for item in gpw if item]
             if not gpw and int(self.data_year) > 2001:
-                return
+                return None
 
             bottom_left = title_rect[0].bottom_left
             table_area = [x_min, media_box.y1 - bottom_left.y, x_max, y_max]
@@ -111,20 +119,20 @@ class PdfYearbookParser(GPWParser):
 
             tables = camelot.read_pdf(self.pdf_path, pages=str(page_num + 1), flavor='stream', table_areas=[table_area])
             if tables:
-                return self.parse_table(tables[0])
+                return self.parse_table(tables[0], page_num + 1)
 
-    def parse_table(self, table):
+    def parse_table(self, table, page_num):
         df = table.df
         rows_number = len(df)
         columns_num = len(df.columns)
 
         pattern = re.compile(r'(?P<index>\d+) (?P<company>\w+)\*?')
-        columns = ["" for _ in range(columns_num)]
+        columns = ['' for _ in range(columns_num)]
         columns_parsed = False
         drop_index = None
 
         for row, value in enumerate(df.values):
-            if value.any() in self.stop_parsing:
+            if numpy.in1d(self.stop_parsing, value).any():
                 drop_index = row
                 break
 
@@ -136,7 +144,7 @@ class PdfYearbookParser(GPWParser):
                 value[1] = company
                 df.loc[[row], 0:1] = index, company
 
-            if not value[0].isdigit():
+            if not value[0].isdigit() and not (not value[0] and value[1].isdigit()):
                 if not columns_parsed:
                     for col, val in enumerate(value):
                         if val in self.end_columns:
@@ -183,21 +191,25 @@ class PdfYearbookParser(GPWParser):
         if self.company_column in df.columns and self.market_value_column in df.columns:
             new_df = df[[self.company_column, self.market_value_column]].replace(regex=r'\*', value='')
             new_df[self.market_value_column] = new_df[self.market_value_column] \
-                .replace(regex=' ', value='') \
-                .replace(regex=',', value='.') \
-                .astype('float') \
-                .mul(multiplier)
-
-            new_df.apply(self.save_value_to_database, axis=1)
+                .replace(regex=r'\s+', value='') \
+                .replace(regex=',', value='.')
+            new_df = df_with_new_indexes(new_df)
+            new_df.apply(self.save_value_to_database, axis=1, args=(multiplier, page_num))
 
             return new_df
         else:
-            raise ParseError(self.pdf_path, 'Invalid column names')
+            raise ParseError(self.pdf_path, 'Invalid column names.')
 
-    def save_value_to_database(self, row):
+    def save_value_to_database(self, row, multiplier, page_num):
+        row_index = row.name
         company_name = row[self.company_column]
         market_value = row[self.market_value_column]
         company_isin = None
 
-        save_value_to_database(company_name, company_isin, market_value, self.date,
-                               self.overlapping_info, self.unification_info, self.save, self.override)
+        market_value = check_if_data_correct(warnings=self.warnings, row_index=row_index, page_num=page_num,
+                                             company_name=company_name, company_isin=company_isin,
+                                             market_value=market_value, multiplier=multiplier)
+
+        if market_value is not None:
+            save_value_to_database(company_name, company_isin, market_value, self.date,
+                                   self.overlapping_info, self.unification_info, self.save, self.override)
