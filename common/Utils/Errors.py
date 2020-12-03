@@ -18,8 +18,8 @@ class ParseError(Exception):
         self.details = details
 
     def __str__(self):
-        message = 'Cannot parse data. Not compatible with convention. Source: ' + self.source
-        return message + self.details if self.details else message
+        message = 'Cannot parse data. Not compatible with convention. Source: ' + self.source + '.'
+        return message + ' ' + self.details if self.details else message
 
 
 class UniqueError(Exception):

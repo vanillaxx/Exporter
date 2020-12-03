@@ -308,24 +308,30 @@ def import_gpw(request):
 
                 if directory_import:
                     if os.path.isdir(path):
+                        warn = None
                         override_save = form.cleaned_data.get('override_save')
                         for root, _, files in os.walk(path):
                             for file in files:
                                 if correct_file(file):
                                     absolute_path = os.path.join(root, file)
                                     paths.append(absolute_path)
-                                else:
-                                    messages.error(request,
-                                                   f'Directory has to contain {file_types[file_type]} files only.')
-                                    return render(request, 'import/gpw.html', {'form': form})
+                                elif warn is None:
+                                    warn = f'Parsing only {file_types[file_type]} files.'
                             break
+
+                        if not paths:
+                            messages.error(request, f'Directory contains no {file_types[file_type]} files.')
+                            return render(request, 'import/gpw.html', {'form': form})
+                        if warn:
+                            messages.warning(request, warn)
 
                         if override_save == 'o':
                             override = True
                         elif override_save == 's':
                             save = True
-                        date = None
+
                         if len(paths) > 1:
+                            date = None
                             msg = 'files'
                     else:
                         messages.error(request, 'Pass a correct path to a directory with GPW files.')
@@ -338,12 +344,20 @@ def import_gpw(request):
                         return render(request, 'import/gpw.html', {'form': form})
 
                 result = None
+                errors = []
+                successes = []
+                date_error = False
                 for path in paths:
                     parser = parsers[file_type](save, override)
                     if date:
-                        date = dateutil.parser.parse(date)
+                        date = dateutil.parser.parse(date).date()
                     try:
                         result = parser.parse(path, date)
+                        if result is None:
+                            successes.append(path)
+                        elif result.warnings:
+                            warnings = '; '.join(result.warnings)
+                            messages.warning(request, f'Problems while parsing {path}: {warnings}. Rows not saved.')
                     except UniqueError as e:
                         overlapping = copy_and_remove_name_from_overlapping_info(e.overlapping_data[0])
 
@@ -354,18 +368,27 @@ def import_gpw(request):
                                        'data': json.dumps([overlapping])})
                     except DateError as e:
                         if directory_import:
-                            messages.error(request, f'{e} The file needs to be imported separately.')
+                            messages.info(request, f'{e} The file needs to be imported separately.')
+                            date_error = True
                         else:
-                            messages.error(request, e)
-                        return render(request, 'import/gpw.html', {'form': GpwImportForm(date=True)})
+                            messages.info(request, e)
+                            return render(request, 'import/gpw.html', {'form': GpwImportForm(date=True)})
                     except ParseError as e:
-                        messages.error(request, e)
-                        return render(request, 'import/gpw.html', {'form': GpwImportForm()})
+                        errors.append(e)
                     except Exception as e:
-                        messages.error(request, f'Error occurred while parsing {path}. {type(e).__name__}: {str(e)}')
-                        return render(request, 'import/gpw.html', {'form': GpwImportForm()})
+                        errors.append(f'Error occurred while parsing {path}. {type(e).__name__}: {str(e)}')
 
-                if result is not None:
+                if errors or date_error:
+                    form = GpwImportForm(date=True) if date_error or date else GpwImportForm()
+                    for error in errors:
+                        messages.error(request, error)
+
+                    if successes:
+                        messages.success(request, f"Successfully parsed: {', '.join(successes)}.")
+
+                    return render(request, 'import/gpw.html', {'form': form})
+
+                if result is not None and result.unification_info:
                     messages.success(request, 'Parsed GPW file successfully.')
                     return render(request, 'import/gpw.html', {'form': GpwImportForm(),
                                                                'unification_form':
@@ -379,5 +402,6 @@ def import_gpw(request):
             form = GpwImportForm()
 
         return render(request, 'import/gpw.html', {'form': form})
-    except:
+    except Exception as e:
+        print(e)
         return render(request, 'error.html')

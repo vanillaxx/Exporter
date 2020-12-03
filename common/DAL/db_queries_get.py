@@ -147,7 +147,7 @@ def get_company_id(connection, company_name, company_ticker, company_isin):
 @with_connection
 def get_all_companies_info(connection):
     c = connection.cursor()
-    c.execute("SELECT ID, Name, Ticker, Bloomberg FROM Company ")
+    c.execute("SELECT ID, Name, Ticker, ISIN, Bloomberg FROM Company ")
     return c.fetchall()
 
 

@@ -25,8 +25,8 @@ class Company:
             self.bloomberg = self.bloomberg.upper()
 
     def get_possible_matches(self, companies):
-        return [(json.dumps((id, name)), name) for (id, name, ticker, bloomberg) in companies
-                if self.is_similar(Company(name=name, ticker=ticker, bloomberg=bloomberg))]
+        return [(json.dumps((id, name)), name) for (id, name, ticker, isin, bloomberg) in companies
+                if self.is_similar(Company(name=name, ticker=ticker, isin=isin, bloomberg=bloomberg))]
 
     def is_similar(self, company):
         tuples_to_compare = [(self.name, company.name),

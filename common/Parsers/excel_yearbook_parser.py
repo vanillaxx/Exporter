@@ -2,12 +2,13 @@ import xlrd
 import re
 from datetime import date
 
-from common.Utils.Errors import UniqueError, DateError
+from common.Parsers.gpw_parser import GPWParser
+from common.Utils.Errors import UniqueError, DateError, ParseError
 from common.Utils.gpw_utils import save_value_to_database
 from common.Utils.parsing_result import ParsingResult
 
 
-class ExcelYearbookParser:
+class ExcelYearbookParser(GPWParser):
     def __init__(self, save, override):
         self.workbook = None
         self.date = None
@@ -17,13 +18,14 @@ class ExcelYearbookParser:
         self.override = override
         self.path = None
 
-    def parse(self, pdf_path, data_date=None):
-        self.path = pdf_path
-        self.workbook = xlrd.open_workbook(pdf_path)
+    def parse(self, path, data_date=None):
+        self.path = path
+        self.workbook = xlrd.open_workbook(self.path)
         self.date, sheet_names = self.get_date_and_sheet_names(data_date)
         data = [self.parse_sheet(sheet_name) for sheet_name in sheet_names]
+        data = [d for d in data if d]
         if not data:
-            raise ValueError('No data found')
+            raise ParseError(self.path, 'No data found.')
 
         if self.unification_info:
             if self.overlapping_info and self.overlapping_info['values']:
@@ -59,7 +61,7 @@ class ExcelYearbookParser:
                     sheet_names.append(sheet_name)
 
         if not sheet_names:
-            raise ValueError('Sheet names not found')
+            raise ParseError(self.path, 'Sheet names not found.')
         if year is None:
             raise DateError(self.path)
 
@@ -92,8 +94,7 @@ class ExcelYearbookParser:
                 data.append([name, isin, market_value])
         return data
 
-    @staticmethod
-    def get_indexes(sheet, row_index):
+    def get_indexes(self, sheet, row_index):
         company = ['spółka', 'company']
         isin = 'isin'
         market_value = ['wartość rynkowa', 'market value']
@@ -111,6 +112,6 @@ class ExcelYearbookParser:
                 market_value_column = col_index
 
         if company_column is None or market_value_column is None:
-            raise ValueError('Columns not found')
+            raise ParseError(self.path, 'Columns not found.')
 
         return company_column, isin_column, market_value_column
