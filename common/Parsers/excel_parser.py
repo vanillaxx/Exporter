@@ -64,7 +64,10 @@ class ExcelParser():
     def parse_company(self, path):
         def parse_ekd(ekd):
             parsed_ekd = ekd.split('.')
-            return parsed_ekd[0], parsed_ekd[1]
+            if len(parsed_ekd) == 2:
+                return parsed_ekd[0], parsed_ekd[1]
+            else:
+                return None, None
 
         excel_sheet = get_sheet(path, 'Info')
         attribute_column = 0
@@ -97,7 +100,8 @@ class ExcelParser():
             raise ParseError(path, '(A26=EKD 1) of company should be in B26 cell')
 
         ekd_section, ekd_class = parse_ekd(company_ekd)
-        insert_ekd_data(ekd_section, ekd_class)
+        if ekd_section and ekd_class:
+            insert_ekd_data(ekd_section, ekd_class)
 
         return Company(name=company_name, ticker=company_ticker, isin=isin, bloomberg=company_bloomberg,
                        ekd_section=ekd_section, ekd_class=ekd_class)
