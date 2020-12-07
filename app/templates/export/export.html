@@ -30,6 +30,7 @@
             <div class="form-group m-3">
                 <label>Companies</label>
                 {{form.chosen_companies}}
+                 <a href="#" class="select-all description-font">Select all companies</a>
             </div>
             <fieldset class="border m-3 p-2">
                 <legend class="form-legend">Frequency</legend>
@@ -118,6 +119,10 @@
     window.onload = function () {
 
     };
+
+    $('.select-all').click(function(){
+        $('option', $(this).parent()).attr('selected', 'selected');
+    });
 
     $('[data-toggle="tooltip"]').tooltip()
 </script>
