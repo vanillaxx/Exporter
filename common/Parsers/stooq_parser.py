@@ -300,12 +300,12 @@ def _convert_kmb(val):
 
 
 def float_or_none(val):
-    if val is None:
+    if val is None or pd.isnull(val):
         return None
     return float(val)
 
 
 def int_or_none(val):
-    if val is None:
+    if val is None or pd.isnull(val):
         return None
     return int(val)
