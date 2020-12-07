@@ -18,7 +18,7 @@ class MergeForm(BSModalForm):
     def clean(self):
         cleaned_data = super(MergeForm, self).clean()
         if cleaned_data.get('chosen_from') == cleaned_data.get('chosen_to'):
-            raise ValidationError("Please, select different companies!")
+            raise ValidationError("Please select different companies!")
 
 
 class CompanyModelForm(BSModalModelForm):
@@ -117,7 +117,7 @@ class StockQuotesModelForm(BSModalModelForm):
 
 
 class ExportForm(forms.Form):
-    file_name = forms.CharField(label='File name:', max_length=100)
+    file_name = forms.CharField(label='File name:')
     company_choices = Company.objects.all().order_by('name')
     chosen_companies = forms.ModelMultipleChoiceField(queryset=company_choices,
                                                       widget=forms.SelectMultiple(attrs={'class': 'form-control',
@@ -166,7 +166,7 @@ class ExportForm(forms.Form):
 
 
 class ExportDatabaseForm(forms.Form):
-    folder = forms.CharField(label='Folder name:', max_length=100, required=True,
+    folder = forms.CharField(label='Folder name:', required=True,
                              widget=forms.TextInput(attrs={'class': 'form-control'}))
     delete = forms.BooleanField(required=False)
 
@@ -175,14 +175,14 @@ class ExportDatabaseForm(forms.Form):
 
 
 class ImportDatabaseForm(forms.Form):
-    file = forms.CharField(label='File name:', max_length=100, required=True,
+    file = forms.CharField(label='File name:', required=True,
                            widget=forms.TextInput(attrs={'class': 'form-control'}))
 
     file_sheet = 'File with database to be imported'
 
 
 class NotoriaImportForm(forms.Form):
-    file_path = forms.CharField(label='Path', max_length=512)
+    file_path = forms.CharField(label='Path')
     choices_bs = [('YS', 'Yearly'),
                   ('QS', 'Quarterly')]
     choices_fr = [('YS', 'Yearly'),
