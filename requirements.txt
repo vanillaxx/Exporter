@@ -57,7 +57,6 @@ six==1.14.0
 sortedcontainers==2.1.0
 soupsieve==2.0
 sqlparse==0.3.1
-traits==6.1.0
 urllib3==1.25.9
 webencodings==0.5.1
 xlrd==1.2.0

@@ -13,10 +13,9 @@
     <div class="wrapper m-3">
         <div class="left col-sm-4 col-xs-4">
             <input type="radio" id="radio_one" name="import_type" value="one">
-            <label class="description-font" for="radio_one" data-toggle="tooltip"
-                   title="Choose any company, any period of time and time interval
-                    (if only stooq.com contains such data), but there is no information about turnover.">
+            <label class="description-font" for="radio_one" data-toggle="tooltip">
                 Import data for one company
+                <span class="fa fa-question-circle" data-toggle="tooltip" title="Choose any company, any period of time and time interval (if only stooq.com contains such data), but there is no information about turnover."></span>
             </label>
 
             <div id="one_content" class="toggle-show form-group" style="display: none">
@@ -54,10 +53,10 @@
 
         <div class="right col-sm-4 col-xs-4">
             <input type="radio" id="radio_all" name="import_type" value="all">
-            <label class="description-font" for="radio_all" data-toggle="tooltip" title="Only daily stock quotes from a few days back will be available,
-                    but it will download information about turnover.">Import data for all companies
+            <label class="description-font" for="radio_all" data-toggle="tooltip">
+                Import data for all companies
+                <span class="fa fa-question-circle" data-toggle="tooltip" title="Only daily stock quotes from a few days back will be available, but it will download information (including turnover) for all companies at once."></span>
             </label>
-
             <div id="all_content" class="toggle-show form-group" style="display: none">
                 <div class="form-group m-3">
                     <label>{{form.date_sheet}}</label>
