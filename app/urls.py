@@ -1,7 +1,8 @@
+from django.conf.urls import url
 from django.urls import path
 
 from .views import crud, database, export_data, general, import_data, merge, replace
-
+from app.models import CompanyAutocomplete
 
 urlpatterns = [
     path('', general.index, name='index'),
@@ -66,5 +67,6 @@ urlpatterns = [
     path('manage/stock', crud.StockQuoteView.as_view(), name='stock'),
     path('manage/stock/create', crud.StockQuoteCreateView.as_view(), name='create_stock'),
     path('manage/stock/update/<int:pk>', crud.StockQuoteUpdateView.as_view(), name='update_stock'),
-    path('manage/stock/delete/<int:pk>', crud.StockQuoteDeleteView.as_view(), name='delete_stock')
+    path('manage/stock/delete/<int:pk>', crud.StockQuoteDeleteView.as_view(), name='delete_stock'),
+    url(r'^company-autocomplete/', CompanyAutocomplete.as_view(), name='company-autocomplete',)
 ]

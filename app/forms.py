@@ -7,7 +7,7 @@ import json
 from .models import *
 from bootstrap_datepicker_plus import DatePickerInput
 from bootstrap_modal_forms.forms import BSModalModelForm, BSModalForm
-
+from dal import autocomplete
 
 class MergeForm(BSModalForm):
     merge_from = Company.objects.all().order_by('name')
@@ -120,8 +120,11 @@ class ExportForm(forms.Form):
     file_name = forms.CharField(label='File name:')
     company_choices = Company.objects.all().order_by('name')
     chosen_companies = forms.ModelMultipleChoiceField(queryset=company_choices,
-                                                      widget=forms.SelectMultiple(attrs={'class': 'form-control',
-                                                                                         'style': 'height: 12em;'}))
+                                                      widget=autocomplete.ModelSelect2Multiple(
+                                                             url='company-autocomplete',
+                                                             attrs={'class': 'form-control companies-multi-select2',
+                                                                    'style': 'height: 12em;'}
+                                                      ))
     date_ranges_count = forms.CharField(widget=forms.HiddenInput())
     choices_i = [('d', 'Daily'),
                  ('w', 'Weekly'),
@@ -164,6 +167,9 @@ class ExportForm(forms.Form):
                                                                                              'class': 'datepicker form-control'}
                                                                                   ))
 
+    class Meta:
+        model = Company
+        fields = ('__all__')
 
 class ExportDatabaseForm(forms.Form):
     folder = forms.CharField(label='Folder name:', required=True,

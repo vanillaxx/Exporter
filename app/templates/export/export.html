@@ -29,8 +29,9 @@
             </div>
             <div class="form-group m-3">
                 <label>Companies</label>
+                <input type="button" class="btn-success btn-sm" id="select-all" value="Select All">
+                <input type="button" class="btn-secondary btn-sm" id="clear-all" value="Clear All">
                 {{form.chosen_companies}}
-                 <a href="#" class="select-all description-font">Select all companies</a>
             </div>
             <fieldset class="border m-3 p-2">
                 <legend class="form-legend">Frequency</legend>
@@ -41,9 +42,9 @@
             </fieldset>
             {{form.date_ranges_count}}
             <fieldset class="border m-3 p-2">
-                <legend class="form-legend">Periods  <i id="add-another" data-toggle="tooltip"
-                   title="Add more periods"
-                   class="fas fa-plus">
+                <legend class="form-legend">Periods <i id="add-another" data-toggle="tooltip"
+                                                       title="Add more periods"
+                                                       class="fas fa-plus">
                 </i></legend>
                 <div class="form-row">
                     <div class="">
@@ -74,7 +75,7 @@
     let gpw_interval_elem = $('#id_chosen_interval_gpw');
     let ratios_interval_elem = $('#id_chosen_interval_ratios');
     let balance_interval_elem = $('#id_chosen_interval_balance');
-
+    var $select2companies
     const intervals = {
         '-f': ratios_interval_elem,
         '-d': ratios_interval_elem,
@@ -112,18 +113,69 @@
     }
 
     $(document).ready(function () {
+        var selectedValues = [];
         $('#id_chosen_interval_ratios').hide();
         $('#id_chosen_interval_stooq').hide();
         $('#id_chosen_interval_gpw').hide();
+        $select2companies = $('.companies-multi-select2').select2({
+            ajax: {
+                url: 'company-autocomplete/',
+                data: function (params) {
+                    var query = {
+                        q: params.term,
+                        type: 'public',
+                        page: params.page || 1
+                    }
+                    return query;
+                },
+                processResults: function (data) {
+                    selectedValues = [];
+                    var select2 = $('.companies-multi-select2');
+                    select2.empty();
+                    $.each(data.results, function (i, item) {
+                        select2.append($('<option>', {
+                            value: item.id,
+                            text: item.text
+                        }));
+                        selectedValues.push(item.id);
+                    });
+                    return {
+                        'results': data.results
+                    };
+                }
+            },
+            closeOnSelect: false,
+        });
+
+        $("#select-all").click(function () {
+            var select2 = $('.companies-multi-select2');
+           // if ($("#select-all").is(':checked')) {
+                select2.val(selectedValues).trigger('change');
+                $("#id_chosen_companies > option").prop("selected", "selected");
+                $(".select2-hidden-accessible").trigger("change");
+            //} else {
+               // select2.empty();
+               // select2.val("").trigger('change');
+               // $("#id_chosen_companies > option").prop("selected", "");
+               // $(".select2-hidden-accessible").trigger("change");
+           // }
+        });
+        $("#clear-all").click(function () {
+            var select2 = $('.companies-multi-select2');
+           // if ($("#select-all").is(':checked')) {
+               // select2.val(selectedValues).trigger('change');
+               // $("#id_chosen_companies > option").prop("selected", "selected");
+               // $(".select2-hidden-accessible").trigger("change");
+            //} else {
+                select2.empty();
+                select2.val("").trigger('change');
+                $("#id_chosen_companies > option").prop("selected", "");
+                $(".select2-hidden-accessible").trigger("change");
+           // }
+        });
     })
     window.onload = function () {
-
     };
-
-    $('.select-all').click(function(){
-        $('option', $(this).parent()).attr('selected', 'selected');
-    });
-
     $('[data-toggle="tooltip"]').tooltip()
 </script>
 {% endblock %}
