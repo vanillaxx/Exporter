@@ -114,8 +114,6 @@ class StooqParser:
             company = Company(name=row['Name'], ticker=ticker)
             company_id, possible_companies = get_company(company)
             if company_id is None and not possible_companies:
-                error = CompanyNotFoundError(ticker)
-                print(error)
                 company_id = insert_company(company)
 
             if row['Last'] is None:
@@ -171,8 +169,6 @@ class StooqParser:
         company = Company(name=company_name, ticker=ticker)
         company_id, possible_companies = get_company(company)
         if company_id is None and not possible_companies:
-            error = CompanyNotFoundError(ticker=ticker)
-            print(error)
             company_id = insert_company(company)
 
         unification_info = StooqUnificationInfo(company=company, possible_matches=possible_companies, data=[])

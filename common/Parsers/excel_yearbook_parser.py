@@ -20,7 +20,7 @@ class ExcelYearbookParser(GPWParser):
 
     def parse(self, path, data_date=None):
         self.path = path
-        self.workbook = xlrd.open_workbook(self.path)
+        self.workbook = xlrd.open_workbook(self.path, on_demand=True)
         self.date, sheet_names = self.get_date_and_sheet_names(data_date)
         data = [self.parse_sheet(sheet_name) for sheet_name in sheet_names]
         data = [d for d in data if d]
@@ -87,7 +87,7 @@ class ExcelYearbookParser(GPWParser):
             if isin_column is not None:
                 isin = row[isin_column]
 
-            if name and market_value:
+            if name and market_value is not None:
                 market_value = market_value * multiplier
                 save_value_to_database(name, isin, market_value, self.date, self.overlapping_info,
                                        self.unification_info, self.save, self.override)

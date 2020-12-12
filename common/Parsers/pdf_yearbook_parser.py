@@ -198,7 +198,7 @@ class PdfYearbookParser(GPWParser):
 
             return new_df
         else:
-            raise ParseError(self.pdf_path, 'Invalid column names.')
+            raise ParseError(self.pdf_path, 'Columns not found.')
 
     def save_value_to_database(self, row, multiplier, page_num):
         row_index = row.name

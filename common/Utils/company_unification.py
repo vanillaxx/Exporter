@@ -55,7 +55,7 @@ def compare_names(names_tuple):
         return False
 
     similarity_threshold = 85
-    return max(fuzz.partial_ratio(name1, name2), fuzz.token_set_ratio(name1, name2)) >= similarity_threshold
+    return fuzz.partial_ratio(name1, name2) >= similarity_threshold
 
 
 def get_acronym_of_longer_name(name1: str, name2: str):
