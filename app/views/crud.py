@@ -12,6 +12,7 @@ class CompanyView(generic.ListView):
     model = Company
     context_object_name = 'companies'
     template_name = 'manage/companies.html'
+    ordering = ['name']
 
 
 class CompanyCreateView(BSModalCreateView):
@@ -41,6 +42,7 @@ class AssetsView(generic.ListView):
     model = Assets
     context_object_name = 'assets'
     template_name = 'manage/assets.html'
+    ordering = ['company_id__name', 'date']
 
 
 class AssetsCreateView(BSModalCreateView):
@@ -70,6 +72,7 @@ class AssetsCategoryView(generic.ListView):
     model = AssetsCategories
     context_object_name = 'assets_categories'
     template_name = 'manage/assetsCategories.html'
+    ordering = ['company_id__name', 'date']
 
 
 class AssetsCategoryCreateView(BSModalCreateView):
@@ -99,6 +102,7 @@ class DuPontIndicatorView(generic.ListView):
     model = DuPontIndicators
     context_object_name = 'indicators'
     template_name = 'manage/duPont.html'
+    ordering = ['company_id__name', 'period_end', 'period_start']
 
 
 class DuPontIndicatorCreateView(BSModalCreateView):
@@ -186,6 +190,7 @@ class EquityLiabilitiesView(generic.ListView):
     model = EquityLiabilities
     context_object_name = 'liabilities'
     template_name = 'manage/equityLiabilities.html'
+    ordering = ['company_id__name', 'date']
 
 
 class EquityLiabilitiesCreateView(BSModalCreateView):
@@ -215,6 +220,7 @@ class EquityLiabilitiesCategoryView(generic.ListView):
     model = EquityLiabilitiesCategories
     context_object_name = 'liabilities_categories'
     template_name = 'manage/equityLiabilitiesCategories.html'
+    ordering = ['company_id__name', 'date']
 
 
 class EquityLiabilitiesCategoryCreateView(BSModalCreateView):
@@ -244,6 +250,7 @@ class FinancialRatiosView(generic.ListView):
     model = FinancialRatios
     context_object_name = 'ratios'
     template_name = 'manage/financial.html'
+    ordering = ['company_id__name', 'period_end', 'period_start']
 
 
 class FinancialRatiosCreateView(BSModalCreateView):
@@ -273,6 +280,7 @@ class MarketValueView(generic.ListView):
     model = MarketValues
     context_object_name = 'values'
     template_name = 'manage/market.html'
+    ordering = ['company_id__name', 'period_end']
 
 
 class MarketValueCreateView(BSModalCreateView):
@@ -302,6 +310,7 @@ class StockQuoteView(generic.ListView):
     model = StockQuotes
     context_object_name = 'stock'
     template_name = 'manage/stock.html'
+    ordering = ['company_id__name', 'date']
 
 
 class StockQuoteCreateView(BSModalCreateView):
