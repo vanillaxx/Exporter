@@ -15,6 +15,7 @@ django-bootstrap-modal-forms==2.0.0
 django-bootstrap3==14.1.0
 django-dynamic-field==0.0.1
 django-modal-forms==1.1
+django-autocomplete-light==3.8.1
 django-widget-tweaks==1.4.8
 et-xmlfile==1.0.1
 etelemetry==0.2.1

@@ -6,62 +6,275 @@
 <div id="export_notoria_form">
     <form method="post">
         {% csrf_token %}
-        <div class="col-sm-5 col-xs-5">
-            <div class="form-group m-3">
-                <label for="file_name">File name</label>
-                <input class="form-control" id="file_name" type="text" name="file_name" value="{{ file_name }}">
-            </div>
-
-            <div class="form-group m-3">
-                <label>Data type</label>
-                <select class="form-control" id="id_chosen_data" name="chosen_data" onchange="tableChange()">
-                    <option value="-da">Detailed assets</option>
-                    <option value="-ca">Assets categories</option>
-                    <option value="-fa">Full assets</option>
-                    <option value="-de">Detailed equity and liabilities</option>
-                    <option value="-ce">Equity and liabilities categories</option>
-                    <option value="-fe">Full equity and liabilities</option>
-                    <option value="-f">Financial ratios</option>
-                    <option value="-d">DuPont Indicators</option>
-                    <option value="-s">Stock quotes</option>
-                    <option value="-mv">Market values</option>
-                </select>
-            </div>
-            <div class="form-group m-3">
-                <label>Companies</label>
-                {{form.chosen_companies}}
-                 <a href="#" class="select-all description-font">Select all companies</a>
-            </div>
-            <fieldset class="border m-3 p-2">
-                <legend class="form-legend">Frequency</legend>
-                <div id="id_chosen_interval_balance">{{form.chosen_interval_balance}}</div>
-                <div id="id_chosen_interval_ratios">{{form.chosen_interval_ratios}}</div>
-                <div id="id_chosen_interval_stooq">{{form.chosen_interval_stooq}}</div>
-                <div id="id_chosen_interval_gpw">{{form.chosen_interval_gpw}}</div>
-            </fieldset>
-            {{form.date_ranges_count}}
-            <fieldset class="border m-3 p-2">
-                <legend class="form-legend">Periods  <i id="add-another" data-toggle="tooltip"
-                   title="Add more periods"
-                   class="fas fa-plus">
-                </i></legend>
-                <div class="form-row">
-                    <div class="">
-                        <label>From:</label>
-                        <div style="width: 12em; margin-right: 4em;">
-                            {{form.start_date_0}}
-                        </div>
-                    </div>
-                    <div class="">
-                        <label>To:</label>
-                        <div style="width: 12em;">
-                            {{form.end_date_0}}
-                        </div>
-                    </div>
+        <div style="display: flex">
+            <div class="col-sm-5 col-xs-5">
+                <div class="form-group m-3">
+                    <label for="file_name">File name</label>
+                    <input class="form-control" id="file_name" type="text" name="file_name" value="{{ file_name }}">
                 </div>
-            </fieldset>
-            <div class="form-group float-md-right submit-button">
-                <input type="submit" class="btn-dark" value="Export">
+
+                <div class="form-group m-3">
+                    <label>Data type</label>
+                    <select class="form-control" id="id_chosen_data" name="chosen_data" onchange="tableChange()">
+                        <option value="-da">Detailed assets</option>
+                        <option value="-ca">Assets categories</option>
+                        <option value="-fa">Full assets</option>
+                        <option value="-de">Detailed equity and liabilities</option>
+                        <option value="-ce">Equity and liabilities categories</option>
+                        <option value="-fe">Full equity and liabilities</option>
+                        <option value="-f">Financial ratios</option>
+                        <option value="-d">DuPont Indicators</option>
+                        <option value="-s">Stock quotes</option>
+                        <option value="-mv">Market values</option>
+                    </select>
+                </div>
+                <div class="form-group m-3">
+                    <label>Companies</label>
+                    <input type="button" class="btn-success btn-sm" id="select-all" value="Select All">
+                    <input type="button" class="btn-secondary btn-sm" id="clear-all" value="Clear All">
+                    {{form.chosen_companies}}
+                </div>
+                <fieldset class="border m-3 p-2">
+                    <legend class="form-legend">Frequency</legend>
+                    <div id="id_chosen_interval_balance">{{form.chosen_interval_balance}}</div>
+                    <div id="id_chosen_interval_ratios">{{form.chosen_interval_ratios}}</div>
+                    <div id="id_chosen_interval_stooq">{{form.chosen_interval_stooq}}</div>
+                    <div id="id_chosen_interval_gpw">{{form.chosen_interval_gpw}}</div>
+                </fieldset>
+                {{form.date_ranges_count}}
+                <fieldset class="border m-3 p-2">
+                    <legend class="form-legend">Periods <i id="add-another" data-toggle="tooltip"
+                                                           title="Add more periods"
+                                                           class="fas fa-plus">
+                    </i></legend>
+                    <div class="form-row">
+                        <div class="">
+                            <label>From:</label>
+                            <div style="width: 12em; margin-right: 4em;">
+                                {{form.start_date_0}}
+                            </div>
+                        </div>
+                        <div class="">
+                            <label>To:</label>
+                            <div style="width: 12em;">
+                                {{form.end_date_0}}
+                            </div>
+                        </div>
+                    </div>
+                </fieldset>
+                <div class="form-group float-md-right submit-button">
+                    <input type="submit" class="btn-dark" value="Export">
+                </div>
+            </div>
+            <div class="col-sm-5 col-xs-5 description-font">
+                <div class="detailed-assets-desc" style="display: none">
+                    Detailed assets columns:
+                    <ul>
+                        <li>Property, plant and equipment</li>
+                        <li>Exploration for and evaluation of mineral resources</li>
+                        <li>Intangible assets</li>
+                        <li>Goodwill</li>
+                        <li>Investment property</li>
+                        <li>Investment in affiliates</li>
+                        <li>Non-current financial assets</li>
+                        <li>Non-current loans and receivables</li>
+                        <li>Deferred income tax</li>
+                        <li>Non-current deferred charges and accruals</li>
+                        <li>Non-current derivative instruments</li>
+                        <li>Other non-current assets</li>
+                        <li>Inventories</li>
+                        <li>Current intangible assets</li>
+                        <li>Biological assets</li>
+                        <li>Trade receivables</li>
+                        <li>Loans and other receivables</li>
+                        <li>Financial assets</li>
+                        <li>Cash and cash equivalents</li>
+                        <li>Accruals</li>
+                        <li>Assets from current tax</li>
+                        <li>Derivative instruments</li>
+                        <li>Other assets</li>
+                    </ul>
+                </div>
+                <div class="assets-categories-desc" style="display: none">
+                    Assets categories columns:
+                    <ul>
+                        <li>Non-current assets</li>
+                        <li>Current assets</li>
+                        <li>Assets held for sale and discontinuing operations</li>
+                        <li>Called up capital</li>
+                        <li>Own shares</li>
+                    </ul>
+                </div>
+                <div class="full-assets-desc" style="display: none">
+                    Full assets columns:
+                    <ul>
+                        <li><b>Non-current assets</b></li>
+                        <li>Property, plant and equipment</li>
+                        <li>Exploration for and evaluation of mineral resources</li>
+                        <li>Intangible assets</li>
+                        <li>Goodwill</li>
+                        <li>Investment property</li>
+                        <li>Investment in affiliates</li>
+                        <li>Non-current financial assets</li>
+                        <li>Non-current loans and receivables</li>
+                        <li>Deferred income tax</li>
+                        <li>Non-current deferred charges and accruals</li>
+                        <li>Non-current derivative instruments</li>
+                        <li>Other non-current assets</li>
+                        <li><b>Current assets</b></li>
+                        <li>Inventories</li>
+                        <li>Current intangible assets</li>
+                        <li>Biological assets</li>
+                        <li>Trade receivables</li>
+                        <li>Loans and other receivables</li>
+                        <li>Financial assets</li>
+                        <li>Cash and cash equivalents</li>
+                        <li>Accruals</li>
+                        <li>Assets from current tax</li>
+                        <li>Derivative instruments</li>
+                        <li>Other assets</li>
+                        <li><b>Assets held for sale and discontinuing operations</b></li>
+                        <li><b>Called up capital</b></li>
+                        <li><b>Own shares</b></li>
+                    </ul>
+                </div>
+                <div class="detailed-el-desc" style="display: none">
+                    Detailed Equity & Liabilities columns:
+                    <ul>
+                        <li>Share capital</li>
+                        <li>Called up share capital</li>
+                        <li>Treasury shares</li>
+                        <li>Supplementary capital</li>
+                        <li>Valuation and exchange differences</li>
+                        <li>Other capitals</li>
+                        <li>Retained earnings / accumulated losses</li>
+                        <li>Non-current liabilities from derivatives</li>
+                        <li>Non-current loans and borrowings</li>
+                        <li>Non-current liabilities from bonds</li>
+                        <li>Non-current liabilities from finance leases</li>
+                        <li>Non-current trade payables</li>
+                        <li>Long-term provision for employee benefits</li>
+                        <li>Deferred tax liabilities</li>
+                        <li>Non-current provision</li>
+                        <li>Other non-current liabilities</li>
+                        <li>Non-current accruals (liability)</li>
+                        <li>Liabilities from derivatives</li>
+                        <li>Financial liabilities (loans and borrowings)</li>
+                        <li>Bond liabilities</li>
+                        <li>Liabilities from finance leases</li>
+                        <li>Trade payables</li>
+                        <li>Employee benefits</li>
+                        <li>Current tax liabilities</li>
+                        <li>Provisions</li>
+                        <li>Other liabilities</li>
+                        <li>Accruals (liability)</li>
+                    </ul>
+                </div>
+                <div class="el-categories-desc" style="display: none">
+                    Equity & Liabilities categories columns:
+                    <ul>
+                        <li>Equity shareholders of the parent</li>
+                        <li>Non-controlling interests</li>
+                        <li>Non-current liabilities</li>
+                        <li>Current liabilities</li>
+                        <li>Liabilities related to assets held for sale and discontinued operations</li>
+                    </ul>
+                </div>
+                <div class="full-el-desc" style="display: none">
+                    Full Equity & Liabilities columns:
+                    <ul>
+                        <li><b>Equity shareholders of the parent</b></li>
+                        <li>Share capital</li>
+                        <li>Called up share capital</li>
+                        <li>Treasury shares</li>
+                        <li>Supplementary capital</li>
+                        <li>Valuation and exchange differences</li>
+                        <li>Other capitals</li>
+                        <li>Retained earnings / accumulated losses</li>
+                        <li><b>Non-controlling interests</b></li>
+                        <li><b>Non-current liabilities</b></li>
+                        <li>Non-current liabilities from derivatives</li>
+                        <li>Non-current loans and borrowings</li>
+                        <li>Non-current liabilities from bonds</li>
+                        <li>Non-current liabilities from finance leases</li>
+                        <li>Non-current trade payables</li>
+                        <li>Long-term provision for employee benefits</li>
+                        <li>Deferred tax liabilities</li>
+                        <li>Non-current provision</li>
+                        <li>Other non-current liabilities</li>
+                        <li>Non-current accruals (liability)</li>
+                        <li><b>Current liabilities</b></li>
+                        <li>Liabilities from derivatives</li>
+                        <li>Financial liabilities (loans and borrowings)</li>
+                        <li>Bond liabilities</li>
+                        <li>Liabilities from finance leases</li>
+                        <li>Trade payables</li>
+                        <li>Employee benefits</li>
+                        <li>Current tax liabilities</li>
+                        <li>Provisions</li>
+                        <li>Other liabilities</li>
+                        <li>Accruals (liability)</li>
+                        <li><b>Liabilities related to assets held for sale and discontinued operations</b></li>
+                    </ul>
+                </div>
+                <div class="ratios-desc" style="display: none">
+                    Financial Ratios columns:
+                    <ul>
+                        <li>Gross profit margin on sales</li>
+                        <li>Operating profit margin</li>
+                        <li>Gross profit margin</li>
+                        <li>Net profit margin</li>
+                        <li>Return on equity (ROE)</li>
+                        <li>Return on assets (ROA)</li>
+                        <li>Working capital ratio</li>
+                        <li>Current ratio</li>
+                        <li>Quick ratio</li>
+                        <li>Cash ratio</li>
+                        <li>Receivables turnover</li>
+                        <li>Inventory turnover</li>
+                        <li>The operating cycle</li>
+                        <li>Rotation commitments</li>
+                        <li>Cash conversion cycle</li>
+                        <li>Rotation assets</li>
+                        <li>Rotation of assets</li>
+                        <li>Assets ratio</li>
+                        <li>Debt ratio</li>
+                        <li>Debt service ratio</li>
+                        <li>Rate debt security</li>
+                    </ul>
+                </div>
+                <div class="indicators-desc" style="display: none">
+                    DuPont Indicators columns:
+                    <ul>
+                        <li>Return on equity (ROE)</li>
+                        <li>Return on assets (ROA)</li>
+                        <li>Leverage (EM)</li>
+                        <li>Net profit margin</li>
+                        <li>Asset utilization (AU)</li>
+                        <li>Load gross profit</li>
+                        <li>Load operating profit</li>
+                        <li>Operating profit margin</li>
+                        <li>EBITDA margin</li>
+                    </ul>
+                </div>
+                <div class="stooq-desc" style="display: none">
+                    Stock Quotes columns:
+                    <ul>
+                        <li>Stock</li>
+                        <li>Change</li>
+                        <li>Open</li>
+                        <li>High</li>
+                        <li>Low</li>
+                        <li>Volume</li>
+                        <li>Turnover</li>
+                    </ul>
+                </div>
+                <div class="mv-desc" style="display: none">
+                    Market Values columns:
+                    <ul>
+                        <li>Market value</li>
+                    </ul>
+                </div>
             </div>
         </div>
     </form>
@@ -74,7 +287,7 @@
     let gpw_interval_elem = $('#id_chosen_interval_gpw');
     let ratios_interval_elem = $('#id_chosen_interval_ratios');
     let balance_interval_elem = $('#id_chosen_interval_balance');
-
+    var $select2companies
     const intervals = {
         '-f': ratios_interval_elem,
         '-d': ratios_interval_elem,
@@ -86,6 +299,28 @@
         intervals[v] = balance_interval_elem
     })
 
+    let detailed_assets_desc = $('.detailed-assets-desc');
+    let assets_categories_desc = $('.assets-categories-desc');
+    let detailed_el_desc = $('.detailed-el-desc');
+    let el_categories_desc = $('.el-categories-desc');
+    let full_assets_desc = $('.full-assets-desc');
+    let full_el_desc = $('.full-el-desc');
+    let ratios_desc = $('.ratios-desc');
+    let indicators_desc = $('.indicators-desc');
+    let stooq_desc = $('.stooq-desc');
+    let mv_desc = $('.mv-desc');
+    const descriptions = {
+        '-f': ratios_desc,
+        '-d': indicators_desc,
+        '-s': stooq_desc,
+        '-mv': mv_desc,
+        '-da': detailed_assets_desc,
+        '-ca': assets_categories_desc,
+        '-fa': full_assets_desc,
+        '-de': detailed_el_desc,
+        '-ce': el_categories_desc,
+        '-fe': full_el_desc
+    }
     let dates = $(".form-row");
 
     $("#add-another").click(function () {
@@ -108,22 +343,66 @@
         $.each(intervals, function (k, v) {
             v.hide();
         })
+        $.each(descriptions, function (k, v) {
+            v.hide();
+        })
         intervals[selected_value].show();
+        descriptions[selected_value].show();
     }
 
     $(document).ready(function () {
+        var selectedValues = [];
         $('#id_chosen_interval_ratios').hide();
         $('#id_chosen_interval_stooq').hide();
         $('#id_chosen_interval_gpw').hide();
+        $select2companies = $('.companies-multi-select2').select2({
+            ajax: {
+                url: 'company-autocomplete/',
+                data: function (params) {
+                    var query = {
+                        q: params.term,
+                        type: 'public',
+                        page: params.page || 1
+                    }
+                    return query;
+                },
+                processResults: function (data) {
+                    selectedValues = [];
+                    var select2 = $('.companies-multi-select2');
+                    select2.empty();
+                    $.each(data.results, function (i, item) {
+                        select2.append($('<option>', {
+                            value: item.id,
+                            text: item.text
+                        }));
+                        selectedValues.push(item.id);
+                    });
+                    return {
+                        'results': data.results
+                    };
+                }
+            },
+            closeOnSelect: false,
+        });
+
+        $("#select-all").click(function () {
+            var select2 = $('.companies-multi-select2');
+            select2.val(selectedValues).trigger('change');
+            $("#id_chosen_companies > option").prop("selected", "selected");
+            $(".select2-hidden-accessible").trigger("change");
+        });
+        $("#clear-all").click(function () {
+            var select2 = $('.companies-multi-select2');
+            select2.empty();
+            select2.val("").trigger('change');
+            $("#id_chosen_companies > option").prop("selected", "");
+            $(".select2-hidden-accessible").trigger("change");
+        });
+
+        $('#id_chosen_data').trigger('change');
     })
     window.onload = function () {
-
     };
-
-    $('.select-all').click(function(){
-        $('option', $(this).parent()).attr('selected', 'selected');
-    });
-
     $('[data-toggle="tooltip"]').tooltip()
 </script>
 {% endblock %}
