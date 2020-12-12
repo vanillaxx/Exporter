@@ -392,13 +392,3 @@ class StockQuotes(models.Model):
                                     name='stock_company_date_interval_unique')
         ]
 
-
-class CompanyAutocomplete(autocomplete.Select2QuerySetView):
-    paginate_by = Company.objects.all().count()
-
-    def get_queryset(self):
-        qs = Company.objects.all().order_by('name')
-        if self.q:
-            qs = qs.filter(name__icontains=self.q)
-
-        return qs

@@ -3,11 +3,13 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.http import QueryDict
 import json
+from common.DAL.db_utils import company_table_exists
 
 from .models import *
 from bootstrap_datepicker_plus import DatePickerInput
 from bootstrap_modal_forms.forms import BSModalModelForm, BSModalForm
 from dal import autocomplete
+
 
 class MergeForm(BSModalForm):
     merge_from = Company.objects.all().order_by('name')
@@ -297,3 +299,18 @@ class UnificationForm(BSModalForm):
                                                                           widget=forms.RadioSelect(
                                                                               attrs={'class': "radio-list"}),
                                                                           required=False)
+
+
+class CompanyAutocomplete(autocomplete.Select2QuerySetView):
+    pb = 2000
+    if company_table_exists():
+        pb = Company.objects.all().count()
+
+    paginate_by = pb
+
+    def get_queryset(self):
+        qs = Company.objects.all().order_by('name')
+        if self.q:
+            qs = qs.filter(name__icontains=self.q)
+
+        return qs
