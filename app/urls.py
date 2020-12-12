@@ -2,7 +2,7 @@ from django.conf.urls import url
 from django.urls import path
 
 from .views import crud, database, export_data, general, import_data, merge, replace
-from app.models import CompanyAutocomplete
+from app.forms import CompanyAutocomplete
 
 urlpatterns = [
     path('', general.index, name='index'),

@@ -355,6 +355,7 @@
         $('#id_chosen_interval_ratios').hide();
         $('#id_chosen_interval_stooq').hide();
         $('#id_chosen_interval_gpw').hide();
+        var currentQuery;
         $select2companies = $('.companies-multi-select2').select2({
             ajax: {
                 url: 'company-autocomplete/',
@@ -368,13 +369,7 @@
                 },
                 processResults: function (data) {
                     selectedValues = [];
-                    var select2 = $('.companies-multi-select2');
-                    select2.empty();
                     $.each(data.results, function (i, item) {
-                        select2.append($('<option>', {
-                            value: item.id,
-                            text: item.text
-                        }));
                         selectedValues.push(item.id);
                     });
                     return {
@@ -383,12 +378,34 @@
                 }
             },
             closeOnSelect: false,
-        });
+        })
 
+        function getAllCompanies() {
+            $.ajax({
+                url: 'company-autocomplete/',
+                data: {
+                    query: {
+                        q: "",
+                        type: 'public',
+                        page: 1
+                    }
+                }
+            }).done(function (data) {
+                var select2 = $('.companies-multi-select2');
+                $.each(data.results, function (i, item) {
+                    select2.append($('<option>', {
+                        value: item.id,
+                        text: item.text
+                    }));
+                });
+            });
+        }
+
+        getAllCompanies();
         $("#select-all").click(function () {
-            var select2 = $('.companies-multi-select2');
-            select2.val(selectedValues).trigger('change');
-            $("#id_chosen_companies > option").prop("selected", "selected");
+            selectedValues.forEach(function (element, index, array) {
+                $(`#id_chosen_companies > option[value="${element}"]`).prop("selected", "selected");
+            });
             $(".select2-hidden-accessible").trigger("change");
         });
         $("#clear-all").click(function () {
@@ -397,6 +414,7 @@
             select2.val("").trigger('change');
             $("#id_chosen_companies > option").prop("selected", "");
             $(".select2-hidden-accessible").trigger("change");
+            getAllCompanies();
         });
 
         $('#id_chosen_data').trigger('change');

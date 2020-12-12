@@ -261,4 +261,18 @@ def set_up_market_values_table(connection):
         );''')
 
 
+def company_table_exists():
+    try:
+        conn = sqlite3.connect('exporter.db')
+        c = conn.cursor()
+
+        c.execute(''' SELECT count(name) FROM sqlite_master WHERE type='table' AND name='Company' ''')
+
+        if c.fetchone()[0] == 1:
+            return True
+
+        return False
+    except sqlite3.OperationalError:
+        return False
+
 # set_up_database_tables()
