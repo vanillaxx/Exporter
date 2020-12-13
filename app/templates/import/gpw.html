@@ -4,34 +4,46 @@
 
     <h2>Data import from GPW</h2>
 
-    <form method="post">{% csrf_token %}
-        <div class="col-sm-4 col-xs-4">
-            <fieldset class="border m-3 p-2">
-            <legend class="form-legend">{{form.file_type.label}}</legend>
-            {{form.file_type}}
-            </fieldset>
-            <div class="form-group m-3 form-checkbox">
-                {{form.directory_import}}
-                <label>{{form.directory_import.label}}</label>
+    <div class="wrapper m-3">
+        <form method="post">{% csrf_token %}
+            <div class="left col-sm-4 col-xs-4">
+                <fieldset class="border m-3 p-2">
+                <legend class="form-legend">{{form.file_type.label}}</legend>
+                {{form.file_type}}
+                </fieldset>
+                <div class="form-group m-3 form-checkbox">
+                    {{form.directory_import}}
+                    <label>{{form.directory_import.label}}</label>
+                </div>
+                <div id="directory_choices" class="form-group m-3" style="display: none">
+                    {{form.override_save}}
+                </div>
+                <div class="form-group m-3">
+                    {% if not form.date.is_hidden %}
+                        <label>Date</label>
+                    {% endif %}
+                    {{form.date}}
+                </div>
+                <div class="form-group m-3">
+                    <label id="source_path">File path</label>
+                    {{form.path}}
+                </div>
+                <div class="form-group float-md-right submit-button">
+                    <button type="submit" class="btn-dark">Import</button>
+                </div>
             </div>
-            <div id="directory_choices" class="form-group m-3" style="display: none">
-                {{form.override_save}}
+        </form>
+
+         <div class="right col-sm-5 col-xs-5 description-font">
+            <div class="gpw-desc">
+                Import:
+                <ul>
+                    <li>yearbooks downloaded from <a href="https://www.gpw.pl/biblioteka-gpw-lista?gpwlc_id=10">GPW library page</a></li>
+                    <li>statistics bulletins - monthly, quarterly, half-yeary or yearly - downloaded from <a href="https://www.gpw.pl/statystyki-gpw">GPW statistics page</a></li>
+                </ul>
             </div>
-            <div class="form-group m-3">
-                {% if not form.date.is_hidden %}
-                    <label>Date</label>
-                {% endif %}
-                {{form.date}}
-            </div>
-            <div class="form-group m-3">
-                <label id="source_path">File path</label>
-                {{form.path}}
-            </div>
-            <div class="form-group float-md-right submit-button">
-                <button type="submit" class="btn-dark">Import</button>
-            </div>
-        </div>
-    </form>
+         </div>
+    </div>
 
     <div id="unification-modal" class="modal fade" role="dialog">
         {% if unification_form %}
