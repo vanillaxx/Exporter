@@ -1,3 +1,5 @@
+@echo off
+
 SET _path=%cd%
 for %%a in ("%_path%") do set "ROOT_DIR=%%~dpa"
 

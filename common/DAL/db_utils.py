@@ -1,4 +1,6 @@
 import sqlite3
+import os
+from pathlib import Path
 
 
 def with_connection(func):
@@ -262,8 +264,15 @@ def set_up_market_values_table(connection):
 
 
 def company_table_exists():
+    path = Path(os.getcwd())
+
+    if path.name == 'scripts':
+        path = path.parent
+
+    path_str = str(path) + '\\exporter.db'
+
     try:
-        conn = sqlite3.connect('exporter.db')
+        conn = sqlite3.connect(path_str)
         c = conn.cursor()
 
         c.execute(''' SELECT count(name) FROM sqlite_master WHERE type='table' AND name='Company' ''')
@@ -274,5 +283,6 @@ def company_table_exists():
         return False
     except sqlite3.OperationalError:
         return False
+
 
 # set_up_database_tables()
