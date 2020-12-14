@@ -351,6 +351,8 @@ def import_gpw(request):
                     parser = parsers[file_type](save, override)
                     if date:
                         date = dateutil.parser.parse(date).date()
+                    else:
+                        date = None
                     try:
                         result = parser.parse(path, date)
                         if result is None:

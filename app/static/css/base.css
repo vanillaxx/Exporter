@@ -136,3 +136,20 @@ nav {
 .menu-dropdown-options a:hover {
     background-color: #ddd;
 }
+
+td, tr {
+    font-size: 14px;
+}
+
+.overlapping-data-top {
+    overflow: scroll;
+    height: 300px;
+    width: 800px;
+    margin-bottom: 2em;
+}
+
+.overlapping-data-bottom {
+    overflow: scroll;
+    height: 300px;
+    width: 800px;
+}

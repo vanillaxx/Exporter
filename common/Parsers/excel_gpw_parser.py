@@ -16,7 +16,7 @@ class ExcelGPWParser(GPWParser):
 
     def parse(self, path, end_date=None):
         self.path = path
-        self.workbook = xlrd.open_workbook(path)
+        self.workbook = xlrd.open_workbook(path, on_demand=True)
 
         sheet_name = 'kap'
         excel_sheet = self.workbook.sheet_by_name(sheet_name)
@@ -92,4 +92,6 @@ class ExcelGPWParser(GPWParser):
                     or find_date_in_halfyearly_statistics(value) \
                     or find_date_in_yearly_statistics(value)
 
+        if not end_date:
+            raise DateError(self.path)
         return end_date

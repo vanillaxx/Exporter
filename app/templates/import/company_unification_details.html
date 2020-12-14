@@ -3,15 +3,14 @@
         <form method="post" action="{% url 'insert_data' %}">{% csrf_token %}
             <div class="modal-header">
                 <h3 class="modal-title">Unify companies</h3>
-                <button type="button" class="close" data-dismiss="modal">
-                    <span aria-hidden="true">&times;</span><span class="sr-only">Close</span>
-                </button>
             </div>
             <div id="possible-matches" class="container">
                 <div class="modal-body">
-                    {{ unification_form }}
-                    <input type="hidden" value="{{ unification }}" name="unification" />
-                    <input type="hidden" value="{{ overlapping_data }}" name="overlapping" />
+                    <div style="overflow: scroll; max-height: 400px">
+                        {{ unification_form }}
+                        <input type="hidden" value="{{ unification }}" name="unification" />
+                        <input type="hidden" value="{{ overlapping_data }}" name="overlapping" />
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button id="submit-button" type="submit" class="btn btn-primary">Submit</button>
