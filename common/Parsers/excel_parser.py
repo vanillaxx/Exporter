@@ -47,6 +47,29 @@ def init_overlapping_info(overlapping_info, table_name, columns):
 
 class ExcelParser():
     def __init__(self):
+        self.detailed_assets = [
+            'Property, plant and equipment', 'Exploration for and evaluation of mineral resources',
+            'Intangible assets', 'Goodwill', 'Investment property', 'Investment in affiliates',
+            'Non-current financial assets', 'Non-current loans and receivables',
+            'Deferred income tax', 'Non-current deferred charges and accruals',
+            'Non-current derivative instruments', 'Other non-current assets',
+            'Inventories', 'Current intangible assets', 'Biological assets', 'Trade receivables',
+            'Loans and other receivables', 'Financial assets', 'Cash and cash equivalents',
+            'Accruals', 'Assets from current tax', 'Derivative instruments', 'Other assets'
+        ]
+        self.detailed_equity_liabilities = [
+            'Share capital', 'Called up share capital',
+            'Treasury shares', 'Supplementary capital', 'Valuation and exchange differences',
+            'Other capitals', 'Retained earnings / accumulated losses',
+            'Non-current liabilities from derivatives', 'Non-current loans and borrowings',
+            'Non-current liabilities from bonds', 'Non-current liabilities from finance leases',
+            'Non-current trade payables', 'Long-term provision for employee benefits',
+            'Deferred tax liabilities', 'Non-current provision', 'Other non-current liabilities',
+            'Non-current accruals (liability)', 'Liabilities from derivatives',
+            'Financial liabilities (loans and borrowings)', 'Bond liabilities',
+            'Liabilities from finance leases', 'Trade payables', 'Employee benefits',
+            'Current tax liabilities', 'Provisions', 'Other liabilities', 'Accruals (liability)'
+        ]
         self.assets_categories = [
             'Non-current assets', 'Current assets',
             'Assets held for sale and discontinuing operations',
@@ -133,6 +156,7 @@ class ExcelParser():
                 equity_liabilities_categories_attributes = ['CompanyID', 'Date']
                 assets_categories_attributes = ['CompanyID', 'Date']
                 equity_liabilities_attributes = ['CompanyID', 'Date']
+                different_assets_exist = False
                 while curr_column < excel_sheet.ncols:
                     # check if data for that period exists
                     if not excel_sheet.cell(sum_row, curr_column).value:
@@ -151,22 +175,46 @@ class ExcelParser():
                         if attribute in self.assets_categories:
                             assets_categories_attributes.append(attribute)
                             insert_float_value(assets_categories, curr_value)
-                        else:
+                        elif attribute in self.detailed_assets:
                             assets_attributes.append(attribute)
                             insert_float_value(assets, curr_value)
+                        else:
+                            different_assets_exist = True
                         curr_row += 1
+                    if different_assets_exist:
+                        for a in self.detailed_assets:
+                            if a not in assets_attributes:
+                                assets_attributes.append(a)
+                                insert_float_value(assets, '')
+                        for ac in self.assets_categories:
+                            if ac not in assets_categories_attributes:
+                                assets_categories_attributes.append(ac)
+                                insert_float_value(assets_categories, '')
                     curr_row += 2
                     # omit headers and iterate until equities and liabilities end
+                    different_eq_exist = False
                     while excel_sheet.cell(curr_row, attributes_column).value != 'Date of publication':
                         attribute = excel_sheet.cell(curr_row, attributes_column).value
                         curr_value = excel_sheet.cell(curr_row, curr_column).value
                         if attribute in self.equity_liabilities_categories:
                             equity_liabilities_categories_attributes.append(attribute)
                             insert_float_value(equity_liabilities_categories, curr_value)
-                        else:
+                        elif attribute in self.detailed_equity_liabilities:
                             equity_liabilities_attributes.append(attribute)
                             insert_float_value(equity_liabilities, curr_value)
+                        else:
+                            different_eq_exist = True
+
                         curr_row += 1
+                    if different_eq_exist:
+                        for e in self.detailed_equity_liabilities:
+                            if e not in equity_liabilities_attributes:
+                                equity_liabilities_attributes.append(e)
+                                insert_float_value(equity_liabilities, '')
+                        for eqc in self.equity_liabilities_categories:
+                            if eqc not in equity_liabilities_categories_attributes:
+                                equity_liabilities_categories_attributes.append(eqc)
+                                insert_float_value(equity_liabilities_categories, '')
 
                     if unification_info is not None:
                         data_to_insert = [
