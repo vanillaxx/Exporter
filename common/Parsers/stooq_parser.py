@@ -90,10 +90,10 @@ class StooqParser:
             i += 1
             found = False
 
-        if len(frames) == 0:
-            raise ParseError(url, "No stock quotes find companies for given date")
-        if len(frames_change) == 0:
-            raise ParseError(url_change, "No stock quotes find companies for given date")
+        if frames is None or len(frames) == 0:
+            raise ParseError(url, "No stock quotes found companies for given data")
+        if frames_change is None or len(frames_change) == 0:
+            raise ParseError(url_change, "No stock quotes found companies for given data")
 
         result = pd.concat(frames)
         result_change = pd.concat(frames_change)
@@ -200,6 +200,9 @@ class StooqParser:
 
             i += 1
             found = False
+
+        if frames is None or len(frames) == 0:
+            raise ParseError(url, "No stock quotes found companies for given data")
 
         result = pd.concat(frames)
         result = result[::-1]
