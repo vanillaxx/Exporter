@@ -269,7 +269,7 @@ def company_table_exists():
     if path.name == 'scripts':
         path = path.parent
 
-    path_str = str(path) + '\\exporter.db'
+    path_str = os.path.join(path, 'exporter.db')
 
     try:
         conn = sqlite3.connect(path_str)
