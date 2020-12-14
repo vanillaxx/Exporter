@@ -55,7 +55,7 @@
             <input type="radio" id="radio_all" name="import_type" value="all">
             <label class="description-font" for="radio_all" data-toggle="tooltip">
                 Import data for all companies
-                <span class="fa fa-question-circle" data-toggle="tooltip" title="Only daily stock quotes from a few days back will be available, but it will download information (including turnover) for all companies at once."></span>
+                <span id='all_companies_msg' class="fa fa-question-circle" data-toggle="tooltip" title="Only daily stock quotes from a few days back will be available, but it will download information (including turnover) for all companies at once."></span>
             </label>
             <div id="all_content" class="toggle-show form-group" style="display: none">
                 <div class="form-group m-3">
@@ -92,8 +92,29 @@
         });
     }
 
+    function setAllCompaniesMsg() {
+        var date = new Date();
+        date.setDate(date.getDate() - 6);
+        document.getElementById("all_companies_msg").title = "Only daily stock quotes from a few days back will be available (earliest " +  formatDate(date) + "), but it will download information (including turnover) for all companies at once."
+    }
+
     $(document).ready(function () {
+        setAllCompaniesMsg();
         initStooqToggleTooltips();
     })
+
+    function formatDate(d) {
+        var month = '' + (d.getMonth() + 1),
+            day = '' + d.getDate(),
+            year = d.getFullYear();
+
+        if (month.length < 2)
+            month = '0' + month;
+        if (day.length < 2)
+            day = '0' + day;
+
+        return [day, month, year].join('.');
+    }
+
 </script>
 {% endblock %}
