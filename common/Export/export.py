@@ -18,7 +18,10 @@ def get_data_with_percentage_values(data, description, add_description=True):
                 skip = skip - 1
                 fresh_row.append(value)
             else:
-                fresh_row.append(value / sum)
+                if sum != 0:
+                    fresh_row.append(value / sum)
+                else:
+                    fresh_row.append(0.0)
         csv_list.append(fresh_row)
     return csv_list
 
