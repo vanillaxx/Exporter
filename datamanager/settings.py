@@ -133,3 +133,5 @@ STATICFILES_DIRS = [
 
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_ROOT = os.path.join(PROJECT_DIR, 'static')
+
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000

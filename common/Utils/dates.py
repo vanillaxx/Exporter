@@ -8,7 +8,7 @@ yearly_patterns = [
     r'Year (?P<year>\d{4})',
     r'(?P<year>^\d{4}$)',
     r'(?P<year>^\d{4})',
-    r'(?P<year>\d{4}$)',
+    # r'(?P<year>\d{4}$)',
     r'\((?P<year>\d{4})\)',
     r'(?:Statystyki roczne GPW|WSE annual statistics) - (?P<year>\d{4})'
 ]
@@ -128,7 +128,10 @@ def find_date_in_monthly_statistics(text):
             groupdict = match.groupdict()
             if 'date' in groupdict or 'pl_date' in groupdict:
                 if 'pl_date' in groupdict:
-                    locale.setlocale(locale.LC_TIME, 'pl_PL')
+                    try:
+                        locale.setlocale(locale.LC_TIME, 'pl_PL')
+                    except locale.Error:
+                        continue
                     month_year = re.sub(r'[,()]', '', match.group('pl_date').strip().replace('ń', 'ñ'))
                 else:
                     month_year = re.sub(r'[,()]', '', match.group('date').strip())
