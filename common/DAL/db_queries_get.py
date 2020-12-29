@@ -510,14 +510,17 @@ def export_stock_quotes(connection, company_ids, start_date, end_date, interval)
                 AND SQ.Date BETWEEN ? AND ?
                 AND Interval = ?
                 ORDER BY C.Name, SQ.Date '''.format(seq=','.join(['?'] * len(company_ids)))
-    company_ids.extend([start_date, end_date, interval_id])
-    c.execute(query, tuple(company_ids))
+    query_args = company_ids.copy()
+    query_args.extend([start_date, end_date, interval_id])
+    c.execute(query, tuple(query_args))
     return c.fetchall(), list(map(lambda x: x[0], c.description))
 
 
 @with_connection
 def get_market_values_for_companies(connection, company_ids, start_date, end_date, months=None):
     c = connection.cursor()
+    query_args = company_ids.copy()
+    query_args.extend([start_date, end_date])
     if months is not None:
         query = '''SELECT C.Name, "Market value", "Period end"
                      FROM MarketValues MV
@@ -527,8 +530,7 @@ def get_market_values_for_companies(connection, company_ids, start_date, end_dat
                      AND strftime('%m',  MV."Period end") IN ({months_seq})
                      ORDER BY C.Name, MV."Period end" '''.format(seq=','.join(['?'] * len(company_ids)),
                                                                  months_seq=','.join(['?'] * len(months)))
-        company_ids.extend([start_date, end_date])
-        company_ids.extend(months)
+        query_args.extend(months)
     else:
         query = '''SELECT C.Name, "Market value", "Period end"
                              FROM MarketValues MV
@@ -536,9 +538,8 @@ def get_market_values_for_companies(connection, company_ids, start_date, end_dat
                              WHERE C.ID IN ({seq}) 
                              AND MV."Period end" BETWEEN ? AND ?
                              ORDER BY C.Name, MV."Period end" '''.format(seq=','.join(['?'] * len(company_ids)))
-        company_ids.extend([start_date, end_date])
 
-    c.execute(query, tuple(company_ids))
+    c.execute(query, tuple(query_args))
     return c.fetchall(), list(map(lambda x: x[0], c.description))
 
 
