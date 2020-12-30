@@ -104,9 +104,9 @@ def merge_database(connection, path):
                         "Financial assets", "Cash and cash equivalents", Accruals, "Assets from current tax",
                         "Derivative instruments", "Other assets" FROM to_import.Assets;''')
         connection.commit()
-        connection.execute('''INSERT INTO main.AssetsCategories(ID, CompanyID, "Non-current assets", "Current assets",
+        connection.execute('''INSERT INTO main.AssetsCategories(ID, CompanyID, Date, "Non-current assets", "Current assets",
                         "Assets held for sale and discontinuing operations", "Called up capital", "Own shares")
-                        SELECT ID, CompanyID, "Non-current assets", "Current assets",
+                        SELECT ID, CompanyID, Date, "Non-current assets", "Current assets",
                         "Assets held for sale and discontinuing operations", "Called up capital", "Own shares"
                          FROM to_import.AssetsCategories;''')
         connection.commit()
@@ -121,7 +121,7 @@ def merge_database(connection, path):
         connection.commit()
         connection.execute('''INSERT INTO main.EquityLiabilities(ID, CompanyID, Date, "Share capital",
                         "Called up share capital", "Treasury shares", "Supplementary capital",
-                        "Valuation and exchange differences", "Retained earnings / accumulated losses",
+                        "Valuation and exchange differences", "Other capitals", "Retained earnings / accumulated losses",
                         "Non-current liabilities from derivatives", "Non-current loans and borrowings",
                         "Non-current liabilities from bonds", "Non-current liabilities from finance leases",
                         "Non-current trade payables", "Long-term provision for employee benefits",
@@ -132,7 +132,7 @@ def merge_database(connection, path):
                         "Current tax liabilities", Provisions, "Other liabilities", "Accruals (liability)")
                         SELECT ID, CompanyID, Date, "Share capital",
                         "Called up share capital", "Treasury shares", "Supplementary capital",
-                        "Valuation and exchange differences", "Retained earnings / accumulated losses",
+                        "Valuation and exchange differences", "Other capitals", "Retained earnings / accumulated losses",
                         "Non-current liabilities from derivatives", "Non-current loans and borrowings",
                         "Non-current liabilities from bonds", "Non-current liabilities from finance leases",
                         "Non-current trade payables", "Long-term provision for employee benefits",
