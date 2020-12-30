@@ -1,5 +1,6 @@
 from bootstrap_modal_forms.generic import BSModalFormView
 from django import forms
+from django.forms.models import ModelMultipleChoiceField
 from django.core.exceptions import ValidationError
 from django.http import QueryDict
 import json
@@ -9,7 +10,6 @@ from .models import *
 from bootstrap_datepicker_plus import DatePickerInput
 from bootstrap_modal_forms.forms import BSModalModelForm, BSModalForm
 from dal import autocomplete
-
 
 class MergeForm(BSModalForm):
     merge_from = Company.objects.all().order_by('name')
@@ -123,9 +123,9 @@ class ExportForm(forms.Form):
     company_choices = Company.objects.all().order_by('name')
     chosen_companies = forms.ModelMultipleChoiceField(queryset=company_choices,
                                                       widget=autocomplete.ModelSelect2Multiple(
-                                                             url='company-autocomplete',
-                                                             attrs={'class': 'form-control companies-multi-select2',
-                                                                    'style': 'height: 12em;'}
+                                                            url='company-autocomplete',
+                                                            attrs={'class': 'form-control companies-multi-select2',
+                                                                   'style': 'height: 12em;'}
                                                       ))
     date_ranges_count = forms.CharField(widget=forms.HiddenInput())
     choices_i = [('d', 'Daily'),
@@ -172,6 +172,7 @@ class ExportForm(forms.Form):
     class Meta:
         model = Company
         fields = ('__all__')
+
 
 class ExportDatabaseForm(forms.Form):
     folder = forms.CharField(label='Folder name:', required=True,
@@ -302,15 +303,23 @@ class UnificationForm(BSModalForm):
 
 
 class CompanyAutocomplete(autocomplete.Select2QuerySetView):
-    pb = 2000
+    pb = 2500
     if company_table_exists():
         pb = Company.objects.all().count()
 
     paginate_by = pb
 
     def get_queryset(self):
+        self.update_pb()
         qs = Company.objects.all().order_by('name')
         if self.q:
             qs = qs.filter(name__icontains=self.q)
 
         return qs
+
+    def update_pb(self):
+        pb = 2500
+        if company_table_exists():
+            pb = Company.objects.all().count()
+
+        self.paginate_by = pb
