@@ -19,9 +19,6 @@ class PdfGPWParser(GPWParser):
         'Domestic companies by market capitalisation',
         'Domestic companies by market capitalization'
     ]
-    # end = [
-    #     'Biuletyn Statystyczny GPW'
-    # ]
     stop_parsing = [
         'Biuletyn Statystyczny GPW',
         'Statystyki roczne GPW'
@@ -85,7 +82,6 @@ class PdfGPWParser(GPWParser):
         x_max, x_min, y_max = media_box.x1, 0, 0
         title_rect = page.searchFor(self.table_title, hit_max=1)
         if title_rect:
-            # print(page_num)
             bottom_left = title_rect[0].bottom_left
             table_area = [x_min, media_box.y1 - bottom_left.y, x_max, y_max]
             table_area = ','.join('%f' % coord for coord in table_area)

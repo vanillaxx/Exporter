@@ -64,7 +64,7 @@ def import_database(request):
 
                 if not is_properly_database(file):
                     messages.error(request, 'Chosen file is not of properly SQLite3 file type.')
-                    return render(request, 'manage/databaseExport.html', {'form': form})
+                    return render(request, 'manage/databaseImport.html', {'form': form})
 
                 if not _is_database_empty():
                     return render(request, 'manage/databaseImport.html',
