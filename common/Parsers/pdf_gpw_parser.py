@@ -92,7 +92,6 @@ class PdfGPWParser(GPWParser):
         else:
             return None
 
-    # TODO refactor
     def parse_table(self, table, page_num):
         df = table.df
         rows_number = len(df)
