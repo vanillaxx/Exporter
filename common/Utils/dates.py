@@ -8,7 +8,7 @@ yearly_patterns = [
     r'Year (?P<year>\d{4})',
     r'(?P<year>^\d{4}$)',
     r'(?P<year>^\d{4})',
-    r'(?P<year>\d{4}$)',
+    # r'(?P<year>\d{4}$)',
     r'\((?P<year>\d{4})\)',
     r'(?:Statystyki roczne GPW|WSE annual statistics) - (?P<year>\d{4})'
 ]
@@ -128,16 +128,19 @@ def find_date_in_monthly_statistics(text):
             groupdict = match.groupdict()
             if 'date' in groupdict or 'pl_date' in groupdict:
                 if 'pl_date' in groupdict:
-                    locale.setlocale(locale.LC_TIME, 'pl_PL')
-                    month_year = re.sub(r'[,()]', '', match.group('pl_date').strip().replace('ń', 'ñ'))
+                    try:
+                        month_year = re.sub(r'[,()]', '', match.group('pl_date').strip())
+                        year, month = _parse_date(month_year)
+                    except ValueError:
+                        continue
                 else:
                     month_year = re.sub(r'[,()]', '', match.group('date').strip())
-                try:
-                    date_time = datetime.strptime(month_year, '%B %Y')
-                except ValueError:
-                    continue
-                year = date_time.year
-                month = date_time.month
+                    try:
+                        date_time = datetime.strptime(month_year, '%B %Y')
+                        year = date_time.year
+                        month = date_time.month
+                    except ValueError:
+                        continue
             elif 'month' in groupdict and 'year' in groupdict:
                 month = int(match.group('month'))
                 if month < 1 or month > 12:
@@ -148,3 +151,23 @@ def find_date_in_monthly_statistics(text):
     return None
 
 
+def _parse_date(date_str):
+    months = {'styczeń': 1,
+              'luty': 2,
+              'marzec': 3,
+              'kwiecień': 4,
+              'maj': 5,
+              'czerwiec': 6,
+              'lipiec': 7,
+              'sierpień': 8,
+              'wrzesień': 9,
+              'październik': 10,
+              'listopad': 11,
+              'grudzień': 12}
+
+    parts = date_str.split(' ')
+
+    month = months[parts[0]]
+    year = int(parts[1])
+
+    return year, month

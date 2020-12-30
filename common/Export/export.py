@@ -18,7 +18,10 @@ def get_data_with_percentage_values(data, description, add_description=True):
                 skip = skip - 1
                 fresh_row.append(value)
             else:
-                fresh_row.append(value / sum)
+                if sum != 0:
+                    fresh_row.append(value / sum)
+                else:
+                    fresh_row.append(0.0)
         csv_list.append(fresh_row)
     return csv_list
 
@@ -28,7 +31,6 @@ def put_percentage_data_to_csv(data, description, file_name, add_description=Tru
         csv_list = get_data_with_percentage_values(data, description, add_description)
         save_to_csv(csv_list, file_name)
     status = get_status(data)
-    # print(status.get_message(file_name))
     return status
 
 
@@ -42,7 +44,6 @@ def put_data_to_csv(data, description, file_name, add_description=True):
             csv_list.append(row)
         save_to_csv(csv_list, file_name)
     status = get_status(data)
-    # print(status.get_message(file_name))
     return status
 
 
